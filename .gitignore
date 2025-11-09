@@ -1,0 +1,14 @@
+# Môi trường ảo
+.venv/
+
+# Cấu hình IDE (PyCharm, VSCode)
+.idea/
+.vscode/
+
+# Python cache
+__pycache__/
+
+# Dữ liệu (Theo Cấu trúc Thư mục đã thống nhất)
+*.db
+data/
+uploads/

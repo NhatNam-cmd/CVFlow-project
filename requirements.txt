@@ -1,0 +1,17 @@
+# Backend Framework
+Flask
+Flask-SQLAlchemy # Giúp làm việc với SQLAlchemy và Flask dễ dàng hơn
+
+# Module 1: File Processing
+PyPDF2
+python-docx
+
+# Module 2, 3, 5: NLP & ML
+nltk
+scikit-learn
+numpy
+
+# QA Tools (Bắt buộc)
+pre-commit
+black
+flake8
