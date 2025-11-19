@@ -1,10 +1,17 @@
 import os
 from app.public import bp
-from flask import render_template, request, flash, redirect, current_app
+from flask import render_template, request, flash, redirect, current_app, url_for
 from werkzeug.utils import secure_filename
 
 # Import Repository
-from app.repository import get_all_jobs, get_job_by_id, create_candidate, save_cv_file
+# Lưu ý: Cần thêm hàm create_init_score vào repository.py
+from app.repository import (
+    get_all_jobs,
+    get_job_by_id,
+    create_candidate,
+    save_cv_file,
+    create_init_score,
+)
 
 
 def allowed_file(filename):
@@ -29,49 +36,68 @@ def job_detail(job_id):
     """Trang chi tiết Job và Form nộp CV"""
     job = get_job_by_id(job_id)
     if not job:
-        return "Job không tồn tại", 404
+        # Nên trả về 404 page hoặc redirect về index
+        flash("Công việc không tồn tại", "warning")
+        return redirect(url_for("public.index"))
+
     return render_template("public/job_detail.html", job=job)
 
 
 @bp.route("/apply", methods=["POST"])
 def apply():
     """Xử lý nộp CV cho Job"""
+    # 1. Nhận dữ liệu từ Form
     job_id = request.form.get("job_id")
     name = request.form.get("name")
     email = request.form.get("email")
     phone = request.form.get("phone")
-    cv_file = request.files.get("cv_file")
 
-    if cv_file not in request.files:
-        flash("Không tìm thấy file", "danger")
+    # 2. Kiểm tra File có tồn tại trong request không
+    if "cv_file" not in request.files:
+        flash("Không tìm thấy file upload", "danger")
         return redirect(request.referrer)
 
     file = request.files["cv_file"]
 
+    # 3. Kiểm tra người dùng có chọn file không
     if file.filename == "":
         flash("Chưa chọn file", "danger")
         return redirect(request.referrer)
 
+    # 4. Kiểm tra định dạng và Lưu
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        # Lưu file vào thư mục cấu hình (data/uploads)
-        file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
-        file.save(file_path)
+        try:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+            file.save(file_path)
 
-        # 3. Lưu vào CSDL (Gọi Repository)
-        # Bước A: Tạo ứng viên
-        new_candidate = create_candidate(name, email, phone)
+            # --- GIAO TIẾP VỚI REPOSITORY ---
 
-        # Bước B: Lưu thông tin file (raw_text để trống chờ Module 1 xử lý sau)
-        save_cv_file(candidate_id=new_candidate.id, file_path=file_path, raw_text="")
+            # Bước A: Tạo ứng viên (Candidate)
+            new_candidate = create_candidate(name, email, phone)
+            if not new_candidate:
+                raise Exception("Lỗi khi tạo ứng viên")
 
-        # (Ghi chú: Logic AI/NLP sẽ được gọi ở đây trong tương lai)
+            # Bước B: Lưu thông tin file (CV_File)
+            save_cv_file(
+                candidate_id=new_candidate.id, file_path=file_path, raw_text=""
+            )
 
-        flash("Nộp hồ sơ thành công! Hệ thống đang xử lý CV của bạn...", "success")
-        return render_template("public/apply_success.html", job_id=job_id)
+            # Bước C (QUAN TRỌNG): Liên kết Ứng viên với Job thông qua bảng Score
+            # Điều này xác nhận hành động "Nộp đơn"
+            create_init_score(candidate_id=new_candidate.id, job_id=job_id)
+
+            # --- KẾT THÚC GIAO TIẾP ---
+
+            flash("Nộp hồ sơ thành công! Hệ thống đang xử lý CV của bạn...", "success")
+            return render_template("public/apply_success.html", job_id=job_id)
+
+        except Exception as e:
+            # Log lỗi thực tế ra console để debug
+            print(f"Error in /apply: {e}")
+            flash("Có lỗi xảy ra khi nộp hồ sơ. Vui lòng thử lại.", "danger")
+            return redirect(request.referrer)
+
     else:
         flash("File không hợp lệ (Chỉ chấp nhận .pdf, .docx)", "danger")
         return redirect(request.referrer)
-
-
-# (Thêm các routes public khác ở đây, ví dụ: /job/<id>)
