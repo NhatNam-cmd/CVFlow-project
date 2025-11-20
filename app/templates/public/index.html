@@ -1,10 +1,131 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# app/templates/public/index.html #}
+{% extends 'base.html' %}
+{% block title %}Danh sách việc làm — CVFlow{% endblock %}
 
-</body>
-</html>
+{% block head_extra %}
+  <meta name="description" content="Danh sách job đang tuyển — CVFlow">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-end mb-3">
+  <div>
+    <h1 class="h3 mb-0">Vị trí đang tuyển</h1>
+    <div class="text-muted small">Chọn vị trí và nộp hồ sơ trực tiếp.</div>
+  </div>
+  <div>
+    <a href="/apply" class="btn btn-outline-primary">Nộp hồ sơ</a>
+  </div>
+</div>
+
+<!-- Search (client-side) -->
+<div class="mb-3">
+  <input id="jobSearch" class="form-control" placeholder="Tìm theo tiêu đề, kỹ năng..." />
+</div>
+
+<!-- Container to render jobs -->
+<div id="jobsList" class="row g-3">
+  <!-- JS will populate job cards here -->
+  <div id="jobsLoading" class="text-center py-5 w-100">
+    <div class="spinner-border text-primary" role="status"></div>
+    <div class="text-muted mt-2">Đang tải danh sách việc làm...</div>
+  </div>
+</div>
+
+<div id="jobsEmpty" class="text-center py-5 text-muted" style="display:none;">
+  Không có việc làm nào. Vui lòng quay lại sau.
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function(){
+  const jobsList = document.getElementById('jobsList');
+  const jobsEmpty = document.getElementById('jobsEmpty');
+  const jobsLoading = document.getElementById('jobsLoading');
+  let jobs = [];
+
+  async function loadJobs(){
+    try {
+      const res = await fetch('/jobs', { headers: { 'Accept': 'application/json' }});
+      if(!res.ok) throw new Error('Không thể lấy jobs: ' + res.status);
+      jobs = await res.json();
+      renderJobs(jobs);
+    } catch(err){
+      console.error(err);
+      jobsLoading.innerHTML = '<div class="text-danger">Lỗi khi tải dữ liệu. Kiểm tra API /jobs.</div>';
+    }
+  }
+
+  function renderJobs(list){
+    jobsLoading.style.display = 'none';
+    jobsList.innerHTML = '';
+    if(!list || list.length === 0){
+      jobsEmpty.style.display = 'block';
+      return;
+    } else {
+      jobsEmpty.style.display = 'none';
+    }
+
+    list.forEach(job => {
+      // job should have id, title, description, requirements(optional)
+      const col = document.createElement('div');
+      col.className = 'col-12 col-md-6';
+
+      const card = document.createElement('div');
+      card.className = 'p-3 bg-white job-card shadow-sm h-100';
+
+      const title = document.createElement('h5');
+      title.className = 'mb-1';
+      title.innerHTML = `<a href="/job?id=${encodeURIComponent(job.id)}" class="stretched-link text-decoration-none">${job.title || 'Untitled'}</a>`;
+
+      const desc = document.createElement('p');
+      desc.className = 'text-muted mb-2 small';
+      let short = (job.description || '').replace(/(<([^>]+)>)/ig, '').slice(0,160);
+      if((job.description||'').length > 160) short += '...';
+      desc.textContent = short;
+
+      const meta = document.createElement('div');
+      meta.className = 'd-flex justify-content-between align-items-center mt-2';
+      const left = document.createElement('div');
+      if(job.requirements){
+        try {
+          const req = JSON.parse(job.requirements);
+          for(const k of Object.keys(req).slice(0,4)){
+            const span = document.createElement('span');
+            span.className = 'tag';
+            span.textContent = k;
+            left.appendChild(span);
+          }
+        } catch(e) {
+          // ignore
+        }
+      }
+      const right = document.createElement('div');
+      right.innerHTML = '<small class="text-muted">Chi tiết →</small>';
+
+      meta.appendChild(left);
+      meta.appendChild(right);
+
+      card.appendChild(title);
+      card.appendChild(desc);
+      card.appendChild(meta);
+      col.appendChild(card);
+      jobsList.appendChild(col);
+    });
+  }
+
+  // Search filter
+  document.getElementById('jobSearch').addEventListener('input', function(e){
+    const q = e.target.value.trim().toLowerCase();
+    if(!q) renderJobs(jobs);
+    else renderJobs(jobs.filter(j=>{
+      return (j.title||'').toLowerCase().includes(q) || (j.description||'').toLowerCase().includes(q)
+      || (j.requirements||'').toLowerCase().includes(q);
+    }));
+  });
+
+  // Initial load
+  loadJobs();
+})();
+</script>
+{% endblock %}
