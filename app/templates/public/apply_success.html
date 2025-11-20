@@ -1,10 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# app/templates/public/apply_success.html #}
+{% extends 'base.html' %}
+{% block title %}Nộp hồ sơ thành công — CVFlow{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="text-center py-5">
+  <div class="bg-white p-4 shadow-sm rounded d-inline-block">
+    <h3 class="mb-2">Cảm ơn bạn đã nộp hồ sơ!</h3>
+    <p class="text-muted">Hồ sơ của bạn đã được nhận. Chúng tôi sẽ xử lý và liên hệ nếu phù hợp.</p>
+    <div class="mt-3">
+      <a href="/" class="btn btn-primary">Xem các vị trí khác</a>
+      <a href="/admin" class="btn btn-outline-secondary">Vào Admin (HR)</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
