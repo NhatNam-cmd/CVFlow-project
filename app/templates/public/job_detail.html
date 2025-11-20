@@ -1,10 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# app/templates/public/job_detail.html #}
+{% extends 'base.html' %}
+{% block title %}Chi tiết công việc — CVFlow{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="mb-3">
+  <a href="/" class="btn btn-link">&larr; Quay về danh sách</a>
+</div>
+
+<div id="jobContainer">
+  <div class="bg-white p-4 shadow-sm rounded">
+    <h2 id="jobTitle">Đang tải…</h2>
+    <div class="text-muted mb-3" id="jobMeta">#</div>
+    <div id="jobSummary" class="mb-3 text-muted"></div>
+
+    <div id="jobDescription" class="mb-4" style="white-space:pre-line;"></div>
+
+    <div class="d-flex gap-2">
+      <a id="applyBtn" href="/apply" class="btn btn-primary">Nộp hồ sơ</a>
+      <a href="/" class="btn btn-outline-secondary">Quay lại</a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function(){
+  // Read id from query string ?id=...
+  const qs = new URLSearchParams(window.location.search);
+  const id = qs.get('id');
+  if(!id){
+    document.getElementById('jobTitle').textContent = 'Job ID không xác định';
+    return;
+  }
+  try {
+    const res = await fetch('/job/' + encodeURIComponent(id));
+    if(!res.ok) throw new Error('Không thể lấy job: ' + res.status);
+    const job = await res.json();
+    document.getElementById('jobTitle').textContent = job.title || 'Untitled';
+    document.getElementById('jobMeta').textContent = 'Mã: ' + (job.id || '-');
+    // If job has summary (from backend using NLTK), show it
+    if(job.summary_text) {
+      document.getElementById('jobSummary').innerHTML = '<strong>Tóm tắt:</strong> ' + job.summary_text;
+    }
+    document.getElementById('jobDescription').textContent = job.description || '';
+    // If frontend wants to pass job id to apply page
+    document.getElementById('applyBtn').href = '/apply?job_id=' + encodeURIComponent(job.id || '');
+  } catch(err){
+    console.error(err);
+    document.getElementById('jobTitle').textContent = 'Lỗi khi tải thông tin công việc';
+  }
+})();
+</script>
+{% endblock %}
