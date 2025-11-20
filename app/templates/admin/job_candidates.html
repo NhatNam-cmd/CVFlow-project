@@ -1,10 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# app/templates/admin/job_candidates.html #}
+{% extends 'base.html' %}
+{% block title %}Ứng viên — CVFlow Admin{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="mb-3">
+  <a href="/admin" class="btn btn-link">&larr; Quay về dashboard</a>
+</div>
+
+<div id="candidatesWrap">
+  <div class="bg-white p-4 shadow-sm rounded">
+    <h4 id="jobTitle">Ứng viên</h4>
+    <div id="candidatesList" class="mt-3">
+      <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function(){
+  const qs = new URLSearchParams(window.location.search);
+  const job_id = qs.get('job_id');
+  if(!job_id){ document.getElementById('jobTitle').textContent = 'Job ID không rõ'; return; }
+
+  try {
+    const res = await fetch('/admin/candidates?job_id=' + encodeURIComponent(job_id));
+    if(!res.ok) throw new Error(res.status);
+    const candidates = await res.json();
+    const list = document.getElementById('candidatesList');
+    list.innerHTML = '';
+    if(!candidates.length){
+      list.innerHTML = '<div class="text-muted p-3">Chưa có ứng viên nộp cho vị trí này.</div>';
+      return;
+    }
+    candidates.forEach(c=>{
+      const row = document.createElement('div');
+      row.className = 'd-flex align-items-center justify-content-between py-2 border-bottom';
+      row.innerHTML = `
+        <div>
+          <div class="fw-semibold">${c.name || '(Không tên)'}</div>
+          <div class="small text-muted">${c.email || ''} · ${c.phone || ''}</div>
+        </div>
+        <div>
+          <a class="btn btn-sm btn-outline-secondary" href="/admin/candidate_detail?id=${encodeURIComponent(c.id)}">Xem chi tiết</a>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+  } catch(e){
+    console.error(e);
+    document.getElementById('candidatesList').innerHTML = '<div class="text-danger p-3">Lỗi khi tải dữ liệu.</div>';
+  }
+})();
+</script>
+{% endblock %}
