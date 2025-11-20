@@ -1,10 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# app/templates/public/apply_form.html #}
+{% extends 'base.html' %}
+{% block title %}Nộp hồ sơ — CVFlow{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="mb-3"><a href="/" class="btn btn-link">&larr; Quay về</a></div>
+
+<div class="bg-white p-4 shadow-sm rounded">
+  <h3 class="mb-3">Form Nộp Hồ Sơ</h3>
+  <form id="applyForm" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label class="form-label">Họ và tên</label>
+      <input name="name" required class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" required class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Số điện thoại</label>
+      <input name="phone" class="form-control" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Chọn vị trí</label>
+      <select name="job_id" id="jobSelect" class="form-select">
+        <option value="">(Không chọn)</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Tải lên CV (.pdf hoặc .docx)</label>
+      <input required name="file" id="fileInput" type="file" accept=".pdf,.docx" class="form-control" />
+    </div>
+
+    <div id="applyStatus" class="mb-3"></div>
+
+    <button class="btn btn-primary" type="submit">Gửi hồ sơ</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function(){
+  // Load jobs into select
+  try {
+    const res = await fetch('/jobs');
+    if(res.ok){
+      const jobs = await res.json();
+      const sel = document.getElementById('jobSelect');
+      jobs.forEach(j=>{
+        const o = document.createElement('option');
+        o.value = j.id;
+        o.textContent = j.title;
+        sel.appendChild(o);
+      });
+      // If job_id passed via query param, select it
+      const qs = new URLSearchParams(window.location.search);
+      const jid = qs.get('job_id');
+      if(jid){ sel.value = jid; }
+    }
+  } catch(e){ console.warn('Không thể load jobs', e); }
+
+  const form = document.getElementById('applyForm');
+  form.addEventListener('submit', async function(ev){
+    ev.preventDefault();
+    const status = document.getElementById('applyStatus');
+    status.innerHTML = '<div class="text-muted">Đang gửi…</div>';
+
+    const fd = new FormData(form);
+    const file = document.getElementById('fileInput').files[0];
+    if(!file){ status.innerHTML = '<div class="text-danger">Vui lòng chọn file CV.</div>'; return; }
+
+    try {
+      const res = await fetch('/apply', {
+        method: 'POST',
+        body: fd
+      });
+      if(res.ok){
+        // redirect to success (or show message)
+        window.location.href = '/apply/success';
+      } else {
+        const text = await res.text();
+        status.innerHTML = '<div class="text-danger">Lỗi khi gửi: ' + res.status + ' ' + (text || '') + '</div>';
+      }
+    } catch(err){
+      console.error(err);
+      status.innerHTML = '<div class="text-danger">Lỗi mạng khi gửi hồ sơ.</div>';
+    }
+  });
+})();
+</script>
+{% endblock %}
