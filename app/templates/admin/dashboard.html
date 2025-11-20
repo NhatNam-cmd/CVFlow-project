@@ -1,10 +1,61 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# app/templates/admin/dashboard.html #}
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — CVFlow{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2 class="h5 mb-0">Admin Dashboard</h2>
+    <div class="text-muted small">Danh sách Job (HR)</div>
+  </div>
+  <div>
+    <a href="/admin/new" class="btn btn-primary">Tạo Job mới</a>
+  </div>
+</div>
+
+<div id="adminJobs" class="row g-3">
+  <div class="text-center w-100 py-4" id="adminLoading">
+    <div class="spinner-border text-primary"></div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function(){
+  const container = document.getElementById('adminJobs');
+  const loading = document.getElementById('adminLoading');
+  try {
+    const res = await fetch('/jobs');
+    if(!res.ok) throw new Error(res.status);
+    const jobs = await res.json();
+    loading.style.display = 'none';
+    if(!jobs.length){
+      container.innerHTML = '<div class="text-muted p-4">Chưa có job nào.</div>';
+      return;
+    }
+    container.innerHTML = '';
+    jobs.forEach(j=>{
+      const col = document.createElement('div');
+      col.className = 'col-12';
+      col.innerHTML = `
+        <div class="bg-white p-3 shadow-sm d-flex justify-content-between align-items-center rounded">
+          <div>
+            <div class="fw-bold">${j.title || ''}</div>
+            <div class="small text-muted">ID: ${j.id || ''}</div>
+          </div>
+          <div>
+            <a class="btn btn-sm btn-outline-primary" href="/admin/job_candidates?job_id=${encodeURIComponent(j.id)}">Xem ứng viên</a>
+          </div>
+        </div>
+      `;
+      container.appendChild(col);
+    });
+  } catch(e){
+    console.error(e);
+    loading.innerHTML = '<div class="text-danger">Lỗi khi load job.</div>';
+  }
+})();
+</script>
+{% endblock %}
