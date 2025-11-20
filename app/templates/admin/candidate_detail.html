@@ -1,10 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{# app/templates/admin/candidate_detail.html #}
+{% extends 'base.html' %}
+{% block title %}Chi tiết ứng viên — Admin{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<div class="mb-3"><a href="/admin" class="btn btn-link">&larr; Quay về</a></div>
+
+<div id="candWrap">
+  <div class="bg-white p-4 shadow-sm rounded">
+    <h4 id="candName">Đang tải…</h4>
+    <div class="small text-muted mb-3" id="candMeta"></div>
+
+    <div class="row">
+      <div class="col-md-7">
+        <h6>Tóm tắt CV</h6>
+        <div id="candSummary" class="mb-3 text-muted"></div>
+
+        <h6>CV Gốc</h6>
+        <div id="cvLinks" class="mb-3"></div>
+      </div>
+      <div class="col-md-5">
+        <h6>Kỹ năng (NER)</h6>
+        <div id="candSkills" class="mb-3"></div>
+
+        <h6>Điểm</h6>
+        <div id="candScores" class="mb-3"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function(){
+  const qs = new URLSearchParams(window.location.search);
+  const id = qs.get('id');
+  if(!id){ document.getElementById('candName').textContent = 'Candidate ID không xác định'; return; }
+  try {
+    const res = await fetch('/admin/candidate/' + encodeURIComponent(id));
+    if(!res.ok) throw new Error(res.status);
+    const c = await res.json();
+    document.getElementById('candName').textContent = c.name || '(Không tên)';
+    document.getElementById('candMeta').textContent = (c.email||'') + ' · ' + (c.phone||'');
+
+    // summary
+    document.getElementById('candSummary').textContent = c.summary_text || '(Không có tóm tắt)';
+
+    // skills
+    const skillsWrap = document.getElementById('candSkills');
+    skillsWrap.innerHTML = '';
+    (c.skills || []).forEach(s=>{
+      const sp = document.createElement('span'); sp.className='tag'; sp.textContent = s; skillsWrap.appendChild(sp);
+    });
+
+    // scores
+    const scoresWrap = document.getElementById('candScores');
+    scoresWrap.innerHTML = '';
+    if(c.scores && c.scores.length){
+      c.scores.forEach(sc=>{
+        const div = document.createElement('div');
+        div.innerHTML = `<div class="d-flex justify-content-between"><div>${sc.job_title || ('Job ' + sc.job_id)}</div><div><strong>${sc.score_value ?? sc.match_value ?? '-'}</strong></div></div>`;
+        scoresWrap.appendChild(div);
+      });
+    } else {
+      scoresWrap.innerHTML = '<div class="text-muted">Chưa có điểm.</div>';
+    }
+
+    // CV original link if exists
+    const cvLinks = document.getElementById('cvLinks');
+    if(c.cv_files && c.cv_files.length){
+      c.cv_files.forEach(f=>{
+        const a = document.createElement('a'); a.href = f.file_path; a.target = '_blank'; a.textContent = 'Xem file'; a.className='d-block';
+        cvLinks.appendChild(a);
+      });
+    } else {
+      cvLinks.innerHTML = '<div class="text-muted">Không có file CV.</div>';
+    }
+  } catch(e){
+    console.error(e);
+    document.getElementById('candName').textContent = 'Lỗi khi tải thông tin ứng viên';
+  }
+})();
+</script>
+{% endblock %}
