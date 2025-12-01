@@ -1,17 +1,20 @@
-# Backend Framework
+# --- Core Backend ---
 Flask
-Flask-SQLAlchemy # Giúp làm việc với SQLAlchemy và Flask dễ dàng hơn
+Flask-SQLAlchemy
+python-dotenv          # (+) Mới: Giúp đọc file .env (cấu hình AI/Model)
 
-# Module 1: File Processing
-PyPDF2
-python-docx
+# --- Module 1: File Processing (Nâng cấp) ---
+pdfplumber             # (+) Mới: Thay PyPDF2. Đọc PDF giữ nguyên layout/cột.
+python-docx            # Giữ nguyên: Đọc file Word (.docx)
 
-# Module 2, 3, 5: NLP & ML
-nltk
-scikit-learn
-numpy
+# --- Module 2 & 3: LLM Integration (Ollama) ---
+requests               # (+) Mới: Dùng để gửi lệnh (Prompt) sang Ollama chạy local
 
-# QA Tools (Bắt buộc)
+# --- Module 5: Matching (Vector Embeddings) ---
+sentence-transformers  # (+) Mới: Thay Scikit-learn. Biến văn bản thành Vector ngữ nghĩa.
+numpy                  # Giữ nguyên: Tính toán độ tương đồng Vector (Cosine Similarity)
+
+# --- QA Tools (Bắt buộc - Giữ nguyên) ---
 pre-commit
 black
 flake8
