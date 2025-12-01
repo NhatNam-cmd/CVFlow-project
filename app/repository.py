@@ -1,7 +1,7 @@
 from app import db
 from app.models import Job, Candidate, CV_File
 from app.models import Score
-from typing import List, Optional  # Thêm Type Hints cho chuyên nghiệp
+from typing import List, Optional, Any  # Thêm Type Hints cho chuyên nghiệp
 
 # --- QUẢN LÝ JOB ---
 
@@ -113,7 +113,9 @@ def create_init_score(candidate_id: int, job_id: int):
 
 
 # (+) THÊM MỚI: Hàm cập nhật thông tin sau khi AI chạy xong
-def update_cv_data(cv_id: int, summary: str, structured_data: dict, vector) -> bool:
+def update_cv_data(
+    cv_id: int, summary: str, structured_data: dict, vector: Any
+) -> bool:
     """Cập nhật CV với dữ liệu từ AI (Tóm tắt, JSON, Vector)"""
     try:
         cv = db.session.get(CV_File, cv_id)
@@ -130,7 +132,7 @@ def update_cv_data(cv_id: int, summary: str, structured_data: dict, vector) -> b
         return False
 
 
-def update_job_vector(job_id: int, vector) -> bool:
+def update_job_vector(job_id: int, vector: Any) -> bool:
     """Cập nhật Vector cho Job (để so khớp sau này)"""
     try:
         job = db.session.get(Job, job_id)
@@ -140,5 +142,6 @@ def update_job_vector(job_id: int, vector) -> bool:
             return True
         return False
     except Exception as e:
+        db.session.rollback()
         print(f"Error updating Job vector: {e}")
         return False
