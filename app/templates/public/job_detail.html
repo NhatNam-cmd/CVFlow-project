@@ -1,10 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}{{ job.title }} - CVFlow{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('public.index') }}">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ job.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h1 class="fw-bold text-primary mb-2">{{ job.title }}</h1>
+                    <div class="text-muted mb-4">
+                        <i class="bi bi-calendar3"></i> Posted on {{ job.created_at.strftime('%B %d, %Y') }}
+                    </div>
+
+                    <hr>
+
+                    <h4 class="fw-bold mt-4 mb-3">Job Description</h4>
+                    <div class="card-text text-secondary" style="white-space: pre-line;">
+                        {{ job.description }}
+                    </div>
+
+                    <h4 class="fw-bold mt-4 mb-3">Requirements</h4>
+                    <div class="bg-light p-3 rounded border">
+                        <ul class="mb-0 ps-3">
+                            {% for req in job.requirements.split('\n') %}
+                            {% if req.strip() %}
+                            <li class="mb-2">{{ req }}</li>
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow border-0 sticky-top" style="top: 20px; z-index: 100;">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-send-fill"></i> Apply Now</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ url_for('public.apply') }}" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+
+                        <input type="hidden" name="job_id" value="{{ job.id }}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Full Name</label>
+                            <input type="text" class="form-control" name="name" required placeholder="Nguyen Van A">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email Address</label>
+                            <input type="email" class="form-control" name="email" required placeholder="name@example.com">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" required placeholder="0901234567">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Upload CV (PDF/DOCX)</label>
+                            <input type="file" class="form-control" name="cv_file" accept=".pdf,.docx" required>
+                            <div class="form-text">Max file size: 5MB.</div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                Submit Application
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showLoading() {
+        const btn = document.getElementById('submitBtn');
+        // Đổi nút thành trạng thái đang chạy
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> AI Processing...';
+        // Khóa nút lại để tránh bấm nhiều lần
+        btn.style.opacity = "0.7";
+        btn.style.pointerEvents = "none";
+    }
+</script>
+{% endblock %}
