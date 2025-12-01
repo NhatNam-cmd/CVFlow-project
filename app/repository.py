@@ -110,3 +110,35 @@ def create_init_score(candidate_id: int, job_id: int):
         db.session.rollback()
         print(f"Error linking candidate to job: {e}")
         return None
+
+
+# (+) THÊM MỚI: Hàm cập nhật thông tin sau khi AI chạy xong
+def update_cv_data(cv_id: int, summary: str, structured_data: dict, vector) -> bool:
+    """Cập nhật CV với dữ liệu từ AI (Tóm tắt, JSON, Vector)"""
+    try:
+        cv = db.session.get(CV_File, cv_id)
+        if cv:
+            cv.summary_text = summary
+            cv.structured_data = structured_data  # Lưu JSON
+            cv.vector_embedding = vector  # Lưu Vector
+            db.session.commit()
+            return True
+        return False
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating CV data: {e}")
+        return False
+
+
+def update_job_vector(job_id: int, vector) -> bool:
+    """Cập nhật Vector cho Job (để so khớp sau này)"""
+    try:
+        job = db.session.get(Job, job_id)
+        if job:
+            job.vector_embedding = vector
+            db.session.commit()
+            return True
+        return False
+    except Exception as e:
+        print(f"Error updating Job vector: {e}")
+        return False
