@@ -12,3 +12,6 @@ __pycache__/
 *.db
 data/
 uploads/
+
+# Biến môi trường
+.env
