@@ -27,6 +27,7 @@
                     {% endif %}
 
                     <form action="{{ url_for('public.apply') }}" method="POST" enctype="multipart/form-data" onsubmit="showLoading()">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                         <!-- Nếu job được truyền vào, tự động điền ID -->
                         <input type="hidden" name="job_id" value="{{ job.id if job else '' }}">
