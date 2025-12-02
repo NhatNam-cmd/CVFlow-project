@@ -118,7 +118,7 @@
                             </span>
                     </td>
                     <td>
-                        <a href="{{ url_for('admin.candidates') }}" class="btn btn-outline-primary btn-action">
+                        <a href="{{ url_for('admin.candidates', job_id=job.id) }}" class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-eye"></i> View Candidates
                         </a>
                         <button class="btn btn-outline-secondary btn-action" disabled>

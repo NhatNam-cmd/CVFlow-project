@@ -33,6 +33,8 @@ def run_cv_processing(cv_id: int, file_path: str):
         print("❌ Failed to extract text from PDF.")
         return False
 
+    # Debug: In thử 100 ký tự đầu xem có đọc được tiếng Việt không
+    print(f"📄 Raw Text Preview: {raw_text[:100]}...")
     # 2. Module 2: Trích xuất thông tin (JSON)
     # Gắn text vào prompt mẫu
     extract_prompt = EXTRACT_INFO_PROMPT.format(
@@ -53,7 +55,7 @@ def run_cv_processing(cv_id: int, file_path: str):
     print("✅ Created Vector Embedding")
 
     # 5. Lưu vào Database
-    success = update_cv_data(cv_id, summary, structured_data, vector)
+    success = update_cv_data(cv_id, summary, structured_data, vector, raw_text)
 
     if success:
         print(f"🎉 Successfully processed CV {cv_id}!")

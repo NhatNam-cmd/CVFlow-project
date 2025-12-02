@@ -1,7 +1,9 @@
 import requests
-import json
 import os
 from typing import Dict, Any
+
+# (+) Import hàm sửa lỗi JSON mới từ utils
+from app.utils.json_fixer import clean_and_parse_json
 
 # Lấy cấu hình từ biến môi trường (file .env)
 OLLAMA_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -37,26 +39,15 @@ def call_ollama(prompt: str) -> str:
         return ""
 
 
-# --- Hàm Wrapper để trả về JSON (Sẽ dùng cho Module 2) ---
+# --- Hàm Wrapper để trả về JSON (Đã nâng cấp) ---
 def query_ollama_json(prompt: str) -> Dict[str, Any]:
     """
-    Gửi prompt và cố gắng ép kiểu kết quả về JSON (Python Dict)
+    Gửi prompt và ép kiểu kết quả về JSON sử dụng json_fixer mạnh mẽ hơn.
     """
     # Thêm câu lệnh ép buộc JSON vào prompt
     json_instruction = "\nIMPORTANT: Return ONLY valid JSON format. No explanations."
     full_response = call_ollama(prompt + json_instruction)
 
-    # Đoạn này sau này chúng ta sẽ dùng 'json_fixer.py' để xử lý kỹ hơn
-    # Tạm thời cứ thử parse đơn giản
-    try:
-        # Tìm dấu { đầu tiên và dấu } cuối cùng để cắt bớt lời dẫn thừa
-        start = full_response.find("{")
-        end = full_response.rfind("}") + 1
-        if start != -1 and end != -1:
-            json_str = full_response[start:end]
-            return json.loads(json_str)
-        else:
-            return {}  # Không tìm thấy JSON
-    except json.JSONDecodeError:
-        print(f"⚠️ AI không trả về đúng JSON: {full_response[:100]}...")
-        return {}
+    # (+) Thay thế logic thủ công cũ bằng hàm chuyên dụng
+    # Hàm này sẽ tự lo liệu việc cắt chuỗi, xóa Markdown, bắt lỗi...
+    return clean_and_parse_json(full_response)
