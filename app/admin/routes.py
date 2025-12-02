@@ -1,13 +1,16 @@
 from app.admin import bp
+from flask import request
 from app.repository import (
     create_job,
     get_all_jobs,
     get_all_candidates,
     get_candidate_by_id,
+    get_candidates_by_job,
+    get_job_by_id,
 )
 
 # Thêm 'session' và 'functools.wraps' để xử lý đăng nhập
-from flask import render_template, request, flash, redirect, url_for, session
+from flask import render_template, flash, redirect, url_for, session
 from config import Config
 from functools import wraps
 
@@ -83,16 +86,31 @@ def new_job():
 
 
 @bp.route("/candidates")
-@login_required  # <--- Bảo vệ route này
+@login_required
 def candidates():
-    """Xem danh sách tất cả ứng viên"""
-    candidates = get_all_candidates()
-    # Sửa tên file template cho khớp với thư mục đã tạo
+    """
+    Xem danh sách ứng viên.
+    - Nếu có ?job_id=... -> Chỉ hiện ứng viên của Job đó.
+    - Nếu không -> Hiện tất cả.
+    """
+    job_id = request.args.get("job_id", type=int)
+    job = None
+
+    if job_id:
+        # Trường hợp 1: Lọc theo Job
+        candidates = get_candidates_by_job(job_id)
+        job = get_job_by_id(job_id)  # Lấy thông tin job để hiển thị tiêu đề
+        page_title = f"Ứng viên cho: {job.title}" if job else "Danh sách ứng viên"
+    else:
+        # Trường hợp 2: Lấy tất cả (View All)
+        candidates = get_all_candidates()
+        page_title = "Tất cả Ứng viên"
+
     return render_template(
-        "admin/job_candidates.html",  # Tận dụng file này để hiển thị list
-        title="Tất cả Ứng viên",
+        "admin/job_candidates.html",
+        title=page_title,
         candidates=candidates,
-        job=None,  # Truyền job=None để template biết đây là list tổng
+        job=job,  # Truyền biến job xuống để giao diện biết đang xem job nào
     )
 
 

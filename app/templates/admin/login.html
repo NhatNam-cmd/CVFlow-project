@@ -1,10 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}HR Login - CVFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* CSS riêng để căn giữa màn hình */
+    .login-container {
+        min-height: 80vh; /* Chiều cao tối thiểu 80% màn hình */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .login-card {
+        max-width: 400px;
+        width: 100%;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    .login-header {
+        background: linear-gradient(135deg, #0077b5 0%, #005885 100%);
+        padding: 30px;
+        text-align: center;
+        color: white;
+    }
+    .login-icon {
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+    .login-body {
+        padding: 40px 30px;
+        background: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container login-container">
+    <div class="card login-card">
+        <div class="login-header">
+            <div class="login-icon">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <h4 class="mb-0 fw-bold">HR Admin Access</h4>
+            <p class="small text-white-50 mb-0">System Security Check</p>
+        </div>
+
+        <div class="login-body">
+            <form action="{{ url_for('admin.login') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="mb-4">
+                    <label for="password" class="form-label text-muted fw-bold">ACCESS CODE</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-key"></i>
+                        </span>
+                        <input type="password"
+                               class="form-control border-start-0 bg-light"
+                               id="password"
+                               name="password"
+                               placeholder="Enter admin password..."
+                               required
+                               autofocus>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                        <i class="bi bi-box-arrow-in-right"></i> Authenticate
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Default password for demo: <code>cvflow_admin_123</code>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

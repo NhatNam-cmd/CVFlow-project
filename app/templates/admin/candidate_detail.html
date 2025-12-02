@@ -1,10 +1,95 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}{{ candidate.name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4" style="height: calc(100vh - 70px);">
+    <div class="row h-100">
+        <div class="col-lg-6 h-100 d-flex flex-column">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-pdf"></i> Original CV</h5>
+                    {% if candidate.cv_files.first() %}
+                    <a href="#" class="btn btn-sm btn-outline-light">
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0 bg-secondary">
+                    {% if candidate.cv_files.first() %}
+                    <div class="d-flex align-items-center justify-content-center h-100 text-white">
+                        <div class="text-center">
+                            <i class="bi bi-file-earmark-text" style="font-size: 4rem;"></i>
+                            <p class="mt-2">PDF Viewer Placeholder</p>
+                            <p class="small text-white-50">(Browser cannot open local file directly due to security)</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="d-flex align-items-center justify-content-center h-100 text-white">
+                        <p>No CV File Attached</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 h-100 overflow-auto">
+            <div class="mb-3">
+                <a href="{{ url_for('admin.candidates') }}" class="text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h2 class="fw-bold text-primary mb-1">{{ candidate.name }}</h2>
+                            <div class="text-muted">
+                                <i class="bi bi-envelope me-2"></i> {{ candidate.email }}
+                                <span class="mx-2">|</span>
+                                <i class="bi bi-telephone me-2"></i> {{ candidate.phone }}
+                            </div>
+                        </div>
+                        <span class="badge bg-success fs-6">Applied</span>
+                    </div>
+                </div>
+            </div>
+
+            {% set cv = candidate.cv_files.all() | sort(attribute='uploaded_at', reverse=True) | first %}
+
+            {% if cv %}
+            <div class="card shadow-sm border-0 mb-4 border-start border-4 border-info">
+                <div class="card-header bg-white fw-bold text-info">
+                    <i class="bi bi-stars"></i> AI Summary
+                </div>
+                <div class="card-body">
+                    {% if cv.summary_text %}
+                    <p class="card-text">{{ cv.summary_text }}</p>
+                    {% else %}
+                    <p class="text-muted fst-italic">AI is processing this CV...</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold">
+                    <i class="bi bi-cpu"></i> Extracted Information
+                </div>
+                <div class="card-body">
+                    {% if cv.structured_data %}
+                    <div class="bg-light p-3 rounded font-monospace" style="font-size: 0.85rem;">
+                        {% for key, value in cv.structured_data.items() %}
+                        <div><strong>{{ key|title }}:</strong> {{ value }}</div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No structured data extracted.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

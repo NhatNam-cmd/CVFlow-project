@@ -114,7 +114,7 @@ def create_init_score(candidate_id: int, job_id: int):
 
 # (+) THÊM MỚI: Hàm cập nhật thông tin sau khi AI chạy xong
 def update_cv_data(
-    cv_id: int, summary: str, structured_data: dict, vector: Any
+    cv_id: int, summary: str, structured_data: dict, vector: Any, raw_text: str
 ) -> bool:
     """Cập nhật CV với dữ liệu từ AI (Tóm tắt, JSON, Vector)"""
     try:
@@ -123,6 +123,7 @@ def update_cv_data(
             cv.summary_text = summary
             cv.structured_data = structured_data  # Lưu JSON
             cv.vector_embedding = vector  # Lưu Vector
+            cv.raw_text = raw_text
             db.session.commit()
             return True
         return False
@@ -145,3 +146,18 @@ def update_job_vector(job_id: int, vector: Any) -> bool:
         db.session.rollback()
         print(f"Error updating Job vector: {e}")
         return False
+
+
+def get_candidates_by_job(job_id: int) -> List[Candidate]:
+    """
+    Lấy danh sách ứng viên đã nộp đơn cho một Job cụ thể.
+    Thực hiện Join bảng Candidate và bảng Score.
+    """
+    # Query: Chọn Candidate, Kết nối với bảng Score, Lọc theo job_id
+    return (
+        db.session.query(Candidate)
+        .join(Score, Candidate.id == Score.candidate_id)
+        .filter(Score.job_id == job_id)
+        .order_by(Candidate.created_at.desc())
+        .all()
+    )

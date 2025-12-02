@@ -1,4 +1,5 @@
 import os
+from app.services.pipeline import run_cv_processing
 from app.public import bp
 from flask import render_template, request, flash, redirect, current_app, url_for
 from werkzeug.utils import secure_filename
@@ -79,12 +80,19 @@ def apply():
                 raise Exception("Lỗi khi tạo ứng viên")
 
             # Bước B: Lưu thông tin file (CV_File)
-            save_cv_file(
+            # 👇 SỬA LỖI TẠI ĐÂY: Phải gán kết quả vào biến new_cv 👇
+            new_cv = save_cv_file(
                 candidate_id=new_candidate.id, file_path=file_path, raw_text=""
             )
 
-            # Bước C (QUAN TRỌNG): Liên kết Ứng viên với Job thông qua bảng Score
-            # Điều này xác nhận hành động "Nộp đơn"
+            if not new_cv:
+                raise Exception("Lỗi khi lưu file CV vào Database")
+
+            # Bước C: Chạy AI Pipeline (Giờ thì new_cv đã tồn tại)
+            # Hàm này sẽ gọi AI và cập nhật lại bản ghi new_cv vừa tạo ở trên
+            run_cv_processing(new_cv.id, file_path)
+
+            # Bước D: Liên kết Ứng viên với Job
             create_init_score(candidate_id=new_candidate.id, job_id=job_id)
 
             # --- KẾT THÚC GIAO TIẾP ---
