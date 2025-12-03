@@ -1,10 +1,128 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}{{ candidate.name }} - Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <a href="{{ url_for('admin.candidates') }}" class="text-decoration-none text-muted">
+            <i class="bi bi-arrow-left"></i> Back to Candidates
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4 text-center">
+                <div class="card-body py-5">
+                    <div class="mb-3">
+                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2rem;">
+                            {{ candidate.name[0].upper() }}
+                        </div>
+                    </div>
+                    <h4 class="fw-bold">{{ candidate.name }}</h4>
+                    <p class="text-muted mb-4">{{ candidate.email }}</p>
+
+                    <div class="d-grid gap-2">
+                        <a href="mailto:{{ candidate.email }}" class="btn btn-outline-primary">
+                            <i class="bi bi-envelope"></i> Send Email
+                        </a>
+                        <button class="btn btn-outline-secondary">
+                            <i class="bi bi-telephone"></i> {{ candidate.phone }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+
+            <div class="card shadow-sm border-0 mb-4 border-start border-4 border-primary">
+                <div class="card-header bg-white fw-bold text-primary">
+                    <i class="bi bi-graph-up-arrow"></i> Match Analysis
+                </div>
+                <div class="card-body">
+                    {% if candidate.scores %}
+                    {% for score in candidate.scores %}
+                    <div class="mb-3 border-bottom pb-3 last:border-0">
+                        <h6 class="fw-bold text-dark">
+                            <i class="bi bi-briefcase"></i> Job: {{ score.job.title }}
+                        </h6>
+
+                        <div class="row mb-2 align-items-center">
+                            <div class="col-md-6">
+                                <small class="text-muted">Keyword Match</small>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ score.score_value }}%"></div>
+                                </div>
+                                <small class="fw-bold">{{ score.score_value }}%</small>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">AI Semantic Match</small>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-success" style="width: {{ score.match_value }}%"></div>
+                                </div>
+                                <small class="fw-bold">{{ score.match_value }}%</small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border mt-2 py-2 small">
+                            <i class="bi bi-info-circle text-primary"></i>
+                            {{ score.explanation | safe }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p class="text-muted mb-0">No scoring data available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% for cv in candidate.cv_files %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold d-flex justify-content-between">
+                    <span><i class="bi bi-file-earmark-pdf"></i> CV Uploaded: {{ cv.created_at.strftime('%Y-%m-%d') }}</span>
+                    <a href="#" class="btn btn-sm btn-outline-primary">Download Original</a>
+                </div>
+                <div class="card-body">
+
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-primary"><i class="bi bi-stars"></i> AI Executive Summary</h6>
+                        <div class="p-3 bg-light rounded border-start border-3 border-warning">
+                            {{ cv.summary_text if cv.summary_text else "AI is generating summary..." }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h6 class="fw-bold text-dark"><i class="bi bi-list-check"></i> Extracted Information</h6>
+                        {% if cv.structured_data %}
+                        <table class="table table-sm table-bordered mt-2">
+                            <tbody>
+                            {% for key, value in cv.structured_data.items() %}
+                            <tr>
+                                <th class="bg-light" style="width: 30%">{{ key|replace('_', ' ')|title }}</th>
+                                <td>
+                                    {% if value is iterable and value is not string %}
+                                    {% for item in value %}
+                                    <span class="badge bg-secondary">{{ item }}</span>
+                                    {% endfor %}
+                                    {% else %}
+                                    {{ value }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                        {% else %}
+                        <p class="text-muted">No extracted data available.</p>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

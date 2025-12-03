@@ -114,7 +114,7 @@ def create_init_score(candidate_id: int, job_id: int):
 
 # (+) THÊM MỚI: Hàm cập nhật thông tin sau khi AI chạy xong
 def update_cv_data(
-    cv_id: int, summary: str, structured_data: dict, vector: Any
+    cv_id: int, summary: str, structured_data: dict, vector: Any, raw_text: str
 ) -> bool:
     """Cập nhật CV với dữ liệu từ AI (Tóm tắt, JSON, Vector)"""
     try:
@@ -123,6 +123,7 @@ def update_cv_data(
             cv.summary_text = summary
             cv.structured_data = structured_data  # Lưu JSON
             cv.vector_embedding = vector  # Lưu Vector
+            cv.raw_text = raw_text
             db.session.commit()
             return True
         return False
@@ -145,3 +146,72 @@ def update_job_vector(job_id: int, vector: Any) -> bool:
         db.session.rollback()
         print(f"Error updating Job vector: {e}")
         return False
+
+
+def get_candidates_by_job(job_id: int) -> List[Candidate]:
+    """
+    Lấy danh sách ứng viên đã nộp đơn cho một Job cụ thể.
+    Thực hiện Join bảng Candidate và bảng Score.
+    """
+    # Query: Chọn Candidate, Kết nối với bảng Score, Lọc theo job_id
+    return (
+        db.session.query(Candidate)
+        .join(Score, Candidate.id == Score.candidate_id)
+        .filter(Score.job_id == job_id)
+        .order_by(Candidate.created_at.desc())
+        .all()
+    )
+
+
+def update_score_result(
+    cv_id: int, job_id: int, score_rule: float, score_ai: float, explanation: str = ""
+) -> bool:
+    """
+    Cập nhật kết quả chấm điểm vào bảng Score.
+    Logic: Từ CV_File -> Tìm Candidate -> Tìm bản ghi Score -> Update.
+    """
+    try:
+        # 1. Lấy thông tin CV để biết ai là chủ sở hữu (candidate_id)
+        cv = db.session.get(CV_File, cv_id)
+        if not cv:
+            return False
+
+        candidate_id = cv.candidate_id
+
+        # 2. Tìm bản ghi điểm số tương ứng (đã được tạo lúc nộp hồ sơ)
+        score_record = Score.query.filter_by(
+            candidate_id=candidate_id, job_id=job_id
+        ).first()
+
+        if score_record:
+            # Nếu đã có -> Cập nhật
+            score_record.score_value = score_rule
+            score_record.match_value = score_ai
+            score_record.explanation = explanation  # (+) Cập nhật giải thích
+        else:
+            # Nếu chưa có (phòng hờ) -> Tạo mới
+            score_record = Score(
+                candidate_id=candidate_id,
+                job_id=job_id,
+                score_value=score_rule,
+                match_value=score_ai,
+                explanation=explanation,
+            )
+            db.session.add(score_record)
+
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating score result: {e}")
+        return False
+
+
+def count_all_candidates() -> int:
+    """Đếm tổng số lượng ứng viên trong hệ thống (cho Dashboard)"""
+    return Candidate.query.count()
+
+
+def count_active_jobs() -> int:
+    """Đếm tổng số Job đang mở (cho Dashboard)"""
+    return Job.query.count()

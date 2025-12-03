@@ -34,6 +34,7 @@ class Candidate(db.Model):
 # Bảng 3: CV_File
 class CV_File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     file_path = db.Column(db.String(300), nullable=False)
     raw_text = db.Column(db.Text)
     summary_text = db.Column(db.Text)
