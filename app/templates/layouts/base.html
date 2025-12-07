@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CVFlow - Hệ thống Tuyển dụng AI{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f8f9fa; }
+        .navbar-brand { color: #0077b5 !important; }
+        .footer { background: #fff; border-top: 1px solid #eee; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="{{ url_for('public.index') }}">
+            <i class="bi bi-robot"></i> CVFlow
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#cvflowNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="cvflowNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0 fw-medium">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Việc làm IT</a>
+                    <ul class="dropdown-menu shadow border-0">
+                        <li><a class="dropdown-item" href="{{ url_for('public.job_search') }}">Tìm kiếm việc làm</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('public.job_search', q='Python') }}">Python Jobs</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('public.company_list') }}">Công ty Top</a></li>
+                <li class="nav-item"><a class="nav-link text-success" href="#"><i class="bi bi-stars"></i> Công cụ AI</a></li>
+            </ul>
+
+            <ul class="navbar-nav ms-auto align-items-center">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.role == 'HR' %}
+                        <li class="nav-item me-3">
+                            <a href="{{ url_for('hr.post_job') }}" class="btn btn-warning fw-bold">Đăng tuyển ngay</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                {{ current_user.full_name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <li><a class="dropdown-item" href="{{ url_for('hr.dashboard') }}">Trang quản trị</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Đăng xuất</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item me-3"><a class="nav-link" href="{{ url_for('candidate.job_manager') }}">Việc của tôi</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                {{ current_user.full_name }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <li><a class="dropdown-item" href="{{ url_for('candidate.dashboard') }}">Dashboard</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('candidate.cv_manager') }}">Quản lý CV <span class="badge bg-success">AI</span></a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Đăng xuất</a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="nav-item me-3"><a class="nav-link text-secondary" href="{{ url_for('auth.register_hr') }}">Nhà tuyển dụng</a></li>
+                    <li class="nav-item me-2"><a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary">Đăng nhập</a></li>
+                    <li class="nav-item"><a href="{{ url_for('auth.register_candidate') }}" class="btn btn-primary">Đăng ký</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<main class="flex-grow-1">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer py-4 mt-5 text-center text-muted">
+    <div class="container">
+        <small>&copy; 2025 CVFlow. Powered by Google Gemini & Python.</small>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
