@@ -1,0 +1,128 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Tìm kiếm việc làm IT - CVFlow{% endblock %}
+
+{% block content %}
+    <div class="bg-light py-4 border-bottom mb-4">
+        <div class="container">
+            <h3 class="fw-bold mb-0">Tìm kiếm việc làm</h3>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 small">
+                    <li class="breadcrumb-item"><a href="{{ url_for('public.index') }}">Trang chủ</a></li>
+                    <li class="breadcrumb-item active">Việc làm IT</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row">
+            <div class="col-lg-3 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white fw-bold py-3">
+                        <i class="bi bi-funnel"></i> Bộ Lọc
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('public.job_search') }}" method="GET">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium small">Từ khóa</label>
+                                <input type="text" name="q" class="form-control" placeholder="Java, Python..." value="{{ request.args.get('q', '') }}">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium small">Địa điểm</label>
+                                <select name="location" class="form-select">
+                                    <option value="">Tất cả</option>
+                                    <option value="Hanoi">Hà Nội</option>
+                                    <option value="HCMC">Hồ Chí Minh</option>
+                                    <option value="Remote">Remote</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium small">Mức lương</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="salary" id="sal_all" value="" checked>
+                                    <label class="form-check-label" for="sal_all">Tất cả</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="salary" id="sal_1000" value="1000">
+                                    <label class="form-check-label" for="sal_1000">Trên $1000</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="salary" id="sal_2000" value="2000">
+                                    <label class="form-check-label" for="sal_2000">Trên $2000</label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Áp dụng lọc</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-9">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Kết quả tìm kiếm ({{ jobs|length }})</h5>
+                    <select class="form-select w-auto form-select-sm">
+                        <option>Mới nhất</option>
+                        <option>Lương cao nhất</option>
+                    </select>
+                </div>
+
+                {% if jobs %}
+                    {% for job in jobs %}
+                        <div class="card mb-3 shadow-sm hover-effect border-0">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <div class="me-3">
+                                        <img src="{{ url_for('static', filename='img/company_default.png') }}" class="rounded border" width="64" height="64" style="object-fit: contain;">
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="card-title mb-1">
+                                            <a href="{{ url_for('public.job_detail', id=job.id) }}" class="text-decoration-none text-dark stretched-link">{{ job.title }}</a>
+                                        </h5>
+                                        <p class="text-muted mb-2 small">{{ job.company_name }} <i class="bi bi-check-circle-fill text-primary" style="font-size: 0.8rem;" title="Verified"></i></p>
+
+                                        <div class="d-flex gap-3 small text-secondary">
+                                            <span><i class="bi bi-geo-alt"></i> {{ job.location }}</span>
+                                            <span class="text-success fw-bold"><i class="bi bi-cash-stack"></i> {{ job.salary_range }}</span>
+                                            <span><i class="bi bi-clock"></i> {{ job.created_at }}</span>
+                                        </div>
+
+                                        <div class="mt-2">
+                                            {% for skill in job.skills[:3] %}
+                                                <span class="badge bg-light text-dark border">{{ skill }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="d-none d-md-block ms-3">
+                                        <a href="{{ url_for('public.job_detail', id=job.id) }}" class="btn btn-outline-primary btn-sm position-relative" style="z-index: 2;">Ứng tuyển</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item disabled"><a class="page-link" href="#">Trước</a></li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item"><a class="page-link" href="#">Sau</a></li>
+                        </ul>
+                    </nav>
+
+                {% else %}
+                    <div class="text-center py-5 bg-white rounded shadow-sm">
+                        <i class="bi bi-search display-4 text-muted"></i>
+                        <p class="mt-3 text-secondary">Không tìm thấy việc làm phù hợp với bộ lọc của bạn.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

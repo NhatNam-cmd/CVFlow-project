@@ -1,0 +1,114 @@
+{% extends "layouts/dashboard_layout.html" %}
+
+{% block title %}Việc làm của tôi - CVFlow{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0"><i class="bi bi-briefcase me-2"></i> Việc Làm Của Tôi</h2>
+        <a href="{{ url_for('public.job_search') }}" class="btn btn-outline-primary fw-bold">
+            <i class="bi bi-search me-1"></i> Tìm việc mới
+        </a>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="jobTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="applied-tab" data-bs-toggle="tab" data-bs-target="#applied" type="button" role="tab">
+                Đã Ứng Tuyển <span class="badge bg-secondary ms-1">5</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved" type="button" role="tab">
+                Đã Lưu <span class="badge bg-secondary ms-1">2</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-success" id="matched-tab" data-bs-toggle="tab" data-bs-target="#matched" type="button" role="tab">
+                <i class="bi bi-stars"></i> Gợi Ý Từ AI
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="jobTabsContent">
+
+        <div class="tab-pane fade show active" id="applied" role="tabpanel">
+            <div class="card shadow-sm border-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Công việc</th>
+                            <th>Ngày nộp</th>
+                            <th>CV sử dụng</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end pe-4">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-primary">Senior Python Developer</div>
+                                <div class="small text-muted">FPT Software</div>
+                            </td>
+                            <td>12/10/2025</td>
+                            <td><span class="badge bg-light text-dark border">CV_Main.pdf</span></td>
+                            <td>
+                                <span class="badge bg-info text-dark border border-info"><i class="bi bi-eye"></i> HR đã xem</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('public.job_detail', id=1) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eye"></i> Xem Job
+                                </a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-primary">DevOps Engineer</div>
+                                <div class="small text-muted">VNG Corporation</div>
+                            </td>
+                            <td>10/10/2025</td>
+                            <td><span class="badge bg-light text-dark border">CV_DevOps.pdf</span></td>
+                            <td>
+                                <span class="badge bg-warning text-dark border border-warning">Chờ phỏng vấn</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('public.job_detail', id=2) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eye"></i> Xem Job
+                                </a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="saved" role="tabpanel">
+            <div class="alert alert-light border text-center py-5">
+                <i class="bi bi-bookmark-heart display-4 text-muted"></i>
+                <p class="mt-3">Bạn chưa lưu công việc nào.</p>
+                <a href="{{ url_for('public.job_search') }}" class="btn btn-primary btn-sm fw-bold">Khám phá ngay</a>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="matched" role="tabpanel">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card h-100 border-success shadow-sm border-start border-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <h5 class="card-title text-primary mb-0 fw-bold">Backend GoLang</h5>
+                                <span class="badge bg-success">95% Match</span>
+                            </div>
+                            <p class="text-muted small fw-bold mb-2">MOMO E-Wallet</p>
+                            <p class="card-text small text-muted">AI nhận thấy bạn có kinh nghiệm Backend vững chắc và từng làm Fintech...</p>
+
+                            <a href="{{ url_for('public.job_detail', id=1) }}" class="btn btn-sm btn-success w-100 fw-bold mt-2">
+                                <i class="bi bi-box-arrow-in-right"></i> Xem chi tiết & Ứng tuyển
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

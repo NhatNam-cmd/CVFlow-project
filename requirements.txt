@@ -21,3 +21,7 @@ flake8
 
 Flask-WTF
 email-validator
+
+psycopg2-binary
+redis
+celery

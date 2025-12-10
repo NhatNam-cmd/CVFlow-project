@@ -1,0 +1,38 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Truy cập bị từ chối - CVFlow{% endblock %}
+
+{% block content %}
+    <div class="container text-center py-5 my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <div class="mb-4">
+                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex p-4">
+                        <i class="bi bi-shield-lock-fill text-danger" style="font-size: 4rem;"></i>
+                    </div>
+                </div>
+
+                <h1 class="display-4 fw-bold text-dark mb-2">Truy cập bị từ chối</h1>
+                <p class="text-danger fw-bold text-uppercase small tracking-wide">Error 403 - Forbidden</p>
+
+                <div class="card shadow-sm border-0 bg-light my-4">
+                    <div class="card-body">
+                        <p class="mb-0 text-secondary">
+                            Xin lỗi, bạn không có quyền truy cập vào khu vực này.<br>
+                            Trang này chỉ dành cho tài khoản có phân quyền đặc biệt (Ví dụ: Nhà tuyển dụng).
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline-dark px-4">
+                        <i class="bi bi-box-arrow-in-right"></i> Đăng nhập tài khoản khác
+                    </a>
+                    <a href="{{ url_for('public.index') }}" class="btn btn-primary px-4 fw-bold">
+                        Về Trang Chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Danh sách Công ty - CVFlow{% endblock %}
+
+{% block content %}
+    <div class="bg-primary text-white py-5 mb-5 text-center">
+        <h1 class="fw-bold">Nhà Tuyển Dụng Hàng Đầu</h1>
+        <p class="lead">Khám phá văn hóa và cơ hội nghề nghiệp tại các công ty công nghệ tốt nhất.</p>
+    </div>
+
+    <div class="container mb-5">
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-6">
+                <div class="input-group input-group-lg shadow-sm">
+                    <input type="text" class="form-control border-0" placeholder="Nhập tên công ty...">
+                    <button class="btn btn-white bg-white text-primary border-0" type="button"><i class="bi bi-search"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+            {% for company in companies %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0 hover-effect text-center p-3">
+                        <div class="mb-3 mx-auto" style="height: 80px; width: 80px; display: flex; align-items: center; justify-content: center;">
+                            <img src="{{ company.logo_url or url_for('static', filename='img/company_default.png') }}" class="img-fluid" style="max-height: 100%;">
+                        </div>
+                        <div class="card-body p-0">
+                            <h5 class="card-title fw-bold text-dark">
+                                {{ company.name }}
+                                <i class="bi bi-check-circle-fill text-primary" style="font-size: 0.9rem;" title="Verified"></i>
+                            </h5>
+                            <p class="text-muted small mb-3">IT Outsourcing</p>
+                            <a href="{{ url_for('public.company_detail', id=company.id) }}" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                                {{ company.job_count }} việc làm đang mở
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,49 +1,25 @@
-{% extends "base.html" %}
+{% extends "layouts/base.html" %}
 
-{% block title %}Application Successful - CVFlow{% endblock %}
+{% block title %}Nộp đơn thành công!{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6 text-center">
+    <div class="container py-5 text-center">
+        <div class="mb-4">
+            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+            <div class="mt-2"><i class="bi bi-check-circle-fill text-success fs-1"></i></div>
+        </div>
 
-            <!-- Icon Thành công -->
-            <div class="mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle" style="width: 100px; height: 100px;">
-                    <i class="bi bi-check-lg text-success" style="font-size: 3.5rem;"></i>
-                </div>
-            </div>
+        <h2 class="fw-bold mb-3">Hồ sơ đã được gửi thành công!</h2>
+        <p class="lead text-muted mb-5">
+            Hệ thống AI đang chấm điểm hồ sơ của bạn cho vị trí này.<br>
+            Bạn có thể theo dõi kết quả trong Dashboard.
+        </p>
 
-            <!-- Thông báo chính -->
-            <h1 class="fw-bold mb-3 text-success">Application Submitted!</h1>
-            <p class="lead text-muted mb-4">
-                Your CV has been successfully uploaded and is currently being processed by our <strong>AI Engine</strong>.
-            </p>
-
-            <!-- Chi tiết Job (Nếu có ID) -->
-            {% if job_id %}
-            <div class="card bg-light border-0 mb-4">
-                <div class="card-body">
-                    <p class="mb-0">
-                        Applied for Job ID: <strong>#{{ job_id }}</strong>
-                    </p>
-                    <p class="small text-muted mb-0">(We have sent a confirmation email to you)</p>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Nút điều hướng -->
-            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-                <a href="{{ url_for('public.index') }}" class="btn btn-primary btn-lg px-4 gap-3">
-                    <i class="bi bi-search"></i> Explore More Jobs
-                </a>
-                <!-- Nút này chỉ để demo cho Admin xem nhanh kết quả -->
-                <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-lg px-4">
-                    <i class="bi bi-speedometer2"></i> Go to Admin Dashboard
-                </a>
-            </div>
-
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{{ url_for('public.index') }}" class="btn btn-outline-secondary">Về Trang chủ</a>
+            <a href="{{ url_for('candidate.job_manager') }}" class="btn btn-primary fw-bold px-4">
+                <i class="bi bi-briefcase"></i> Theo dõi Đơn hàng
+            </a>
         </div>
     </div>
-</div>
 {% endblock %}

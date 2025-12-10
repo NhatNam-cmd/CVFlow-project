@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # 1. Web Server (Flask)
+  web:
+    build: .
+    container_name: cvflow_web
+    command: python run.py
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URI=postgresql://user:password@db:5432/cvflow
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+
+  # 2. Database (PostgreSQL) - Thay thế SQLite
+  db:
+    image: postgres:15-alpine
+    container_name: cvflow_db
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=cvflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # 3. Cache & Queue (Redis) - Dùng cho Celery sau này
+  redis:
+    image: redis:alpine
+    container_name: cvflow_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:

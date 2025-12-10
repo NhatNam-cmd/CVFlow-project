@@ -1,0 +1,91 @@
+{% extends "layouts/dashboard_layout.html" %}
+
+{% block title %}Lịch Phỏng Vấn Của Tôi{% endblock %}
+
+{% block content %}
+    <div class="container-fluid p-0">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold text-dark mb-0">Lịch Phỏng Vấn</h3>
+                <p class="text-muted small mb-0">Theo dõi lịch hẹn phỏng vấn và tải lịch về máy.</p>
+            </div>
+            <div class="bg-white px-3 py-2 rounded shadow-sm border d-flex align-items-center">
+                <span class="badge bg-success rounded-circle p-1 me-2"><span class="visually-hidden">online</span></span>
+                <span class="small fw-bold">Giờ rảnh: Sáng T2, Chiều T6</span>
+                <a href="{{ url_for('candidate.profile') }}" class="ms-2 text-primary"><i class="bi bi-pencil-square"></i></a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100 border-top border-4 border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Sắp diễn ra</span>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light rounded-circle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#">Hủy lịch</a></li>
+                                    <li><a class="dropdown-item" href="#">Yêu cầu dời lịch</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h5 class="fw-bold mb-1">Senior Python Developer</h5>
+                        <p class="text-primary fw-bold mb-3"><i class="bi bi-building me-1"></i> FPT Software</p>
+
+                        <div class="bg-light rounded p-3 mb-3">
+                            <div class="d-flex mb-2">
+                                <i class="bi bi-calendar-check text-muted me-3"></i>
+                                <span class="fw-bold">Thứ 2, 20/05/2025</span>
+                            </div>
+                            <div class="d-flex mb-2">
+                                <i class="bi bi-clock text-muted me-3"></i>
+                                <span class="fw-bold text-danger">09:00 - 10:00</span>
+                            </div>
+                            <div class="d-flex">
+                                <i class="bi bi-camera-video text-muted me-3"></i>
+                                <a href="#" class="text-decoration-none">meet.google.com/abc-xyz</a>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-primary fw-bold"><i class="bi bi-camera-video-fill me-2"></i> Vào Phòng Họp</a>
+                            <button class="btn btn-outline-dark" onclick="alert('Đang tải file invite.ics về máy...')">
+                                <i class="bi bi-calendar-plus me-2"></i> Thêm vào Lịch (.ics)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100 opacity-75">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="badge bg-secondary">Đã hoàn thành</span>
+                        </div>
+
+                        <h5 class="fw-bold mb-1">DevOps Engineer</h5>
+                        <p class="text-muted fw-bold mb-3"><i class="bi bi-building me-1"></i> VNG Corp</p>
+
+                        <div class="bg-light rounded p-3 mb-3">
+                            <div class="d-flex mb-2">
+                                <i class="bi bi-calendar-check text-muted me-3"></i>
+                                <span>Thứ 6, 15/05/2025</span>
+                            </div>
+                            <div class="d-flex">
+                                <i class="bi bi-clock text-muted me-3"></i>
+                                <span>14:00 - 15:00</span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button class="btn btn-light text-muted" disabled>Cuộc họp đã kết thúc</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

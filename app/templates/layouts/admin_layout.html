@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Portal - CVFlow{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .sidebar { min-height: 100vh; background-color: #212529; color: #fff; }
+        .sidebar .nav-link { color: rgba(255,255,255,.75); padding: 12px 20px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background-color: rgba(255,255,255,.1); }
+        .sidebar .nav-link i { margin-right: 10px; width: 20px; text-align: center; }
+        .content-wrapper { background-color: #f8f9fa; min-height: 100vh; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-3px); }
+    </style>
+</head>
+<body>
+
+<div class="d-flex">
+    <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 260px;">
+        <a href="{{ url_for('admin.dashboard') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none px-3">
+            <i class="bi bi-shield-lock-fill fs-3 me-2 text-warning"></i>
+            <span class="fs-5 fw-bold">CVFlow Admin</span>
+        </a>
+        <hr>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li class="nav-item">
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i> Tổng quan
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin.company_verification') }}" class="nav-link {% if request.endpoint == 'admin.company_verification' %}active{% endif %}">
+                    <i class="bi bi-building-check"></i> Duyệt Công Ty
+                    {% if pending_count %}
+                        <span class="badge bg-danger float-end rounded-pill">{{ pending_count }}</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin.crawler_manager') }}" class="nav-link {% if request.endpoint == 'admin.crawler_manager' %}active{% endif %}">
+                    <i class="bi bi-robot"></i> Quản lý Crawler
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin.user_manager') }}" class="nav-link {% if request.endpoint == 'admin.user_manager' %}active{% endif %}">
+                    <i class="bi bi-people"></i> Quản lý User
+                </a>
+            </li>
+            <li class="mt-4">
+                <div class="text-uppercase small text-white-50 px-3 mb-2">Hệ thống</div>
+                <a href="{{ url_for('admin.settings') }}" class="nav-link text-danger">
+                    <i class="bi bi-gear"></i> Cấu hình chung
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div class="dropdown px-3">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=random" alt="" width="32" height="32" class="rounded-circle me-2">
+                <strong>Admin</strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                <li><a class="dropdown-item" href="{{ url_for('admin.profile') }}">Cài đặt</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Đăng xuất</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="content-wrapper flex-grow-1">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-4">
+            <div class="container-fluid">
+                <button class="btn btn-outline-secondary d-md-none" type="button"><i class="bi bi-list"></i></button>
+                <span class="navbar-brand mb-0 h1 ms-2">{% block header_title %}Dashboard{% endblock %}</span>
+                <div class="ms-auto">
+                    <a href="{{ url_for('public.index') }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                        <i class="bi bi-box-arrow-up-right"></i> Xem trang chủ
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="p-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

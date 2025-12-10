@@ -1,0 +1,78 @@
+{% extends "layouts/dashboard_layout.html" %}
+
+{% block title %}Hồ sơ Công ty - CVFlow{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <h2 class="mb-4">Hồ sơ Doanh nghiệp</h2>
+
+            <div class="alert alert-success d-flex align-items-center mb-4 border-0 shadow-sm">
+                <i class="bi bi-patch-check-fill fs-2 me-3"></i>
+                <div>
+                    <h5 class="alert-heading fw-bold mb-0">Tài khoản Đã xác thực</h5>
+                    <p class="mb-0 small">Doanh nghiệp của bạn đã được cấp tích xanh uy tín.</p>
+                </div>
+            </div>
+
+            <div class="card shadow border-0 mb-4">
+                <div class="card-body p-4">
+                    <form method="POST">
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-md-3 text-center">
+                                <div class="mb-2">
+                                    <img src="{{ url_for('static', filename='img/company_default.png') }}" class="rounded border p-1" width="120" height="120">
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary">Đổi Logo</button>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Tên hiển thị công ty</label>
+                                    <input type="text" class="form-control" value="Công ty Cổ phần Công nghệ ABC" readonly>
+                                    <div class="form-text small"><i class="bi bi-lock"></i> Tên công ty được khóa theo Mã Số Thuế.</div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Lĩnh vực hoạt động (Industry)</label>
+                                        <select class="form-select bg-light">
+                                            <option>IT Outsourcing</option>
+                                            <option selected>IT Product (SaaS)</option>
+                                            <option>Fintech / Banking</option>
+                                            <option>E-commerce</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Slogan / Tagline</label>
+                                        <input type="text" class="form-control" value="To lead and level the playing field">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Website</label>
+                                <input type="url" class="form-control" value="https://abc-tech.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Địa chỉ trụ sở</label>
+                                <input type="text" class="form-control" value="Tầng 12, Tòa nhà Keangnam, Hà Nội">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Giới thiệu công ty (Markdown)</label>
+                                <textarea class="form-control" rows="6">ABC Tech là công ty hàng đầu...</textarea>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 text-end">
+                            <button type="submit" class="btn btn-primary px-4 fw-bold">Lưu thay đổi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Công cụ tính lương Gross - Net Chuẩn 2025{% endblock %}
+
+{% block content %}
+    <div class="bg-light py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <div class="text-center mb-5">
+                        <h1 class="fw-bold text-primary display-5">Tính Lương Gross <i class="bi bi-arrow-left-right text-dark mx-2" style="font-size: 0.8em;"></i> Net</h1>
+                        <p class="lead text-muted">Áp dụng mức giảm trừ gia cảnh & Lương cơ sở mới nhất (2025).</p>
+                    </div>
+
+                    <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-5">
+                        <div class="card-header bg-white border-0 pt-4 pb-0 px-4 px-md-5">
+                            <ul class="nav nav-tabs card-header-tabs justify-content-center border-0" id="modeTabs">
+                                <li class="nav-item">
+                                    <a class="nav-link active fw-bold border-0 border-bottom border-3 border-primary text-primary bg-transparent py-3 px-4" href="#">
+                                        GROSS &rarr; NET
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link fw-bold border-0 text-muted bg-transparent py-3 px-4" href="#">
+                                        NET &rarr; GROSS
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="card-body p-4 p-md-5 bg-white">
+                            <form method="POST">
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-8">
+                                        <label class="form-label fw-bold text-uppercase small text-muted">Thu nhập tháng</label>
+                                        <div class="input-group input-group-lg">
+                                            <input type="number" class="form-control fw-bold" placeholder="VD: 20000000" value="{{ result.gross if result else '' }}">
+                                            <select class="form-select bg-light" style="max-width: 100px;">
+                                                <option value="VND">VNĐ</option>
+                                                <option value="USD">USD</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-uppercase small text-muted">Đóng bảo hiểm trên</label>
+                                        <select class="form-select form-select-lg">
+                                            <option value="full">Lương chính thức</option>
+                                            <option value="other">Mức khác...</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="accordion mb-4" id="advancedSettings">
+                                    <div class="accordion-item border-0 bg-light rounded-3">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed bg-transparent fw-bold text-secondary shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#settingsCollapse">
+                                                <i class="bi bi-gear-fill me-2"></i> Tùy chỉnh (Giảm trừ gia cảnh & Vùng)
+                                            </button>
+                                        </h2>
+                                        <div id="settingsCollapse" class="accordion-collapse collapse" data-bs-parent="#advancedSettings">
+                                            <div class="accordion-body pt-0">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small">Số người phụ thuộc</label>
+                                                        <div class="input-group">
+                                                            <button class="btn btn-outline-secondary" type="button"><i class="bi bi-dash"></i></button>
+                                                            <input type="number" class="form-control text-center" value="0">
+                                                            <button class="btn btn-outline-secondary" type="button"><i class="bi bi-plus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label small">Vùng (Lương tối thiểu)</label>
+                                                        <select class="form-select">
+                                                            <option value="1" selected>Vùng I (4.960.000đ)</option>
+                                                            <option value="2">Vùng II (4.410.000đ)</option>
+                                                            <option value="3">Vùng III (3.860.000đ)</option>
+                                                            <option value="4">Vùng IV (3.250.000đ)</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-warning btn-lg fw-bold text-dark py-3">
+                                        <i class="bi bi-calculator me-2"></i> TÍNH TOÁN NGAY
+                                    </button>
+                                </div>
+                            </form>
+
+                            {% if result %}
+                                <hr class="my-5 border-secondary border-opacity-10">
+
+                                <div class="row text-center align-items-center mb-4">
+                                    <div class="col-6 border-end">
+                                        <div class="text-uppercase small text-muted fw-bold mb-1">Lương GROSS</div>
+                                        <div class="h3 fw-bold text-secondary mb-0">{{ "{:,.0f}".format(result.gross) }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-uppercase small text-success fw-bold mb-1">Lương NET (Thực nhận)</div>
+                                        <div class="h2 fw-bold text-success mb-0">{{ "{:,.0f}".format(result.net) }} <small class="fs-6">VNĐ</small></div>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive rounded-3 border">
+                                    <table class="table table-striped mb-0">
+                                        <tbody>
+                                        <tr>
+                                            <td class="ps-4">Lương Gross</td>
+                                            <td class="text-end pe-4 fw-bold">{{ "{:,.0f}".format(result.gross) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-4 text-muted"><i class="bi bi-dash-lg"></i> Bảo hiểm xã hội (8%)</td>
+                                            <td class="text-end pe-4 text-danger">- {{ "{:,.0f}".format(result.bhxh) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-4 text-muted"><i class="bi bi-dash-lg"></i> Bảo hiểm y tế (1.5%)</td>
+                                            <td class="text-end pe-4 text-danger">- {{ "{:,.0f}".format(result.bhyt) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-4 text-muted"><i class="bi bi-dash-lg"></i> BHTN (1%)</td>
+                                            <td class="text-end pe-4 text-danger">- {{ "{:,.0f}".format(result.bhtn) }}</td>
+                                        </tr>
+                                        <tr class="fw-bold bg-white">
+                                            <td class="ps-4">Thu nhập trước thuế</td>
+                                            <td class="text-end pe-4">{{ "{:,.0f}".format(result.income_before_tax) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-4 text-muted"><i class="bi bi-dash-lg"></i> Giảm trừ gia cảnh</td>
+                                            <td class="text-end pe-4 text-success">- 11,000,000</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-4 text-muted"><i class="bi bi-dash-lg"></i> Thuế TNCN</td>
+                                            <td class="text-end pe-4 text-danger fw-bold">- {{ "{:,.0f}".format(result.tax) }}</td>
+                                        </tr>
+                                        <tr class="table-success border-top border-success">
+                                            <td class="ps-4 fw-bold fs-5 text-success">Lương NET</td>
+                                            <td class="text-end pe-4 fw-bold fs-5 text-success">{{ "{:,.0f}".format(result.net) }}</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
