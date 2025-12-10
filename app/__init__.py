@@ -18,7 +18,7 @@ def create_app(config_class=Config):
 
     app.register_blueprint(public_bp)
 
-    from .admin import bp as admin_bp
+    from .adminTemp import bp as admin_bp
 
     app.register_blueprint(admin_bp, url_prefix="/admin")
 

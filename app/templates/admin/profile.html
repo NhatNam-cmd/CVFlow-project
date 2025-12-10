@@ -1,0 +1,93 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block header_title %}Cài đặt Tài khoản{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-5">
+                    <div class="position-relative d-inline-block mb-3">
+                        <img src="https://ui-avatars.com/api/?name=Admin+System&background=0d6efd&color=fff&size=128" class="rounded-circle border border-4 border-white shadow-sm" width="120" height="120">
+                        <button class="btn btn-sm btn-dark position-absolute bottom-0 end-0 rounded-circle" style="width: 32px; height: 32px; padding: 0;">
+                            <i class="bi bi-camera"></i>
+                        </button>
+                    </div>
+                    <h5 class="fw-bold mb-1">System Admin</h5>
+                    <p class="text-muted small">admin@cvflow.vn</p>
+                    <div class="badge bg-danger">Super Admin</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <ul class="nav nav-pills card-header-pills" id="profileTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#info">Thông tin</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#security">Bảo mật & Mật khẩu</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-4">
+                    <div class="tab-content">
+
+                        <div class="tab-pane fade show active" id="info">
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label">Họ và tên</label>
+                                    <input type="text" class="form-control" value="System Admin">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Email đăng nhập</label>
+                                    <input type="email" class="form-control bg-light" value="admin@cvflow.vn" readonly>
+                                    <div class="form-text">Không thể thay đổi email admin hệ thống.</div>
+                                </div>
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" checked>
+                                    <label class="form-check-label" for="flexSwitchCheckDefault">Nhận email khi có Công ty mới đăng ký</label>
+                                </div>
+                                <div class="mt-4 text-end">
+                                    <button type="button" class="btn btn-primary">Lưu thay đổi</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="security">
+                            <form>
+                                <div class="mb-3">
+                                    <label class="form-label">Mật khẩu hiện tại</label>
+                                    <input type="password" class="form-control">
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Mật khẩu mới</label>
+                                        <input type="password" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Xác nhận mật khẩu mới</label>
+                                        <input type="password" class="form-control">
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <div class="alert alert-warning small border-0">
+                                    <i class="bi bi-shield-exclamation"></i> Để bảo mật, phiên đăng nhập sẽ kết thúc sau khi đổi mật khẩu.
+                                </div>
+
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-danger">Đổi Mật Khẩu</button>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block header_title %}Quản lý Bot Crawler{% endblock %}
+
+{% block content %}
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white fw-bold py-3">Điều khiển</div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span>Trạng thái:</span>
+                        <span class="badge bg-secondary">Đang nghỉ (Idle)</span>
+                    </div>
+
+                    <label class="form-label fw-bold small">Chọn nguồn cào:</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="src1" checked>
+                        <label class="form-check-label" for="src1">TopDev</label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" value="" id="src2" checked>
+                        <label class="form-check-label" for="src2">ITViec</label>
+                    </div>
+
+                    <div class="d-grid">
+                        <button class="btn btn-primary fw-bold"><i class="bi bi-play-fill"></i> CHẠY NGAY</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold py-3">Cấu hình Nguồn</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>TopDev</strong>
+                            <div class="small text-muted">Link: .../viec-lam-it</div>
+                        </div>
+                        <span class="badge bg-success rounded-pill">Active</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>VietnamWorks</strong>
+                            <div class="small text-muted">Chưa cấu hình</div>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill">Inactive</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100 bg-dark text-white font-monospace">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-terminal-fill me-2"></i> Live Logs</span>
+                    <button class="btn btn-sm btn-outline-light py-0">Clear</button>
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 500px; min-height: 400px;">
+                    <div class="text-success">[14:00:01] System: Crawler service initialized.</div>
+                    <div class="text-white-50">[14:00:02] Bot: Connecting to TopDev...</div>
+                    <div class="text-white-50">[14:00:03] Bot: Fetching page 1... Status 200 OK.</div>
+                    <div class="text-info">[14:00:04] Parser: Found 20 jobs. Processing...</div>
+                    <div class="text-warning">[14:00:05] DB: Skipped 2 duplicates. Inserted 18 new jobs.</div>
+                    <div class="text-white-50">[14:00:06] Bot: Moving to page 2...</div>
+                    <div class="mt-2 text-white">_ <span class="spinner-border spinner-border-sm" role="status"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "layouts/dashboard_layout.html" %}
+
+{% block title %}Đăng Tin Tuyển Dụng - CVFlow{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0">Đăng Tin Tuyển Dụng Mới</h2>
+        <a href="{{ url_for('hr.my_jobs') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-x-lg"></i> Hủy bỏ
+        </a>
+    </div>
+
+    <form method="POST">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold py-3">
+                        <span class="badge bg-primary me-2">1</span> Thông Tin Công Việc
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Chức danh (Job Title) <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control form-control-lg" placeholder="VD: Senior Python Backend Developer" required>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Mức lương (VNĐ)</label>
+                                <div class="input-group">
+                                    <input type="number" name="salary_min" class="form-control" placeholder="Min (VD: 15000000)">
+                                    <span class="input-group-text">-</span>
+                                    <input type="number" name="salary_max" class="form-control" placeholder="Max (VD: 30000000)">
+                                </div>
+                                <div class="form-text small">Để trống nếu là "Thỏa thuận".</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Địa điểm làm việc</label>
+                                <select name="location" class="form-select">
+                                    <option value="Hanoi">Hà Nội</option>
+                                    <option value="HCMC">Hồ Chí Minh</option>
+                                    <option value="Danang">Đà Nẵng</option>
+                                    <option value="Remote">Remote</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Mô tả công việc (JD)</label>
+                            <textarea name="description" class="form-control" rows="6" placeholder="Mô tả trách nhiệm, yêu cầu công việc..." required></textarea>
+                            <div class="form-text small">Hỗ trợ định dạng Markdown đơn giản.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold py-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-info text-dark me-2">2</span> Bài Test Nhanh (Mini-Test)
+                        </div>
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" id="enableTest" checked>
+                            <label class="form-check-label small" for="enableTest">Kích hoạt</label>
+                        </div>
+                    </div>
+                    <div class="card-body p-4 bg-light collapse show" id="testSection">
+                        <div class="alert alert-info small border-0">
+                            <i class="bi bi-info-circle-fill me-1"></i>
+                            Ứng viên sẽ phải trả lời câu hỏi này khi nộp đơn. Giúp lọc ứng viên ảo.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Câu hỏi trắc nghiệm</label>
+                            <input type="text" name="question" class="form-control" placeholder="VD: Port mặc định của Flask là bao nhiêu?">
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="radio" name="correct_answer" value="A"></div>
+                                    <input type="text" class="form-control" placeholder="Đáp án A (VD: 3000)">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="radio" name="correct_answer" value="B"></div>
+                                    <input type="text" class="form-control" placeholder="Đáp án B (VD: 5000)">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="radio" name="correct_answer" value="C"></div>
+                                    <input type="text" class="form-control" placeholder="Đáp án C (VD: 8080)">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="radio" name="correct_answer" value="D"></div>
+                                    <input type="text" class="form-control" placeholder="Đáp án D (VD: 80)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow border-0 mb-4 border-top border-4 border-warning">
+                    <div class="card-header bg-white fw-bold py-3">
+                        <i class="bi bi-robot text-warning me-2"></i> Bộ Lọc Tự Động (AI Filter)
+                    </div>
+                    <div class="card-body bg-light">
+                        <p class="small text-muted mb-3">
+                            Hệ thống sẽ tự động chấm điểm và loại hồ sơ không đạt tiêu chí cứng.
+                        </p>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase text-secondary">Kỹ năng bắt buộc (Tags)</label>
+                            <input type="text" name="required_skills" class="form-control" placeholder="VD: Python, SQL, Docker">
+                            <div class="form-text small">Phân cách bằng dấu phẩy.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase text-secondary">Số năm kinh nghiệm tối thiểu</label>
+                            <input type="number" name="min_exp" class="form-control" value="1" min="0">
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase text-secondary">Hành động khi không đạt</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="auto_reject_action" id="reject_mark" value="mark" checked>
+                                <label class="form-check-label small" for="reject_mark">
+                                    Đánh dấu "Cảnh báo" (Khuyên dùng)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="auto_reject_action" id="reject_mail" value="mail">
+                                <label class="form-check-label small" for="reject_mail">
+                                    Tự động gửi mail từ chối
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg fw-bold text-dark">
+                                <i class="bi bi-send-check me-2"></i> Đăng Tin Ngay
+                            </button>
+                            <button type="button" class="btn btn-light text-secondary">
+                                Lưu nháp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        const toggle = document.getElementById('enableTest');
+        const section = document.getElementById('testSection');
+        const inputs = section.querySelectorAll('input');
+
+        function updateState() {
+            if (!toggle.checked) {
+                section.style.opacity = "0.5";
+                section.style.pointerEvents = "none";
+                inputs.forEach(input => input.disabled = true);
+            } else {
+                section.style.opacity = "1";
+                section.style.pointerEvents = "auto";
+                inputs.forEach(input => input.disabled = false);
+            }
+        }
+
+        toggle.addEventListener('change', updateState);
+        updateState();
+    </script>
+{% endblock %}

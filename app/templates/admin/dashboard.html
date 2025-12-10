@@ -1,0 +1,119 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block header_title %}Tổng quan Hệ thống{% endblock %}
+
+{% block content %}
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card border-0 shadow-sm bg-primary text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1 opacity-75">Tổng Users</h6>
+                            <h2 class="mb-0 fw-bold">1,250</h2>
+                        </div>
+                        <i class="bi bi-people fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-0 shadow-sm bg-success text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1 opacity-75">Việc làm (Active)</h6>
+                            <h2 class="mb-0 fw-bold">850</h2>
+                        </div>
+                        <i class="bi bi-briefcase fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Trong đó 600 tin từ Crawler</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-0 shadow-sm bg-warning text-dark h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1 opacity-75 fw-bold">Cty chờ duyệt</h6>
+                            <h2 class="mb-0 fw-bold">5</h2>
+                        </div>
+                        <i class="bi bi-building-exclamation fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-0 shadow-sm bg-info text-white h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1 opacity-75">Crawler Status</h6>
+                            <h2 class="mb-0 fw-bold">Idle</h2>
+                        </div>
+                        <i class="bi bi-robot fs-1 opacity-50"></i>
+                    </div>
+                    <small class="opacity-75">Chạy lần cuối: 2h trước</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white fw-bold py-3">
+                    <i class="bi bi-terminal"></i> Hoạt động gần đây
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light text-secondary small">
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Hành động</th>
+                            <th>Kết quả</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>10:30 AM</td>
+                            <td>Crawler: TopDev Spider</td>
+                            <td><span class="badge bg-success">Success (+50 jobs)</span></td>
+                        </tr>
+                        <tr>
+                            <td>09:15 AM</td>
+                            <td>Đăng ký mới: HR @ FPT</td>
+                            <td><span class="badge bg-warning text-dark">Pending Verify</span></td>
+                        </tr>
+                        <tr>
+                            <td>08:00 AM</td>
+                            <td>Crawler: ITViec Spider</td>
+                            <td><span class="badge bg-danger">Error (Timeout)</span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white fw-bold py-3">Thao tác nhanh</div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <a href="{{ url_for('admin.crawler_manager') }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-play-circle me-2"></i> Chạy Crawler thủ công
+                        </a>
+                        <a href="{{ url_for('admin.company_verification') }}" class="btn btn-outline-warning text-dark text-start">
+                            <i class="bi bi-check2-circle me-2"></i> Duyệt 5 công ty mới
+                        </a>
+                        <button class="btn btn-outline-danger text-start">
+                            <i class="bi bi-trash me-2"></i> Xóa Cache hệ thống
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

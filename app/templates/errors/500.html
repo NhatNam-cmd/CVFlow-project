@@ -1,0 +1,36 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Lỗi Hệ Thống - CVFlow{% endblock %}
+
+{% block content %}
+    <div class="container text-center py-5 my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-7">
+                <div class="mb-4">
+                    <i class="bi bi-cone-striped text-warning" style="font-size: 5rem;"></i>
+                </div>
+
+                <h1 class="fw-bold mb-3">Hệ thống đang gặp sự cố</h1>
+                <p class="text-muted mb-4 lead">
+                    Đã xảy ra lỗi nội bộ máy chủ (Internal Server Error 500).<br>
+                    Đội ngũ kỹ thuật của chúng tôi đã được thông báo và đang khắc phục sự cố này.
+                </p>
+
+                <div class="alert alert-light border d-inline-block text-start p-3 mb-4 rounded-3 shadow-sm" style="max-width: 500px;">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb"></i> Bạn có thể thử:</h6>
+                    <ul class="mb-0 text-secondary small ps-3">
+                        <li>Tải lại trang (F5) sau vài phút.</li>
+                        <li>Quay lại trang trước đó và thử thao tác khác.</li>
+                        <li>Liên hệ hỗ trợ nếu lỗi vẫn tiếp diễn: <a href="mailto:support@cvflow.vn">support@cvflow.vn</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <a href="{{ url_for('public.index') }}" class="btn btn-primary btn-lg fw-bold px-5">
+                        Thử lại Trang Chủ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

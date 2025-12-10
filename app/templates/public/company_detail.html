@@ -1,0 +1,71 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Công ty ABC - CVFlow{% endblock %}
+
+{% block content %}
+    <div style="height: 250px; background: linear-gradient(90deg, #1c3d5a 0%, #3a7bd5 100%);"></div>
+
+    <div class="container" style="margin-top: -80px;">
+        <div class="card shadow border-0 mb-4">
+            <div class="card-body p-4 d-flex align-items-center flex-column flex-md-row text-center text-md-start">
+                <div class="me-md-4 mb-3 mb-md-0 bg-white p-2 rounded shadow-sm border">
+                    <img src="{{ url_for('static', filename='img/company_default.png') }}" width="120" height="120">
+                </div>
+                <div class="flex-grow-1">
+                    <h2 class="fw-bold mb-1">Công ty Cổ phần Công nghệ ABC <i class="bi bi-check-circle-fill text-primary fs-5"></i></h2>
+                    <p class="text-muted mb-2"><i class="bi bi-geo-alt"></i> Tòa nhà Keangnam, Hà Nội | <i class="bi bi-people"></i> 100-200 nhân viên</p>
+                    <div class="d-flex gap-2 justify-content-center justify-content-md-start">
+                        <a href="#" class="btn btn-primary"><i class="bi bi-plus"></i> Theo dõi</a>
+                        <a href="#" class="btn btn-outline-secondary"><i class="bi bi-globe"></i> Website</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold py-3">Giới thiệu công ty</div>
+                    <div class="card-body text-secondary">
+                        <p>ABC Tech là công ty hàng đầu trong lĩnh vực Fintech...</p>
+                        <p>Môi trường làm việc trẻ trung, năng động...</p>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white fw-bold py-3">Việc làm đang tuyển (3)</div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action p-3">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 fw-bold text-primary">Senior Python Developer</h6>
+                                    <small class="text-muted">3 ngày trước</small>
+                                </div>
+                                <p class="mb-1 small">Hà Nội • $2000 - $3000</p>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action p-3">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 fw-bold text-primary">Fresher DevOps Engineer</h6>
+                                    <small class="text-muted">1 tuần trước</small>
+                                </div>
+                                <p class="mb-1 small">Hồ Chí Minh • Thỏa thuận</p>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Thông tin liên hệ</h6>
+                        <ul class="list-unstyled small text-secondary">
+                            <li class="mb-2"><i class="bi bi-envelope me-2"></i> hr@abctech.com</li>
+                            <li class="mb-2"><i class="bi bi-telephone me-2"></i> 024 3333 4444</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

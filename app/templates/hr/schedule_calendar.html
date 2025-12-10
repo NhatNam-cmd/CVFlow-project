@@ -1,0 +1,213 @@
+{% extends "layouts/dashboard_layout.html" %}
+
+{% block title %}Quản lý Lịch Phỏng vấn{% endblock %}
+
+{% block content %}
+    <div class="container-fluid p-0">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold text-dark mb-0">Lịch Phỏng Vấn</h3>
+                <p class="text-muted small mb-0">Quản lý thời gian và tự động tìm khung giờ phù hợp với ứng viên.</p>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bookInterviewModal">
+                <i class="bi bi-plus-lg me-2"></i> Đặt lịch mới
+            </button>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="bi bi-calendar-event me-2"></i> Lịch sắp tới</h6>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary active">Tuần này</button>
+                            <button class="btn btn-outline-secondary">Tháng này</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Thời gian</th>
+                                    <th>Ứng viên / Vị trí</th>
+                                    <th>Hình thức</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-end pe-4">Thao tác</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-primary">09:00 - 10:00</div>
+                                        <div class="small text-muted">Hôm nay, 20/05</div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="https://ui-avatars.com/api/?name=Nguyen+Van+A&background=random" class="rounded-circle me-2" width="32">
+                                            <div>
+                                                <div class="fw-bold">Nguyễn Văn A</div>
+                                                <div class="small text-muted">Python Developer</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="badge bg-light text-dark border">
+                                            <i class="bi bi-google me-1 text-danger"></i> Google Meet
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-warning text-dark">Sắp diễn ra</span></td>
+                                    <td class="text-end pe-4">
+                                        <a href="#" class="btn btn-sm btn-light border" title="Vào họp"><i class="bi bi-camera-video-fill"></i></a>
+                                        <a href="#" class="btn btn-sm btn-light border" title="Gửi lại ICS"><i class="bi bi-envelope"></i></a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">14:30 - 15:30</div>
+                                        <div class="small text-muted">Ngày mai, 21/05</div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="https://ui-avatars.com/api/?name=Le+Thi+B&background=random" class="rounded-circle me-2" width="32">
+                                            <div>
+                                                <div class="fw-bold">Lê Thị B</div>
+                                                <div class="small text-muted">ReactJS Frontend</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="badge bg-light text-dark border">
+                                            <i class="bi bi-building me-1"></i> Tại văn phòng
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-primary">Đã lên lịch</span></td>
+                                    <td class="text-end pe-4">
+                                        <a href="#" class="btn btn-sm btn-light border"><i class="bi bi-pencil"></i></a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm bg-primary text-white h-100" style="background: linear-gradient(180deg, #0d6efd 0%, #0a58ca 100%);">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-clock-history"></i> Giờ làm việc của tôi</h5>
+                        <p class="small opacity-75 mb-4">Hệ thống sẽ dùng cấu hình này để so khớp (matching) với giờ rảnh của ứng viên.</p>
+
+                        <div class="bg-white bg-opacity-10 rounded p-3 mb-2 d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-calendar-check me-2"></i> Thứ 2, 4, 6</span>
+                            <span class="fw-bold">08:00 - 11:30</span>
+                        </div>
+                        <div class="bg-white bg-opacity-10 rounded p-3 mb-2 d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-calendar-check me-2"></i> Thứ 2, 4, 6</span>
+                            <span class="fw-bold">13:30 - 17:00</span>
+                        </div>
+                        <div class="bg-white bg-opacity-10 rounded p-3 mb-4 d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-calendar-check me-2"></i> Thứ 7</span>
+                            <span class="fw-bold">09:00 - 12:00</span>
+                        </div>
+
+                        <button class="btn btn-light text-primary w-100 fw-bold">
+                            <a href="{{ url_for('hr.profile') }}" class="btn btn-light text-primary w-100 fw-bold">
+                                <i class="bi bi-gear-fill me-2"></i> Cập nhật cấu hình
+                            </a>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="bookInterviewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-magic me-2"></i>Đặt Lịch Thông Minh</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Chọn ứng viên cần phỏng vấn</label>
+                            <select class="form-select form-select-lg bg-light" id="candidateSelect">
+                                <option selected>Nguyễn Văn A - Python Dev</option>
+                                <option>Trần Văn C - DevOps</option>
+                            </select>
+                        </div>
+
+                        <div class="alert alert-success border-success mb-4">
+                            <div class="d-flex">
+                                <i class="bi bi-lightbulb-fill fs-4 me-3"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Gợi ý từ AI Scheduler:</h6>
+                                    <p class="small mb-2">Dựa trên lịch của bạn và ứng viên Nguyễn Văn A, đây là các khung giờ phù hợp nhất (Intersection):</p>
+
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <input type="radio" class="btn-check" name="slot" id="slot1" autocomplete="off" checked>
+                                        <label class="btn btn-outline-success fw-bold" for="slot1">
+                                            Thứ 4 (22/05) <br> 09:00 - 10:00
+                                        </label>
+
+                                        <input type="radio" class="btn-check" name="slot" id="slot2" autocomplete="off">
+                                        <label class="btn btn-outline-success fw-bold" for="slot2">
+                                            Thứ 6 (24/05) <br> 14:00 - 15:00
+                                        </label>
+
+                                        <input type="radio" class="btn-check" name="slot" id="slot3" autocomplete="off">
+                                        <label class="btn btn-outline-secondary" for="slot3" disabled>
+                                            Thứ 2 (Bận)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Hình thức</label>
+                                <select class="form-select">
+                                    <option>Google Meet (Online)</option>
+                                    <option>Tại văn phòng</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Thời lượng</label>
+                                <select class="form-select">
+                                    <option>45 phút</option>
+                                    <option>60 phút</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Link phòng họp / Địa chỉ</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                                    <input type="text" class="form-control" value="https://meet.google.com/abc-xyz-123">
+                                    <button class="btn btn-outline-secondary" type="button">Tạo Link Meet</button>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" checked id="sendICS">
+                                    <label class="form-check-label" for="sendICS">
+                                        Gửi email kèm file lịch <strong>(.ics)</strong> cho ứng viên
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary fw-bold px-4">
+                        <i class="bi bi-calendar-check me-2"></i> Xác nhận & Gửi Lịch
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block header_title %}Quản lý Người dùng{% endblock %}
+
+{% block content %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-2">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <select class="form-select border-0 bg-light">
+                        <option>Tất cả vai trò</option>
+                        <option>Candidate</option>
+                        <option>Recruiter (HR)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select border-0 bg-light">
+                        <option>Trạng thái: Active</option>
+                        <option>Trạng thái: Locked</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control border-0 bg-light" placeholder="Tìm theo email hoặc tên...">
+                        <button class="btn btn-light border"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table class="table table-hover align-middle mb-0 mt-2">
+            <thead class="bg-light">
+            <tr>
+                <th class="ps-4">User Info</th>
+                <th>Vai trò</th>
+                <th>Ngày tham gia</th>
+                <th>Trạng thái</th>
+                <th class="text-end pe-4">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="ps-4">
+                    <div class="fw-bold">Nguyễn Văn A</div>
+                    <div class="small text-muted">a.nguyen@gmail.com</div>
+                </td>
+                <td><span class="badge bg-info text-dark">Candidate</span></td>
+                <td>12/10/2024</td>
+                <td><span class="badge bg-success-subtle text-success">Active</span></td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-outline-secondary" title="Reset Pass"><i class="bi bi-key"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" title="Lock User"><i class="bi bi-lock"></i></button>
+                </td>
+            </tr>
+            <tr>
+                <td class="ps-4">
+                    <div class="fw-bold">Lê Thị HR</div>
+                    <div class="small text-muted">hr@vng.com</div>
+                </td>
+                <td><span class="badge bg-warning text-dark">Recruiter</span></td>
+                <td>10/11/2024</td>
+                <td><span class="badge bg-danger-subtle text-danger">Locked</span></td>
+                <td class="text-end pe-4">
+                    <button class="btn btn-sm btn-outline-secondary" title="Unlock"><i class="bi bi-unlock"></i></button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="card-footer bg-white py-3">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item disabled"><a class="page-link" href="#">Trước</a></li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">Sau</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+{% endblock %}

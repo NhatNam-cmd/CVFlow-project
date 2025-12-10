@@ -1,0 +1,59 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block header_title %}Xác thực Doanh nghiệp{% endblock %}
+
+{% block content %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <ul class="nav nav-pills card-header-pills">
+                <li class="nav-item">
+                    <a class="nav-link active fw-bold" href="#">Chờ duyệt (5)</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-success" href="#">Đã xác thực</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-secondary" href="#">Đã từ chối</a>
+                </li>
+            </ul>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Công ty</th>
+                    <th>Mã số thuế</th>
+                    <th>Người đăng ký</th>
+                    <th>Tài liệu</th>
+                    <th class="text-end pe-4">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center">
+                            <img src="https://via.placeholder.com/40" class="rounded border me-2">
+                            <div>
+                                <div class="fw-bold">Công ty TNHH ABC</div>
+                                <div class="small text-muted">Hà Nội</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><code class="text-primary fw-bold">0101234567</code></td>
+                    <td>
+                        <div>Nguyễn Văn HR</div>
+                        <div class="small text-muted">hr@abc.com</div>
+                    </td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-light border"><i class="bi bi-file-earmark-pdf"></i> GPKD.pdf</a>
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-success me-1" title="Chấp nhận"><i class="bi bi-check-lg"></i></button>
+                        <button class="btn btn-sm btn-danger" title="Từ chối"><i class="bi bi-x-lg"></i></button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
