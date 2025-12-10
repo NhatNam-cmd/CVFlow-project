@@ -1,82 +1,201 @@
-from app import db  # Import db từ file __init__.py
+from app import db
 from datetime import datetime
+from flask_login import UserMixin
+from sqlalchemy.dialects.postgresql import (
+    JSONB,
+)  # Dùng cho Postgres
+
+# ==========================================
+# 1. NHÓM NGƯỜI DÙNG & CÔNG TY
+# ==========================================
 
 
-# Bảng 1: Job
+class Company(db.Model):
+    __tablename__ = "companies"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), unique=True)
+    logo_url = db.Column(db.String(500))
+    website = db.Column(db.String(200))
+    address = db.Column(db.Text)
+    description = db.Column(db.Text)
+
+    # Feature 2: Market Intelligence
+    industry = db.Column(db.String(100))  # Fintech, Outsourcing...
+
+    # Enterprise: Xác thực
+    tax_number = db.Column(db.String(50), unique=True)
+    verification_status = db.Column(
+        db.String(20), default="PENDING"
+    )  # PENDING, VERIFIED
+
+    # Quan hệ
+    recruiters = db.relationship("User", backref="company", lazy=True)
+    jobs = db.relationship("Job", backref="company", lazy=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class User(db.Model, UserMixin):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    full_name = db.Column(db.String(150), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # ADMIN, HR, CANDIDATE
+    avatar_url = db.Column(db.String(500))
+
+    # Dành cho Candidate
+    phone = db.Column(db.String(20))
+    bio = db.Column(db.Text)
+    is_open_to_work = db.Column(db.Boolean, default=True)
+
+    # Dành cho HR
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id"), nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Quan hệ
+    cvs = db.relationship("CV_File", backref="candidate", lazy=True)
+    availabilities = db.relationship("Availability", backref="user", lazy=True)
+
+
+# ==========================================
+# 2. NHÓM VIỆC LÀM (JOB)
+# ==========================================
+
+
 class Job(db.Model):
+    __tablename__ = "jobs"
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(150), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    requirements = db.Column(db.Text, nullable=False)  # Lưu JSON dạng text
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200))
+
+    company_id = db.Column(db.Integer, db.ForeignKey("companies.id"), nullable=False)
+    recruiter_id = db.Column(
+        db.Integer, db.ForeignKey("users.id"), nullable=True
+    )  # Null nếu là job cào
+
+    # Feature 2: Market Intelligence
+    salary_min = db.Column(db.Float)
+    salary_max = db.Column(db.Float)
+    currency = db.Column(db.String(10), default="VND")
+    location = db.Column(db.String(100))  # Hanoi, HCM...
+    level = db.Column(db.String(50))  # Junior, Senior...
+
+    description = db.Column(db.Text)
+    requirements = db.Column(db.Text)
+    benefits = db.Column(db.Text)
+
+    # Feature 4: Crawler
+    source = db.Column(db.String(50), default="INTERNAL")  # INTERNAL, TOPDEV...
+    original_url = db.Column(db.Text)
+
+    # Feature 1: Automation Config
+    # Lưu JSON: ["Python", "SQL"]
+    # Lưu ý: Nếu dùng SQLite thì đổi JSONB thành Text và xử lý bằng json.loads
+    skills_required = db.Column(JSONB)
+    min_years_exp = db.Column(db.Integer, default=0)
+    # Lưu JSON: {"question": "...", "options": [], "correct": "A"}
+    mini_test_config = db.Column(JSONB)
+
+    is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    # Vector này giúp máy tính "hiểu" ý nghĩa của Job để so khớp
-    vector_embedding = db.Column(db.PickleType, nullable=True)
-    # Mối quan hệ: Một Job có nhiều Score
-    scores = db.relationship("Score", backref="job", lazy="dynamic")
+
+    # Vector Embedding cho Job Matching
+    vector_embedding = db.Column(db.PickleType)
 
 
-# Bảng 2: Candidate
-class Candidate(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(150))
-    email = db.Column(db.String(150))
-    phone = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # Mối quan hệ: Một Candidate có nhiều CV_File
-    cv_files = db.relationship("CV_File", backref="candidate", lazy="dynamic")
-    # Mối quan hệ: Một Candidate có nhiều Skill
-    skills = db.relationship("Extracted_Skill", backref="candidate", lazy="dynamic")
-    # Mối quan hệ: Một Candidate có nhiều Score
-    scores = db.relationship("Score", backref="candidate", lazy="dynamic")
+# ==========================================
+# 3. NHÓM ỨNG TUYỂN & CV
+# ==========================================
 
 
-# Bảng 3: CV_File
 class CV_File(db.Model):
+    __tablename__ = "cv_files"
     id = db.Column(db.Integer, primary_key=True)
-    file_path = db.Column(db.String(300), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    file_url = db.Column(db.String(500), nullable=False)
+    file_name = db.Column(db.String(200))
+    is_main = db.Column(db.Boolean, default=False)
+
+    # AI Analysis
     raw_text = db.Column(db.Text)
-    summary_text = db.Column(db.Text)
+    ai_score = db.Column(db.Integer)
+    # Lưu JSON kết quả phân tích AI
+    ai_matching_data = db.Column(JSONB)
+    vector_embedding = db.Column(db.PickleType)
 
-    # (+) CỘT MỚI: Lưu toàn bộ thông tin AI trích xuất (JSON)
-    # Ví dụ: {"years_exp": 3, "education": "Bachelor", "companies": ["FPT", "Viettel"]}
-    # Giúp hiển thị chi tiết lên Admin Dashboard mà không cần tạo nhiều bảng con.
-    structured_data = db.Column(db.JSON, nullable=True)
-
-    # (+) CỘT MỚI: Lưu Vector của CV
-    vector_embedding = db.Column(db.PickleType, nullable=True)
-
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
-    # Khóa ngoại: Nối với Candidate
-    candidate_id = db.Column(db.Integer, db.ForeignKey("candidate.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-# Bảng 4: Extracted_Skill
-class Extracted_Skill(db.Model):
+class Application(db.Model):
+    __tablename__ = "applications"
     id = db.Column(db.Integer, primary_key=True)
-    skill_name = db.Column(db.String(100), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey("jobs.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    cv_id = db.Column(db.Integer, db.ForeignKey("cv_files.id"), nullable=True)
 
-    # Khóa ngoại: Nối với Candidate
-    candidate_id = db.Column(db.Integer, db.ForeignKey("candidate.id"), nullable=False)
+    cover_letter = db.Column(db.Text)
+
+    # Kanban Status: NEW, SCREENED, INTERVIEW, OFFER, REJECTED
+    status = db.Column(db.String(50), default="NEW")
+
+    # Feature 2: Analytics (Tại sao trượt?)
+    rejected_reason = db.Column(db.String(200))
+
+    # Feature 1: Mini-Test Result
+    mini_test_answer = db.Column(db.String(10))
+    mini_test_score = db.Column(db.Integer)
+
+    # AI Score riêng cho Job này
+    match_score = db.Column(db.Integer)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Quan hệ
+    job = db.relationship("Job", backref="applications")
+    candidate = db.relationship("User", foreign_keys=[user_id], backref="applications")
+    cv = db.relationship("CV_File")
 
 
-# Bảng 5: Score
-class Score(db.Model):
+# ==========================================
+# 4. NHÓM LỊCH PHỎNG VẤN (SCHEDULER)
+# ==========================================
+
+
+class Availability(db.Model):
+    __tablename__ = "availabilities"
     id = db.Column(db.Integer, primary_key=True)
-    score_value = db.Column(db.Float)  # Điểm Module 4
-    match_value = db.Column(db.Float)  # Điểm Module 5
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
-    # (+) CỘT MỚI (Optional): Lý do chấm điểm của AI
-    # Ví dụ: "Ứng viên này tốt nhưng thiếu kinh nghiệm Cloud"
-    # Cái này cực kỳ giá trị để show cho HR xem.
-    explanation = db.Column(db.Text, nullable=True)
+    # 0=CN, 1=T2... 6=T7
+    day_of_week = db.Column(db.Integer, nullable=False)
+    start_time = db.Column(db.Time, nullable=False)
+    end_time = db.Column(db.Time, nullable=False)
 
-    # Khóa ngoại: Nối với Candidate
-    candidate_id = db.Column(db.Integer, db.ForeignKey("candidate.id"), nullable=False)
-    # Khóa ngoại: Nối với Job
-    job_id = db.Column(db.Integer, db.ForeignKey("job.id"), nullable=False)
 
-    # Đảm bảo 1 ứng viên chỉ có 1 điểm cho 1 job
-    __table_args__ = (
-        db.UniqueConstraint("candidate_id", "job_id", name="_candidate_job_uc"),
+class Interview(db.Model):
+    __tablename__ = "interviews"
+    id = db.Column(db.Integer, primary_key=True)
+    application_id = db.Column(
+        db.Integer, db.ForeignKey("applications.id"), nullable=False
     )
+    recruiter_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+
+    start_time = db.Column(db.DateTime, nullable=False)
+    end_time = db.Column(db.DateTime, nullable=False)
+
+    location = db.Column(db.String(200))  # Online link hoặc phòng họp
+    meeting_link = db.Column(db.String(500))
+    status = db.Column(
+        db.String(20), default="SCHEDULED"
+    )  # SCHEDULED, COMPLETED, CANCELLED
+
+    # File ICS sinh ra bởi Python
+    ics_file_url = db.Column(db.String(500))
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Quan hệ
+    application = db.relationship("Application", backref="interviews")
