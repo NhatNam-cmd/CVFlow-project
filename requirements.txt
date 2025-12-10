@@ -1,27 +1,33 @@
-# --- Core Backend ---
-Flask
-Flask-SQLAlchemy
-python-dotenv          # (+) Mới: Giúp đọc file .env (cấu hình AI/Model)
+# 1. Core Framework
+Flask==3.0.0
+SQLAlchemy==2.0.23
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
+Flask-Login==0.6.3
+Flask-Bcrypt==1.0.1
+Flask-WTF==1.2.1
 
-# --- Module 1: File Processing (Nâng cấp) ---
-pdfplumber             # (+) Mới: Thay PyPDF2. Đọc PDF giữ nguyên layout/cột.
-python-docx            # Giữ nguyên: Đọc file Word (.docx)
+# 2. Database Driver
+psycopg2-binary==2.9.9
 
-# --- Module 2 & 3: LLM Integration (Ollama) ---
-requests               # (+) Mới: Dùng để gửi lệnh (Prompt) sang Ollama chạy local
+# 3. Feature: Crawler
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
 
-# --- Module 5: Matching (Vector Embeddings) ---
-sentence-transformers  # (+) Mới: Thay Scikit-learn. Biến văn bản thành Vector ngữ nghĩa.
-numpy                  # Giữ nguyên: Tính toán độ tương đồng Vector (Cosine Similarity)
+# 4. Feature: Analytics & Tools
+pandas==2.1.3
+python-dateutil==2.8.2
 
-# --- QA Tools (Bắt buộc - Giữ nguyên) ---
-pre-commit
-black
-flake8
+# 5. Feature: Utilities
+python-dotenv==1.0.0
+email-validator==2.1.0.post1
+Pillow==10.1.0
 
-Flask-WTF
-email-validator
+# 6. Feature: AI & PDF Processing
+pdfplumber==0.10.3
+sentence-transformers==2.2.2
 
-psycopg2-binary
-redis
-celery
+# 7. Feature: Background Tasks
+redis==5.0.1
+celery==5.3.6

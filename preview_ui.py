@@ -120,9 +120,9 @@ class MockUser:
 
 
 # 👇 BỎ COMMENT DÒNG DƯỚI ĐÂY ĐỂ ĐỔI VAI TRÒ 👇
-# current_user = MockUser(role='CANDIDATE', name='Nguyễn Văn A')
+current_user = MockUser(role="CANDIDATE", name="Nguyễn Văn A")
 # current_user = MockUser(role='HR', name='HR Manager')
-current_user = MockUser(role="ADMIN", name="System Admin")
+# current_user = MockUser(role="ADMIN", name="System Admin")
 # current_user = MockUser(role='GUEST', name='Khách vãng lai')
 
 # =========================================================================
@@ -165,6 +165,16 @@ def job_detail(id):
     # Tìm Job theo ID (Giả lập)
     job = next((j for j in MOCK_JOBS if j["id"] == id), MOCK_JOBS[0])
     return render_template("public/job_detail.html", job=job)
+
+
+@app.route("/apply", methods=["POST"], endpoint="public.apply")
+def apply():
+    # Giả lập xử lý nộp đơn thành công
+    # Lấy job_id từ form (nếu cần) hoặc mặc định
+    return render_template("public/apply_success.html")
+
+
+# 👆 KẾT THÚC ĐOẠN THÊM 👆
 
 
 @app.route("/companies", endpoint="public.company_list")
