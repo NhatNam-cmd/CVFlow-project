@@ -6,15 +6,23 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="h3 mb-1">Quy trình Tuyển dụng</h2>
-            <p class="text-muted small mb-0">Job đang xem: <strong>Senior Python Backend Developer</strong></p>
+            <p class="text-muted small mb-0">Đang xem: <strong>{{ current_job_name }}</strong></p>
         </div>
 
         <div class="d-flex gap-2">
-            <select class="form-select w-auto">
-                <option>Chuyển sang Job khác...</option>
-                <option>Senior Python Backend</option>
-                <option>DevOps Engineer</option>
-            </select>
+            <div class="dropdown">
+                <button class="btn btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-filter"></i> Lọc theo Job
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('hr.candidate_list') }}">Tất cả vị trí</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% for job in all_jobs %}
+                        <li><a class="dropdown-item" href="{{ url_for('hr.candidate_list', job_id=job.id) }}">{{ job.title }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
             <a href="{{ url_for('hr.schedule_calendar') }}" class="btn btn-outline-primary">
                 <i class="bi bi-calendar-week me-1"></i> Xem Lịch
             </a>
@@ -27,55 +35,35 @@
             <div class="card bg-light border-0 h-100">
                 <div class="card-header bg-transparent fw-bold text-uppercase small text-secondary d-flex justify-content-between">
                     <span>Mới (New)</span>
-                    <span class="badge bg-white text-dark shadow-sm">3</span>
+                    <span class="badge bg-white text-dark shadow-sm">{{ kanban['NEW']|length }}</span>
                 </div>
                 <div class="card-body p-2">
-                    <div class="card shadow-sm mb-2 border-start border-4 border-info cursor-pointer draggable">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <h6 class="fw-bold mb-0 text-truncate">Nguyễn Văn A</h6>
-                                <span class="badge bg-success">92% Match</span>
-                            </div>
-                            <p class="small text-muted mb-2">5 năm KN • Python, Django</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted" style="font-size: 0.75rem;">1 giờ trước</small>
-                                <a href="{{ url_for('hr.candidate_view', id=1) }}" class="btn btn-xs btn-outline-primary py-0" style="font-size: 0.8rem;">Xem</a>
-                            </div>
-                        </div>
-                    </div>
+                    {% for app in kanban['NEW'] %}
+                        <div class="card shadow-sm mb-2 border-start border-4 border-info">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <h6 class="fw-bold mb-0 text-truncate" title="{{ app.candidate.full_name }}">
+                                        {{ app.candidate.full_name }}
+                                    </h6>
+                                    {% if app.match_score %}
+                                        <span class="badge bg-success">{{ app.match_score }}%</span>
+                                    {% endif %}
+                                </div>
+                                <p class="small text-muted mb-2 text-truncate">{{ app.job.title }}</p>
 
-                    <div class="card shadow-sm mb-2 border-start border-4 border-warning">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <h6 class="fw-bold mb-0">Lê Văn C</h6>
-                                <span class="badge bg-warning text-dark">60% Match</span>
-                            </div>
-                            <div class="alert alert-warning py-1 px-2 mb-2 small" style="font-size: 0.75rem;">
-                                <i class="bi bi-exclamation-triangle"></i> Lương mong muốn cao
-                            </div>
-                            <a href="{{ url_for('hr.candidate_view', id=3) }}" class="btn btn-xs btn-outline-primary py-0 w-100" style="font-size: 0.8rem;">Xem chi tiết</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                                <div class="d-flex justify-content-between align-items-center mt-3 border-top pt-2">
+                                    <a href="{{ url_for('hr.candidate_view', id=app.id) }}" class="text-decoration-none small fw-bold">Xem</a>
 
-        <div class="col-md-3" style="min-width: 300px;">
-            <div class="card bg-light border-0 h-100">
-                <div class="card-header bg-transparent fw-bold text-uppercase small text-primary d-flex justify-content-between">
-                    <span>Đã Sơ loại</span>
-                    <span class="badge bg-primary text-white shadow-sm">1</span>
-                </div>
-                <div class="card-body p-2">
-                    <div class="card shadow-sm mb-2">
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold mb-1">Phạm Thị D</h6>
-                            <p class="small text-success mb-2"><i class="bi bi-check-all"></i> Đã pass vòng gửi xe</p>
-                            <div class="d-grid">
-                                <button class="btn btn-sm btn-white border">Mời phỏng vấn</button>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='REJECTED') }}"
+                                           class="btn btn-light text-danger" title="Từ chối"><i class="bi bi-x-lg"></i></a>
+                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='INTERVIEW') }}"
+                                           class="btn btn-light text-primary" title="Chuyển sang Phỏng vấn"><i class="bi bi-arrow-right"></i></a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -84,19 +72,82 @@
             <div class="card bg-light border-0 h-100">
                 <div class="card-header bg-transparent fw-bold text-uppercase small text-warning d-flex justify-content-between">
                     <span>Phỏng vấn</span>
-                    <span class="badge bg-warning text-dark shadow-sm">2</span>
+                    <span class="badge bg-warning text-dark shadow-sm">{{ kanban['INTERVIEW']|length }}</span>
                 </div>
                 <div class="card-body p-2">
-                    <div class="card shadow-sm mb-2">
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold mb-1">Hoàng Văn E</h6>
-                            <div class="small text-muted mb-2"><i class="bi bi-calendar-event"></i> 10:00 AM, Mai</div>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-success flex-grow-1"><i class="bi bi-check"></i> Pass</button>
-                                <button class="btn btn-sm btn-danger flex-grow-1"><i class="bi bi-x"></i> Fail</button>
+                    {% for app in kanban['INTERVIEW'] %}
+                        <div class="card shadow-sm mb-2 border-start border-4 border-warning">
+                            <div class="card-body p-3">
+                                <h6 class="fw-bold mb-1 text-truncate" title="{{ app.candidate.full_name }}">
+                                    {{ app.candidate.full_name }}
+                                </h6>
+                                <p class="small text-muted mb-2 text-truncate">{{ app.job.title }}</p>
+
+                                <div class="d-flex justify-content-between align-items-center mt-3 border-top pt-2">
+                                    <a href="{{ url_for('hr.candidate_view', id=app.id) }}" class="text-decoration-none small fw-bold">Xem</a>
+
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='NEW') }}"
+                                           class="btn btn-light text-secondary"
+                                           title="Quay lại trạng thái Mới">
+                                            <i class="bi bi-arrow-left"></i>
+                                        </a>
+
+                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='REJECTED') }}"
+                                           class="btn btn-light text-danger"
+                                           title="Từ chối"
+                                           onclick="return confirm('Bạn chắc chắn muốn từ chối?')">
+                                            <i class="bi bi-x-lg"></i>
+                                        </a>
+
+                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='OFFER') }}"
+                                           class="btn btn-light text-success"
+                                           title="Duyệt & Gửi Offer">
+                                            <i class="bi bi-check-lg"></i>
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3" style="min-width: 300px;">
+            <div class="card bg-light border-0 h-100">
+                <div class="card-header bg-transparent fw-bold text-uppercase small text-success d-flex justify-content-between">
+                    <span>Offer / Tuyển dụng</span>
+                    <span class="badge bg-success text-white shadow-sm">{{ kanban['OFFER']|length }}</span>
+                </div>
+                <div class="card-body p-2">
+                    {% for app in kanban['OFFER'] %}
+                        <div class="card shadow-sm mb-2 border-start border-4 border-success">
+                            <div class="card-body p-3">
+                                <h6 class="fw-bold mb-1 text-truncate">{{ app.candidate.full_name }}</h6>
+                                <p class="small text-success mb-2"><i class="bi bi-trophy-fill me-1"></i> Đã gửi Offer</p>
+
+                                <div class="d-flex justify-content-between align-items-center mt-3 border-top pt-2">
+                                    <a href="{{ url_for('hr.candidate_view', id=app.id) }}" class="text-decoration-none small fw-bold">Xem</a>
+
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='INTERVIEW') }}"
+                                           class="btn btn-light text-secondary"
+                                           title="Quay lại Phỏng vấn">
+                                            <i class="bi bi-arrow-left"></i>
+                                        </a>
+
+                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='REJECTED') }}"
+                                           class="btn btn-light text-danger"
+                                           title="Hủy Offer"
+                                           onclick="return confirm('Hủy Offer này?')">
+                                            <i class="bi bi-x-lg"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -105,22 +156,30 @@
             <div class="card bg-light border-0 h-100">
                 <div class="card-header bg-transparent fw-bold text-uppercase small text-danger d-flex justify-content-between">
                     <span>Đã Từ chối</span>
-                    <span class="badge bg-white text-danger shadow-sm">10</span>
+                    <span class="badge bg-white text-danger shadow-sm">{{ kanban['REJECTED']|length }}</span>
                 </div>
                 <div class="card-body p-2 opacity-50">
-                    <div class="card shadow-sm mb-2">
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold mb-1">Ứng viên rác 1</h6>
-                            <span class="badge bg-secondary">Auto-Reject</span>
+                    {% for app in kanban['REJECTED'] %}
+                        <div class="card shadow-sm mb-2 opacity-75">
+                            <div class="card-body p-3">
+                                <h6 class="fw-bold mb-1 text-truncate text-decoration-line-through">{{ app.candidate.full_name }}</h6>
+                                <span class="badge bg-secondary mb-2">Rejected</span>
+
+                                <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-2">
+                                    <a href="{{ url_for('hr.candidate_view', id=app.id) }}" class="text-decoration-none small fw-bold">Xem</a>
+
+                                    <a href="{{ url_for('hr.update_status', id=app.id, new_status='NEW') }}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Khôi phục hồ sơ">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Khôi phục
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
 
-    <style>
-        .cursor-pointer { cursor: grab; }
-        .cursor-pointer:active { cursor: grabbing; }
-    </style>
+    </div>
 {% endblock %}

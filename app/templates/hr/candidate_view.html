@@ -6,19 +6,37 @@
     <div class="container-fluid p-0">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <a href="{{ url_for('hr.candidate_list') }}" class="text-decoration-none text-muted fw-bold">
-                <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+                <i class="bi bi-arrow-left me-1"></i> Quay lại Kanban
             </a>
-            <div class="d-flex gap-2">
-                <button class="btn btn-outline-danger fw-bold">
-                    <i class="bi bi-x-circle me-1"></i> Từ chối
-                </button>
-                <button class="btn btn-outline-secondary fw-bold">
-                    <i class="bi bi-envelope me-1"></i> Gửi Email
-                </button>
 
-                <a href="{{ url_for('hr.schedule_calendar') }}" class="btn btn-primary fw-bold shadow-sm px-4">
-                    <i class="bi bi-calendar-plus me-2"></i> Đặt lịch Phỏng vấn
-                </a>
+            <div class="d-flex gap-2">
+                {% if application.status != 'REJECTED' %}
+                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='REJECTED') }}"
+                       class="btn btn-outline-danger fw-bold"
+                       onclick="return confirm('Bạn có chắc muốn từ chối ứng viên này?')">
+                        <i class="bi bi-x-circle me-1"></i> Từ chối
+                    </a>
+                {% endif %}
+
+                {% if application.status == 'NEW' %}
+                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='INTERVIEW') }}"
+                       class="btn btn-primary fw-bold shadow-sm px-4">
+                        <i class="bi bi-calendar-check me-2"></i> Mời Phỏng vấn
+                    </a>
+                {% elif application.status == 'INTERVIEW' %}
+                    <button type="button" class="btn btn-warning fw-bold shadow-sm px-3 me-2" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                        <i class="bi bi-clock-history me-2"></i> Lên lịch gặp mặt
+                    </button>
+                {% elif application.status == 'OFFER' %}
+                    <button class="btn btn-success disabled">
+                        <i class="bi bi-trophy-fill me-2"></i> Đã tuyển dụng
+                    </button>
+                {% elif application.status == 'REJECTED' %}
+                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='NEW') }}"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Khôi phục hồ sơ
+                    </a>
+                {% endif %}
             </div>
         </div>
 
@@ -136,4 +154,80 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="scheduleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-calendar-plus"></i> Thiết lập cuộc hẹn</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="{{ url_for('hr.create_interview', app_id=application.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="modal-body">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded border border-primary border-opacity-25">
+                            <div>
+                                <small class="fw-bold text-primary"><i class="bi bi-stars"></i> AI Smart Schedule</small>
+                                <div class="text-muted" style="font-size: 0.75rem;">Tự động tìm giờ rảnh chung tốt nhất</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary bg-white" onclick="alert('Tính năng đang phát triển!\nChúng tôi đang tích hợp thuật toán tìm lịch tối ưu.')">
+                                <i class="bi bi-magic"></i> Gợi ý ngay
+                            </button>
+                        </div>
+                        <hr class="my-3">
+                        <div class="alert alert-info small">
+                            Hệ thống sẽ lưu lịch và hiển thị bên phía ứng viên <strong>{{ application.candidate.full_name }}</strong>.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ngày & Giờ bắt đầu</label>
+                            <input type="datetime-local" name="start_time" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Thời lượng dự kiến</label>
+                            <select name="duration" class="form-select">
+                                <option value="30">30 phút</option>
+                                <option value="45">45 phút</option>
+                                <option value="60" selected>60 phút (1 tiếng)</option>
+                                <option value="90">90 phút</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Hình thức / Địa điểm</label>
+                            <select name="location_type" class="form-select mb-2" onchange="toggleLocation(this)">
+                                <option value="online">Online (Google Meet/Zoom)</option>
+                                <option value="offline">Offline (Tại văn phòng)</option>
+                            </select>
+                            <input type="text" name="location_detail" id="locationInput" class="form-control"
+                                   placeholder="Nhập link cuộc họp (VD: meet.google.com/abc...)" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ghi chú cho ứng viên</label>
+                            <textarea name="note" class="form-control" rows="2" placeholder="VD: Vui lòng mang theo laptop..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-warning fw-bold text-dark">Lưu Lịch Hẹn</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleLocation(select) {
+            const input = document.getElementById('locationInput');
+            if (select.value === 'online') {
+                input.placeholder = "Nhập link cuộc họp (VD: meet.google.com/abc...)";
+            } else {
+                input.placeholder = "Nhập tên phòng họp / Địa chỉ văn phòng";
+                input.value = "{{ application.job.company.address }}"; // Gợi ý địa chỉ cty
+            }
+        }
+    </script>
 {% endblock %}

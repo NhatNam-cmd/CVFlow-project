@@ -3,8 +3,10 @@
 {% block title %}CVFlow - Tìm Việc IT & Phân Tích CV Bằng AI{% endblock %}
 
 {% block content %}
-    <div class="bg-primary text-white py-5 mb-5 position-relative overflow-hidden" style="background: linear-gradient(135deg, #0077b5 0%, #004182 100%);">
-        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10" style="background-image: url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80'); background-size: cover;"></div>
+    <div class="bg-dark text-white py-5 mb-5 position-relative overflow-hidden"
+         style="background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
+                         url('https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80') center center no-repeat;
+            background-size: cover;">
 
         <div class="container position-relative py-4">
             <div class="row align-items-center">
@@ -221,50 +223,75 @@
         </div>
 
         <div class="row g-4 mb-5">
-            {% for job in jobs %}
-                <div class="col-lg-6">
-                    <div class="card shadow-sm border-0 hover-effect h-100">
-                        <div class="card-body d-flex p-3">
-                            <div class="me-3 flex-shrink-0">
-                                <img src="https://ui-avatars.com/api/?name={{ job.company_name }}&background=random" class="rounded border p-1" width="70" height="70" style="object-fit: contain;">
-                            </div>
-                            <div class="flex-grow-1">
-                                <h5 class="card-title mb-1 fw-bold">
-                                    <a href="{{ url_for('public.job_detail', id=job.id) }}" class="text-dark text-decoration-none stretched-link">{{ job.title }}</a>
-                                </h5>
-                                <div class="mb-2">
-                                    <span class="text-muted small me-2"><i class="bi bi-building"></i> {{ job.company_name }}</span>
-                                    {% if job.is_hot %}
-                                        <span class="badge bg-danger-subtle text-danger"><i class="bi bi-fire"></i> HOT</span>
-                                    {% endif %}
-                                    {% if job.source != 'INTERNAL' %}
-                                        <span class="badge bg-secondary-subtle text-secondary border" style="font-size: 0.7em">Nguồn: {{ job.source }}</span>
-                                    {% endif %}
+            {% if jobs %}
+                {% for job in jobs %}
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm border-0 hover-effect h-100">
+                            <div class="card-body d-flex p-3">
+                                <div class="me-3 flex-shrink-0">
+                                    <img src="{{ job.company.logo_url or url_for('static', filename='img/company_default.png') }}"
+                                         class="rounded border p-1" width="70" height="70" style="object-fit: contain;">
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <div class="small">
-                                        <span class="text-success fw-bold me-2"><i class="bi bi-cash-stack"></i> {{ job.salary_range }}</span>
-                                        <span class="text-secondary"><i class="bi bi-geo-alt"></i> {{ job.location }}</span>
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1 fw-bold">
+                                        <a href="{{ url_for('public.job_detail', id=job.id) }}" class="text-dark text-decoration-none stretched-link">
+                                            {{ job.title }}
+                                        </a>
+                                    </h5>
+                                    <div class="mb-2">
+                                        <span class="text-muted small me-2"><i class="bi bi-building"></i> {{ job.company.name }}</span>
+                                        <span class="badge bg-secondary-subtle text-secondary border" style="font-size: 0.7em">
+                                    {{ job.level }}
+                                </span>
                                     </div>
-                                    <small class="text-muted">{{ job.created_at }}</small>
+                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                        <div class="small">
+                                    <span class="text-success fw-bold me-2">
+                                        <i class="bi bi-cash-stack"></i>
+                                        {% if job.salary_min %}
+                                            {{ "{:,.0f}".format(job.salary_min) }} - {{ "{:,.0f}".format(job.salary_max) }} {{ job.currency }}
+                                        {% else %}
+                                            Thỏa thuận
+                                        {% endif %}
+                                    </span>
+                                            <span class="text-secondary"><i class="bi bi-geo-alt"></i> {{ job.location }}</span>
+                                        </div>
+                                        <small class="text-muted">{{ job.created_at.strftime('%d/%m/%Y') }}</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted">Chưa có tin tuyển dụng nào được đăng.</p>
                 </div>
-            {% endfor %}
+            {% endif %}
         </div>
 
         <div class="bg-light rounded-4 p-4 p-md-5 text-center mb-5">
             <h3 class="fw-bold mb-4">Nhà Tuyển Dụng Nổi Bật</h3>
-            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3 align-items-center justify-content-center opacity-75">
-                <div class="col"><img src="https://via.placeholder.com/150x60?text=FPT+Software" class="img-fluid grayscale-hover"></div>
-                <div class="col"><img src="https://via.placeholder.com/150x60?text=VNG" class="img-fluid grayscale-hover"></div>
-                <div class="col"><img src="https://via.placeholder.com/150x60?text=Viettel" class="img-fluid grayscale-hover"></div>
-                <div class="col"><img src="https://via.placeholder.com/150x60?text=MOMO" class="img-fluid grayscale-hover"></div>
-                <div class="col"><img src="https://via.placeholder.com/150x60?text=Tiki" class="img-fluid grayscale-hover"></div>
-                <div class="col"><img src="https://via.placeholder.com/150x60?text=NashTech" class="img-fluid grayscale-hover"></div>
-            </div>
+
+            {% if top_companies %}
+                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3 align-items-center justify-content-center">
+                    {% for company in top_companies %}
+                        <div class="col">
+                            <a href="{{ url_for('public.company_detail', id=company.id) }}" class="text-decoration-none" title="{{ company.name }}">
+                                <div class="bg-white p-3 rounded shadow-sm hover-effect border h-100 d-flex align-items-center justify-content-center">
+                                    <img src="{{ company.logo_url or url_for('static', filename='img/company_default.png') }}"
+                                         class="img-fluid grayscale-hover"
+                                         style="max-height: 60px; object-fit: contain;"
+                                         alt="{{ company.name }}">
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted opacity-75">Đang cập nhật danh sách đối tác...</p>
+            {% endif %}
+
             <div class="mt-4">
                 <a href="{{ url_for('public.company_list') }}" class="btn btn-outline-dark rounded-pill px-4">Xem danh sách công ty</a>
             </div>

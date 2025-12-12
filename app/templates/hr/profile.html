@@ -43,6 +43,7 @@
 
                 <div class="card-body p-4">
                     <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <div class="tab-content">
 
                             <div class="tab-pane fade show active" id="info">

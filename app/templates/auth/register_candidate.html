@@ -1,52 +1,50 @@
 {% extends "layouts/auth_layout.html" %}
 
-{% block title %}Đăng Ký Ứng Viên - CVFlow{% endblock %}
+{% block title %}Đăng ký Ứng viên - CVFlow{% endblock %}
 
-{% block auth_content %}
-    <div class="card auth-card shadow border-0">
-        <div class="card-header bg-success text-white text-center py-3">
-            <h4 class="mb-0 fw-bold"><i class="bi bi-person-plus-fill"></i> Tạo Hồ Sơ Ứng Viên</h4>
-        </div>
-        <div class="card-body p-4">
-            <form method="POST" action="{{ url_for('auth.register_candidate') }}">
+{% block content %}
+    <h4 class="text-center fw-bold mb-2">Đăng Ký Ứng Viên</h4>
+    <p class="text-center text-muted small mb-4">Tìm kiếm việc làm IT tốt nhất</p>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Họ và Tên</label>
-                    <input type="text" name="full_name" class="form-control" placeholder="Nguyễn Văn A" required>
-                </div>
+    <form method="POST">
+        {{ form.hidden_tag() }}
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="email@gmail.com" required>
-                </div>
-
-                <div class="row g-2 mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Mật khẩu</label>
-                        <input type="password" name="password" class="form-control" required minlength="6">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Nhập lại mật khẩu</label>
-                        <input type="password" name="confirm_password" class="form-control" required>
-                    </div>
-                </div>
-
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" required>
-                    <label class="form-check-label small text-muted">
-                        Tôi đồng ý với <a href="#">Điều khoản sử dụng</a> và <a href="#">Chính sách bảo mật</a>.
-                    </label>
-                </div>
-
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-success btn-lg fw-bold">Đăng Ký Ngay</button>
-                </div>
-            </form>
-
-            <div class="text-center mt-3">
-                <span class="text-muted small">Đã có tài khoản?</span>
-                <a href="{{ url_for('auth.login') }}" class="text-decoration-none fw-bold ms-1">Đăng nhập</a>
+        {% if form.errors %}
+            <div class="alert alert-danger p-2 small">
+                <ul class="mb-0 ps-3">
+                    {% for field, errors in form.errors.items() %}
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
             </div>
+        {% endif %}
+
+        <div class="form-floating mb-3">
+            {{ form.full_name(class="form-control", placeholder="Họ tên") }}
+            {{ form.full_name.label }}
         </div>
-    </div>
+
+        <div class="form-floating mb-3">
+            {{ form.email(class="form-control", placeholder="Email") }}
+            {{ form.email.label }}
+        </div>
+
+        <div class="form-floating mb-3">
+            {{ form.password(class="form-control", placeholder="Mật khẩu") }}
+            {{ form.password.label }}
+        </div>
+
+        <div class="form-floating mb-4">
+            {{ form.confirm_password(class="form-control", placeholder="Nhập lại mật khẩu") }}
+            {{ form.confirm_password.label }}
+        </div>
+
+        <button class="w-100 btn btn-lg btn-primary fw-bold mb-3" type="submit">Đăng Ký Ngay</button>
+
+        <div class="text-center">
+            <small class="text-muted">Đã có tài khoản? <a href="{{ url_for('auth.login') }}" class="fw-bold text-decoration-none">Đăng nhập</a></small>
+        </div>
+    </form>
 {% endblock %}
