@@ -15,6 +15,7 @@ venv/
 # Đôi khi bạn dump dữ liệu ra file sql để backup, không nên commit nó
 *.sql
 *.dump
+data/
 
 # (Đã xóa dòng *.sqlite3 thừa)
 

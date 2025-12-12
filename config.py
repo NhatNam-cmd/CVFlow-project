@@ -6,6 +6,8 @@ load_dotenv()
 
 # Đường dẫn gốc của dự án
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DEFAULT_DB_DIR = os.path.join(BASE_DIR, "data")
+DEFAULT_DB_PATH = os.path.join(DEFAULT_DB_DIR, "cvflow.db")
 
 
 class Config:
@@ -16,9 +18,11 @@ class Config:
 
     # 2. Database (Mặc định dùng SQLite nếu không có Postgres)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URI"
-    ) or "sqlite:///" + os.path.join(BASE_DIR, "data", "cvflow.db")
+    if os.environ.get("DATABASE_URI"):
+        SQLALCHEMY_DATABASE_URI = os.environ["DATABASE_URI"]
+    else:
+        os.makedirs(DEFAULT_DB_DIR, exist_ok=True)
+        SQLALCHEMY_DATABASE_URI = f"sqlite:///{DEFAULT_DB_PATH}"
 
     # 3. Uploads
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "app", "static", "uploads")
