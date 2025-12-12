@@ -5,9 +5,11 @@ from app.modules.public import public_bp
 from app.modules.public.forms import SalaryToolForm
 from app.models.job import Job
 from app.models.user import Company
-from app.models.application import Application, CV_File
+from app.models.application import Application
 from sqlalchemy import func
 from sqlalchemy import or_
+from app.models.application import CV_File
+from datetime import datetime
 
 # --- TRANG CHỦ & TÌM KIẾM ---
 
@@ -174,40 +176,71 @@ def company_detail(id):
 @public_bp.route("/apply", methods=["POST"])
 @login_required
 def apply():
-    """Xử lý khi ứng viên bấm nút 'Gửi Hồ Sơ'"""
-    # Chỉ Candidate mới được nộp
+    # 1. Kiểm tra quyền (chỉ Candidate được ứng tuyển)
     if current_user.role != "CANDIDATE":
-        flash("Tài khoản Nhà tuyển dụng không thể nộp đơn.", "warning")
-        return redirect(request.referrer)
+        flash("Chỉ ứng viên mới có thể ứng tuyển.", "warning")
+        return redirect(url_for("public.index"))
 
-    job_id = request.form.get("job_id")
-    cv_id = request.form.get("cv_id")  # Lấy ID của CV đã chọn trong Modal
+    # 2. Lấy dữ liệu thô
+    job_id_raw = request.form.get("job_id")
+    cv_id_raw = request.form.get("cv_id")
 
-    if not job_id or not cv_id:
-        flash("Dữ liệu không hợp lệ.", "danger")
-        return redirect(request.referrer)
+    # 3. Validate cơ bản: Kiểm tra rỗng
+    if not job_id_raw or not cv_id_raw:
+        flash("Dữ liệu không hợp lệ. Vui lòng thử lại.", "danger")
+        return redirect(request.referrer or url_for("public.index"))
 
-    # Kiểm tra nộp trùng
-    exists = Application.query.filter_by(job_id=job_id, user_id=current_user.id).first()
-    if exists:
-        flash("Bạn đã ứng tuyển công việc này rồi!", "info")
+    try:
+        # 4. Validate kiểu dữ liệu (Phải là số nguyên)
+        job_id = int(job_id_raw)
+        cv_id = int(cv_id_raw)
+    except ValueError:
+        flash("ID công việc hoặc CV không hợp lệ.", "danger")
+        return redirect(url_for("public.index"))
+
+    # 5. Validate logic: Job có tồn tại và đang mở không?
+    job = db.session.get(
+        Job, job_id
+    )  # Dùng db.session.get thay vì Job.query.get (SQLAlchemy 2.0 style)
+    if not job or not job.is_active:
+        flash("Công việc này không tồn tại hoặc đã đóng.", "danger")
+        return redirect(url_for("public.index"))
+
+    # 6. Validate logic: CV có tồn tại và CÓ PHẢI CỦA USER NÀY KHÔNG? (Quan trọng)
+    cv = CV_File.query.filter_by(id=cv_id, user_id=current_user.id).first()
+    if not cv:
+        flash("CV không tồn tại hoặc bạn không có quyền sử dụng CV này.", "danger")
         return redirect(url_for("public.job_detail", id=job_id))
 
-    # Tạo Application mới
-    new_app = Application(
-        job_id=job_id,
-        user_id=current_user.id,
-        cv_id=cv_id,
-        status="NEW",
-        match_score=0,  # Sẽ được AI update sau (Feature 5)
-    )
+    # 7. Validate logic: Đã nộp đơn chưa?
+    existing_app = Application.query.filter_by(
+        job_id=job_id, user_id=current_user.id
+    ).first()
+    if existing_app:
+        flash("Bạn đã ứng tuyển công việc này rồi.", "warning")
+        return redirect(url_for("public.job_detail", id=job_id))
 
-    db.session.add(new_app)
-    db.session.commit()
+    # --- NẾU VƯỢT QUA HẾT CÁC ẢI TRÊN THÌ MỚI LƯU ---
+    try:
+        new_app = Application(
+            job_id=job_id,
+            user_id=current_user.id,
+            cv_id=cv_id,  # Lưu ID CV đã chọn
+            status="NEW",
+            created_at=datetime.utcnow(),
+        )
+        db.session.add(new_app)
+        db.session.commit()
 
-    # TODO: Trigger Celery Task để AI chấm điểm (sẽ làm ở phần Services)
+        flash("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.", "success")
+        return redirect(
+            url_for("candidate.job_manager")
+        )  # Chuyển hướng về trang quản lý việc làm
 
-    return render_template("public/apply_success.html")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Có lỗi xảy ra: {str(e)}", "danger")
+        return redirect(url_for("public.job_detail", id=job_id))
 
 
 # --- CÔNG CỤ TIỆN ÍCH ---

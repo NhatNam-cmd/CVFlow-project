@@ -46,11 +46,25 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
-    """Cấu hình cho môi trường Production (Chạy thật)."""
-
     DEBUG = False
-    # Ở Prod, bắt buộc dùng biến môi trường mạnh
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URI")
+
+    # Ghi đè init để kiểm tra chặt chẽ hơn
+    def __init__(self):
+        super().__init__()
+
+        # 1. Bắt buộc phải có DATABASE_URI
+        self.SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URI")
+        if not self.SQLALCHEMY_DATABASE_URI:
+            raise ValueError(
+                "FATAL ERROR: Biến môi trường 'DATABASE_URI' chưa được thiết lập cho Production!"
+            )
+
+        # 2. Bắt buộc phải có SECRET_KEY và không được dùng key mặc định
+        self.SECRET_KEY = os.environ.get("SECRET_KEY")
+        if not self.SECRET_KEY or self.SECRET_KEY == "cvflow-fallback-secret-key-2025":
+            raise ValueError(
+                "FATAL ERROR: Biến môi trường 'SECRET_KEY' chưa được thiết lập hoặc không an toàn!"
+            )
 
 
 # Dictionary để ánh xạ tên config
