@@ -17,50 +17,73 @@
 
     <div class="container mb-5">
         <div class="row">
-            <div class="col-lg-3 mb-4">
-                <div class="card shadow-sm border-0">
+            <div class="col-lg-3">
+                <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white fw-bold py-3">
-                        <i class="bi bi-funnel"></i> Bộ Lọc
+                        <i class="bi bi-funnel"></i> Bộ Lọc Tìm Kiếm
                     </div>
                     <div class="card-body">
                         <form action="{{ url_for('public.job_search') }}" method="GET">
+
                             <div class="mb-3">
-                                <label class="form-label fw-medium small">Từ khóa</label>
-                                <input type="text" name="q" class="form-control" placeholder="Java, Python..." value="{{ request.args.get('q', '') }}">
+                                <label class="form-label small fw-bold text-secondary">Từ khóa</label>
+                                <input type="text" name="q" class="form-control"
+                                       placeholder="VD: Java, Python..."
+                                       value="{{ request.args.get('q', '') }}">
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-medium small">Địa điểm</label>
+                                <label class="form-label small fw-bold text-secondary">Địa điểm</label>
                                 <select name="location" class="form-select">
-                                    <option value="">Tất cả</option>
-                                    <option value="Hanoi">Hà Nội</option>
-                                    <option value="HCMC">Hồ Chí Minh</option>
-                                    <option value="Remote">Remote</option>
+                                    <option value="All">Tất cả</option>
+                                    <option value="Hà Nội" {% if request.args.get('location') == 'Hà Nội' %}selected{% endif %}>Hà Nội</option>
+                                    <option value="Hồ Chí Minh" {% if request.args.get('location') == 'Hồ Chí Minh' %}selected{% endif %}>Hồ Chí Minh</option>
+                                    <option value="Đà Nẵng" {% if request.args.get('location') == 'Đà Nẵng' %}selected{% endif %}>Đà Nẵng</option>
+                                    <option value="Remote" {% if request.args.get('location') == 'Remote' %}selected{% endif %}>Remote</option>
                                 </select>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-medium small">Mức lương</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="salary" id="sal_all" value="" checked>
-                                    <label class="form-check-label" for="sal_all">Tất cả</label>
+                                <label class="form-label small fw-bold text-secondary">Mức lương (Triệu VNĐ)</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text small">Từ</span>
+                                    <input type="number" name="min_salary" class="form-control" placeholder="0" min="0"
+                                           value="{{ request.args.get('min_salary', '') }}">
                                 </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="salary" id="sal_1000" value="1000">
-                                    <label class="form-check-label" for="sal_1000">Trên $1000</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="salary" id="sal_2000" value="2000">
-                                    <label class="form-check-label" for="sal_2000">Trên $2000</label>
+                                <div class="input-group">
+                                    <span class="input-group-text small">Đến</span>
+                                    <input type="number" name="max_salary" class="form-control" placeholder="Max" min="0"
+                                           value="{{ request.args.get('max_salary', '') }}">
                                 </div>
                             </div>
 
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Áp dụng lọc</button>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-secondary">Cấp bậc</label>
+                                <select name="level" class="form-select">
+                                    <option value="All">Tất cả</option>
+                                    <option value="Fresher" {% if request.args.get('level') == 'Fresher' %}selected{% endif %}>Fresher</option>
+                                    <option value="Junior" {% if request.args.get('level') == 'Junior' %}selected{% endif %}>Junior</option>
+                                    <option value="Senior" {% if request.args.get('level') == 'Senior' %}selected{% endif %}>Senior</option>
+                                    <option value="Lead" {% if request.args.get('level') == 'Lead' %}selected{% endif %}>Manager / Lead</option>
+                                </select>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary fw-bold">Áp dụng lọc</button>
+                                <a href="{{ url_for('public.job_search') }}" class="btn btn-outline-secondary btn-sm">Xóa bộ lọc</a>
                             </div>
                         </form>
                     </div>
                 </div>
+
+                {% if not current_user.is_authenticated or current_user.role == 'CANDIDATE' %}
+                    <div class="card border-0 bg-primary text-white p-3 text-center mb-4" style="background: linear-gradient(45deg, #007bff, #6610f2);">
+                        <i class="bi bi-stars fs-1 mb-2"></i>
+                        <h6 class="fw-bold">Nâng cấp hồ sơ?</h6>
+                        <p class="small opacity-75 mb-3">Sử dụng AI để tối ưu CV của bạn ngay hôm nay.</p>
+                        <a href="{{ url_for('candidate.cv_manager') }}" class="btn btn-light btn-sm text-primary fw-bold">Thử ngay</a>
+                    </div>
+                {% endif %}
             </div>
 
             <div class="col-lg-9">
@@ -93,7 +116,7 @@
                                         </div>
 
                                         <div class="mt-2">
-                                            {% for skill in job.skills[:3] %}
+                                            {% for skill in (job.skills_required or [])[:3] %}
                                                 <span class="badge bg-light text-dark border">{{ skill }}</span>
                                             {% endfor %}
                                         </div>

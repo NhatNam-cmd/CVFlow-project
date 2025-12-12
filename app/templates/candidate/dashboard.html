@@ -9,34 +9,26 @@
             <p class="text-muted small mb-0">Chúc bạn một ngày tốt lành. Dưới đây là hoạt động của bạn.</p>
         </div>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <div class="btn-group me-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle">
-                <i class="bi bi-calendar"></i> Tuần này
-            </button>
+            <a href="{{ url_for('public.job_search') }}" class="btn btn-sm btn-primary fw-bold shadow-sm">
+                <i class="bi bi-search"></i> Tìm việc ngay
+            </a>
         </div>
     </div>
 
     <div class="row g-4 mb-4 row-cols-1 row-cols-md-2 row-cols-xl-4">
-
         <div class="col">
             <div class="card shadow-sm border-0 border-start border-4 border-primary h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <p class="text-muted mb-0 small text-uppercase fw-bold text-truncate">Việc đã nộp</p>
-                            <h2 class="fw-bold text-primary mb-0">12</h2>
+                            <h2 class="fw-bold text-primary mb-0">{{ applied_count }}</h2>
                         </div>
                         <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
                             <i class="bi bi-send fs-4"></i>
                         </div>
                     </div>
-                    <div class="mt-3 small">
-                        <span class="text-success fw-bold"><i class="bi bi-arrow-up"></i> 2</span>
-                        <span class="text-muted">so với tuần trước</span>
-                    </div>
+                    <div class="mt-3 small text-muted">Hồ sơ đã gửi đi</div>
                 </div>
             </div>
         </div>
@@ -47,15 +39,13 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
                             <p class="text-muted mb-0 small text-uppercase fw-bold text-truncate">Phỏng vấn</p>
-                            <h2 class="fw-bold text-success mb-0">3</h2>
+                            <h2 class="fw-bold text-success mb-0">{{ interview_count }}</h2>
                         </div>
                         <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
                             <i class="bi bi-calendar-check fs-4"></i>
                         </div>
                     </div>
-                    <div class="mt-3 small text-truncate">
-                        <span class="text-muted">Sắp tới: <strong>FPT (Mai)</strong></span>
-                    </div>
+                    <div class="mt-3 small text-truncate text-muted">Lịch hẹn sắp diễn ra</div>
                 </div>
             </div>
         </div>
@@ -65,17 +55,14 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
                         <div>
-                            <p class="text-muted mb-0 small text-uppercase fw-bold text-truncate">NTD đã xem</p>
-                            <h2 class="fw-bold text-warning mb-0">28</h2>
+                            <p class="text-muted mb-0 small text-uppercase fw-bold text-truncate">Được quan tâm</p>
+                            <h2 class="fw-bold text-warning mb-0">{{ interested_count }}</h2>
                         </div>
                         <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
                             <i class="bi bi-eye fs-4"></i>
                         </div>
                     </div>
-                    <div class="mt-3 small">
-                        <span class="text-success fw-bold"><i class="bi bi-arrow-up"></i> 5</span>
-                        <span class="text-muted">lượt xem mới</span>
-                    </div>
+                    <div class="mt-3 small text-muted">Hồ sơ được HR xem xét</div>
                 </div>
             </div>
         </div>
@@ -85,13 +72,19 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-2">
                         <i class="bi bi-alarm fs-4 text-warning me-2"></i>
-                        <h6 class="fw-bold mb-0 text-dark">Lịch sắp tới</h6>
+                        <h6 class="fw-bold mb-0 text-dark">Lịch tiếp theo</h6>
                     </div>
-                    <p class="mb-1 fw-bold text-truncate">PV Python Dev</p>
-                    <p class="small text-muted mb-3"><i class="bi bi-clock"></i> 09:00 - T2, 20/05</p>
-                    <a href="{{ url_for('candidate.interview_list') }}" class="btn btn-sm btn-warning w-100 text-dark fw-bold stretched-link">
-                        Chi tiết & Link họp
-                    </a>
+                    {% if upcoming_interviews %}
+                        <p class="mb-1 fw-bold text-truncate">{{ upcoming_interviews[0].application.job.title }}</p>
+                        <p class="small text-muted mb-3">
+                            <i class="bi bi-clock"></i> {{ upcoming_interviews[0].start_time.strftime('%H:%M - %d/%m') }}
+                        </p>
+                        <a href="{{ url_for('candidate.interview_list') }}" class="btn btn-sm btn-warning w-100 text-dark fw-bold stretched-link">
+                            Xem chi tiết
+                        </a>
+                    {% else %}
+                        <p class="small text-muted mb-0 mt-3">Chưa có lịch phỏng vấn nào.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -104,36 +97,36 @@
                     <i class="bi bi-clock-history me-2"></i> Hoạt động gần đây
                 </div>
                 <div class="list-group list-group-flush">
-                    <a href="#" class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
-                        <div class="d-flex gap-2 w-100 justify-content-between">
-                            <div>
-                                <h6 class="mb-0 fw-bold">Nộp đơn: Senior Python Developer</h6>
-                                <p class="mb-0 opacity-75 small">Tại công ty TopDev • Đã gửi CV chính</p>
-                            </div>
-                            <small class="opacity-50 text-nowrap">Vừa xong</small>
+                    {% if recent_activities %}
+                        {% for app in recent_activities %}
+                            <a href="{{ url_for('public.job_detail', id=app.job.id) }}" class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                                <div class="d-flex gap-2 w-100 justify-content-between">
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">Nộp đơn: {{ app.job.title }}</h6>
+                                        <p class="mb-0 opacity-75 small">
+                                            Tại {{ app.job.company.name }} •
+                                            {% if app.status == 'NEW' %}
+                                                <span class="text-primary">Đã gửi</span>
+                                            {% elif app.status == 'REJECTED' %}
+                                                <span class="text-danger">Bị từ chối</span>
+                                            {% else %}
+                                                <span class="text-success">{{ app.status }}</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <small class="opacity-50 text-nowrap">{{ app.created_at.strftime('%d/%m') }}</small>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 mb-2 d-block"></i>
+                            Bạn chưa có hoạt động nào.
                         </div>
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action d-flex gap-3 py-3">
-                        <div class="d-flex gap-2 w-100 justify-content-between">
-                            <div>
-                                <h6 class="mb-0 fw-bold">Nhà tuyển dụng đã xem hồ sơ</h6>
-                                <p class="mb-0 opacity-75 small">HR từ công ty VinGroup đã tải xuống CV của bạn.</p>
-                            </div>
-                            <small class="opacity-50 text-nowrap">2 giờ trước</small>
-                        </div>
-                    </a>
-                    <a href="#" class="list-group-item list-group-item-action d-flex gap-3 py-3">
-                        <div class="d-flex gap-2 w-100 justify-content-between">
-                            <div>
-                                <h6 class="mb-0 fw-bold">Cập nhật CV mới</h6>
-                                <p class="mb-0 opacity-75 small">File: <code>My_Best_CV_Final.pdf</code> - AI Score: 92/100</p>
-                            </div>
-                            <small class="opacity-50 text-nowrap">Hôm qua</small>
-                        </div>
-                    </a>
+                    {% endif %}
                 </div>
                 <div class="card-footer bg-white text-center">
-                    <a href="#" class="text-decoration-none small fw-bold">Xem tất cả hoạt động</a>
+                    <a href="{{ url_for('candidate.job_manager') }}" class="text-decoration-none small fw-bold">Xem tất cả lịch sử</a>
                 </div>
             </div>
         </div>
@@ -150,11 +143,11 @@
                     <ul class="list-unstyled small">
                         <li class="mb-3 d-flex align-items-start gap-2">
                             <i class="bi bi-check-circle-fill mt-1 text-info"></i>
-                            <span>Thêm chứng chỉ <strong>AWS Cloud Practitioner</strong> để tăng 20% lương.</span>
+                            <span>Cập nhật kỹ năng <strong>Docker & Kubernetes</strong> để tăng cơ hội.</span>
                         </li>
                         <li class="mb-3 d-flex align-items-start gap-2">
                             <i class="bi bi-check-circle-fill mt-1 text-info"></i>
-                            <span>Cập nhật kỹ năng <strong>Docker & Kubernetes</strong> vào CV.</span>
+                            <span>Bổ sung chứng chỉ ngoại ngữ vào hồ sơ.</span>
                         </li>
                     </ul>
                     <div class="d-grid mt-4">

@@ -1,91 +1,68 @@
 {% extends "layouts/dashboard_layout.html" %}
 
-{% block title %}Lịch Phỏng Vấn Của Tôi{% endblock %}
+{% block title %}Lịch phỏng vấn của tôi - CVFlow{% endblock %}
 
 {% block content %}
-    <div class="container-fluid p-0">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h3 class="fw-bold text-dark mb-0">Lịch Phỏng Vấn</h3>
-                <p class="text-muted small mb-0">Theo dõi lịch hẹn phỏng vấn và tải lịch về máy.</p>
-            </div>
-            <div class="bg-white px-3 py-2 rounded shadow-sm border d-flex align-items-center">
-                <span class="badge bg-success rounded-circle p-1 me-2"><span class="visually-hidden">online</span></span>
-                <span class="small fw-bold">Giờ rảnh: Sáng T2, Chiều T6</span>
-                <a href="{{ url_for('candidate.profile') }}" class="ms-2 text-primary"><i class="bi bi-pencil-square"></i></a>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100 border-top border-4 border-warning">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between mb-3">
-                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Sắp diễn ra</span>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-light rounded-circle" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#">Hủy lịch</a></li>
-                                    <li><a class="dropdown-item" href="#">Yêu cầu dời lịch</a></li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <h5 class="fw-bold mb-1">Senior Python Developer</h5>
-                        <p class="text-primary fw-bold mb-3"><i class="bi bi-building me-1"></i> FPT Software</p>
-
-                        <div class="bg-light rounded p-3 mb-3">
-                            <div class="d-flex mb-2">
-                                <i class="bi bi-calendar-check text-muted me-3"></i>
-                                <span class="fw-bold">Thứ 2, 20/05/2025</span>
-                            </div>
-                            <div class="d-flex mb-2">
-                                <i class="bi bi-clock text-muted me-3"></i>
-                                <span class="fw-bold text-danger">09:00 - 10:00</span>
-                            </div>
-                            <div class="d-flex">
-                                <i class="bi bi-camera-video text-muted me-3"></i>
-                                <a href="#" class="text-decoration-none">meet.google.com/abc-xyz</a>
-                            </div>
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            <a href="#" class="btn btn-primary fw-bold"><i class="bi bi-camera-video-fill me-2"></i> Vào Phòng Họp</a>
-                            <button class="btn btn-outline-dark" onclick="alert('Đang tải file invite.ics về máy...')">
-                                <i class="bi bi-calendar-plus me-2"></i> Thêm vào Lịch (.ics)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-4">
-                <div class="card border-0 shadow-sm h-100 opacity-75">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between mb-3">
-                            <span class="badge bg-secondary">Đã hoàn thành</span>
-                        </div>
-
-                        <h5 class="fw-bold mb-1">DevOps Engineer</h5>
-                        <p class="text-muted fw-bold mb-3"><i class="bi bi-building me-1"></i> VNG Corp</p>
-
-                        <div class="bg-light rounded p-3 mb-3">
-                            <div class="d-flex mb-2">
-                                <i class="bi bi-calendar-check text-muted me-3"></i>
-                                <span>Thứ 6, 15/05/2025</span>
-                            </div>
-                            <div class="d-flex">
-                                <i class="bi bi-clock text-muted me-3"></i>
-                                <span>14:00 - 15:00</span>
-                            </div>
-                        </div>
-
-                        <div class="d-grid">
-                            <button class="btn btn-light text-muted" disabled>Cuộc họp đã kết thúc</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0"><i class="bi bi-calendar-event me-2"></i> Lịch Phỏng Vấn</h2>
     </div>
+
+    {% if interviews %}
+        <div class="row row-cols-1 row-cols-lg-2 g-4">
+            {% for interview in interviews %}
+                <div class="col">
+                    <div class="card shadow-sm border-0 h-100 border-start border-4 {% if interview.status == 'COMPLETED' %}border-success{% elif interview.status == 'CANCELLED' %}border-danger opacity-75{% else %}border-warning{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge bg-light text-dark border">
+                                    {{ interview.start_time.strftime('%H:%M') }} - {{ interview.end_time.strftime('%H:%M') }}
+                                </span>
+                                <span class="badge {% if interview.status == 'SCHEDULED' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ interview.status }}
+                                </span>
+                            </div>
+
+                            <h5 class="fw-bold mb-1">{{ interview.application.job.title }}</h5>
+                            <p class="text-primary fw-bold mb-2 small"><i class="bi bi-building"></i> {{ interview.application.job.company.name }}</p>
+
+                            <div class="d-flex align-items-center text-muted small mb-3">
+                                <i class="bi bi-calendar-check me-2 fs-5"></i>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ interview.start_time.strftime('Ngày %d tháng %m, %Y') }}</div>
+                                    <div class="fst-italic">Thời lượng: {{ ((interview.end_time - interview.start_time).seconds / 60)|int }} phút</div>
+                                </div>
+                            </div>
+
+                            <div class="bg-light p-3 rounded mb-3">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-geo-alt-fill text-danger me-2 mt-1"></i>
+                                    <div>
+                                        <strong>Địa điểm / Link họp:</strong><br>
+                                        {% if 'http' in interview.location %}
+                                            <a href="{{ interview.location }}" target="_blank" class="text-break fw-bold">{{ interview.location }}</a>
+                                        {% else %}
+                                            <span class="text-break">{{ interview.location }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('public.job_detail', id=interview.application.job.id) }}" class="btn btn-sm btn-outline-secondary w-100">Xem Job</a>
+                                {% if 'http' in interview.location and interview.status == 'SCHEDULED' %}
+                                    <a href="{{ interview.location }}" target="_blank" class="btn btn-sm btn-primary w-100 fw-bold">Tham gia ngay</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <img src="https://cdni.iconscout.com/illustration/premium/thumb/calendar-booking-4786026-3981881.png" width="200" class="opacity-75 mb-3">
+            <h5 class="text-muted">Chưa có lịch phỏng vấn nào</h5>
+            <p class="small text-muted">Khi nhà tuyển dụng mời phỏng vấn, lịch hẹn sẽ xuất hiện ở đây.</p>
+        </div>
+    {% endif %}
 {% endblock %}

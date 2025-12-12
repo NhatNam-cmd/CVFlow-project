@@ -1,34 +1,28 @@
 {% extends "layouts/auth_layout.html" %}
 
-{% block title %}Đang Xác Minh - CVFlow{% endblock %}
+{% block title %}Tài khoản đang chờ duyệt - CVFlow{% endblock %}
 
-{% block auth_content %}
-    <div class="card auth-card shadow-sm text-center p-5 border-warning border-top border-5">
-        <div class="mb-3">
-            <div class="spinner-border text-warning" role="status" style="width: 3rem; height: 3rem;"></div>
+{% block content %}
+    <div class="text-center py-4">
+        <div class="mb-4">
+            <i class="bi bi-hourglass-split text-warning" style="font-size: 4rem;"></i>
         </div>
-        <h3 class="fw-bold text-dark mb-3">Hồ sơ đang được xác minh</h3>
+        <h4 class="fw-bold text-warning mb-3">Tài khoản đang chờ duyệt</h4>
 
-        <div class="alert alert-light text-start small mb-4">
-            <p class="mb-2"><strong>Xin chào Quý đối tác,</strong></p>
-            <p class="mb-0">
-                Để đảm bảo môi trường tuyển dụng chất lượng, đội ngũ Admin đang tiến hành đối chiếu
-                <strong>Mã Số Thuế</strong> và thông tin doanh nghiệp của bạn.
-            </p>
+        <p class="text-muted mb-4">
+            Xin chào <strong>{{ user.full_name }}</strong>,<br>
+            Tài khoản doanh nghiệp của bạn đang trong quá trình xác minh thông tin.
+        </p>
+
+        <div class="card bg-light border-0 mb-4 text-start">
+            <div class="card-body small text-secondary">
+                <strong>Tại sao cần duyệt?</strong><br>
+                Để đảm bảo chất lượng tin tuyển dụng và tránh spam, chúng tôi cần xác minh Mã số thuế và thông tin doanh nghiệp của bạn. Quá trình này thường mất 4-24 giờ làm việc.
+            </div>
         </div>
-
-        <ul class="list-unstyled text-muted small mb-4">
-            <li><i class="bi bi-clock"></i> Thời gian xử lý dự kiến: <strong>24 giờ làm việc</strong></li>
-            <li><i class="bi bi-envelope"></i> Kết quả sẽ được gửi về email đăng ký.</li>
-        </ul>
 
         <div class="d-grid gap-2">
-            <a href="{{ url_for('public.index') }}" class="btn btn-outline-secondary">
-                Về Trang chủ
-            </a>
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-link text-decoration-none text-muted">
-                Đăng xuất
-            </a>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-dark">Đăng xuất</a>
         </div>
     </div>
 {% endblock %}

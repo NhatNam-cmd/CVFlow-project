@@ -1,78 +1,123 @@
 {% extends "layouts/dashboard_layout.html" %}
 
-{% block title %}Hồ sơ Công ty - CVFlow{% endblock %}
+{% block title %}Hồ Sơ Công Ty - CVFlow{% endblock %}
 
 {% block content %}
     <div class="row justify-content-center">
-        <div class="col-lg-9">
-            <h2 class="mb-4">Hồ sơ Doanh nghiệp</h2>
-
-            <div class="alert alert-success d-flex align-items-center mb-4 border-0 shadow-sm">
-                <i class="bi bi-patch-check-fill fs-2 me-3"></i>
-                <div>
-                    <h5 class="alert-heading fw-bold mb-0">Tài khoản Đã xác thực</h5>
-                    <p class="mb-0 small">Doanh nghiệp của bạn đã được cấp tích xanh uy tín.</p>
-                </div>
+        <div class="col-lg-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="h3 mb-0">Hồ Sơ Doanh Nghiệp</h2>
+                <a href="{{ url_for('public.company_detail', id=current_user.company_id) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-eye me-1"></i> Xem trang công khai
+                </a>
             </div>
 
-            <div class="card shadow border-0 mb-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-bold text-uppercase text-secondary small">
+                        <i class="bi bi-building me-2"></i> Thông tin chung
+                    </h6>
+                </div>
                 <div class="card-body p-4">
                     <form method="POST">
-                        <div class="row mb-4 align-items-center">
-                            <div class="col-md-3 text-center">
-                                <div class="mb-2">
-                                    <img src="{{ url_for('static', filename='img/company_default.png') }}" class="rounded border p-1" width="120" height="120">
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-secondary">Đổi Logo</button>
-                            </div>
-                            <div class="col-md-9">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row g-4">
+                            <div class="col-md-4 text-center">
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Tên hiển thị công ty</label>
-                                    <input type="text" class="form-control" value="Công ty Cổ phần Công nghệ ABC" readonly>
-                                    <div class="form-text small"><i class="bi bi-lock"></i> Tên công ty được khóa theo Mã Số Thuế.</div>
-                                </div>
+                                    <label class="form-label fw-bold d-block text-start">Logo Công ty</label>
+                                    <div class="border rounded p-3 d-inline-block bg-light mb-2 position-relative" style="width: 150px; height: 150px;">
+                                        <img src="{{ company.logo_url or url_for('static', filename='img/company_default.png') }}"
+                                             class="img-fluid h-100 w-100" style="object-fit: contain;">
 
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Lĩnh vực hoạt động (Industry)</label>
-                                        <select class="form-select bg-light">
-                                            <option>IT Outsourcing</option>
-                                            <option selected>IT Product (SaaS)</option>
-                                            <option>Fintech / Banking</option>
-                                            <option>E-commerce</option>
-                                        </select>
+                                        <button type="button" class="btn btn-sm btn-light border position-absolute bottom-0 end-0 m-2" title="Đổi Logo">
+                                            <i class="bi bi-camera"></i>
+                                        </button>
                                     </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-bold">Slogan / Tagline</label>
-                                        <input type="text" class="form-control" value="To lead and level the playing field">
-                                    </div>
+                                    <div class="text-muted small fst-italic">Ảnh vuông, tối đa 2MB</div>
                                 </div>
                             </div>
-                        </div>
 
-                        <hr>
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    {{ form.name.label(class="form-label fw-bold") }} <span class="text-danger">*</span>
+                                    {{ form.name(class="form-control", placeholder="Nhập tên hiển thị công ty") }}
+                                </div>
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Website</label>
-                                <input type="url" class="form-control" value="https://abc-tech.com">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        {{ form.industry.label(class="form-label fw-bold") }}
+                                        {{ form.industry(class="form-select") }}
+                                        <div class="form-text small">Chọn lĩnh vực chính để ứng viên dễ tìm kiếm.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ form.website.label(class="form-label fw-bold") }}
+                                        {{ form.website(class="form-control", placeholder="https://...") }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.address.label(class="form-label fw-bold") }}
+                                    {{ form.address(class="form-control", placeholder="VD: Tầng 5, Tòa nhà ABC, Quận 1, TP.HCM") }}
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Địa chỉ trụ sở</label>
-                                <input type="text" class="form-control" value="Tầng 12, Tòa nhà Keangnam, Hà Nội">
-                            </div>
+
                             <div class="col-12">
-                                <label class="form-label fw-bold">Giới thiệu công ty (Markdown)</label>
-                                <textarea class="form-control" rows="6">ABC Tech là công ty hàng đầu...</textarea>
+                                <hr class="my-0 mb-4">
+                                <div class="mb-3">
+                                    {{ form.description.label(class="form-label fw-bold") }}
+                                    {{ form.description(class="form-control", rows=6, placeholder="Giới thiệu về văn hóa, môi trường làm việc, tầm nhìn...") }}
+                                    <div class="form-text text-end" id="charCount">0/2000 ký tự</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="mt-4 text-end">
-                            <button type="submit" class="btn btn-primary px-4 fw-bold">Lưu thay đổi</button>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <a href="{{ url_for('hr.dashboard') }}" class="btn btn-light border">Hủy bỏ</a>
+                            {{ form.submit(class="btn btn-primary fw-bold px-4") }}
                         </div>
                     </form>
                 </div>
             </div>
+
+            <div class="card shadow-sm border-0 mt-4 bg-light">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <div>
+                        <small class="text-uppercase fw-bold text-muted d-block mb-1">Thông tin pháp lý</small>
+                        <div>
+                            <span class="me-3"><i class="bi bi-shield-check text-success"></i> MST: <strong>{{ company.tax_number }}</strong></span>
+                            <span class="badge bg-success">Đã xác thực</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" disabled>Liên hệ Admin để sửa</button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const descInput = document.getElementById('description');
+            const countDisplay = document.getElementById('charCount');
+
+            if(descInput) {
+                descInput.addEventListener('input', function() {
+                    countDisplay.textContent = this.value.length + '/2000 ký tự';
+                });
+                // Trigger lần đầu
+                countDisplay.textContent = descInput.value.length + '/2000 ký tự';
+            }
+        });
+    </script>
 {% endblock %}

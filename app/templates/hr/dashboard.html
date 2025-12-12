@@ -15,21 +15,20 @@
         </div>
     </div>
 
-    <div class="row g-3 mb-4 row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5">
-
+    <div class="row g-3 mb-4 row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4">
         <div class="col">
             <div class="card border-0 shadow-sm h-100 bg-white border-bottom border-4 border-primary">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
                             <h6 class="text-muted text-uppercase small fw-bold text-truncate">Lịch Phỏng Vấn</h6>
-                            <h2 class="mb-0 fw-bold text-dark">3</h2>
+                            <h2 class="mb-0 fw-bold text-dark">{{ upcoming_interviews }}</h2>
                         </div>
                         <div class="bg-primary bg-opacity-10 p-2 rounded">
                             <i class="bi bi-calendar-check text-primary fs-5"></i>
                         </div>
                     </div>
-                    <p class="small text-muted mb-2 text-truncate">Có <strong>1</strong> cuộc hẹn hôm nay</p>
+                    <p class="small text-muted mb-2 text-truncate">Sắp diễn ra</p>
                     <a href="{{ url_for('hr.schedule_calendar') }}" class="btn btn-sm btn-outline-primary w-100 stretched-link">Quản lý</a>
                 </div>
             </div>
@@ -40,10 +39,10 @@
                 <div class="card-body">
                     <h6 class="text-uppercase opacity-75 small fw-bold text-truncate">Tổng CV nhận được</h6>
                     <div class="d-flex align-items-center justify-content-between mt-3">
-                        <h2 class="fw-bold mb-0">128</h2>
+                        <h2 class="fw-bold mb-0">{{ total_cvs }}</h2>
                         <i class="bi bi-file-earmark-person fs-2 opacity-50"></i>
                     </div>
-                    <small class="mt-2 d-block opacity-75">+12 hôm nay</small>
+                    <small class="mt-2 d-block opacity-75">Hồ sơ trong hệ thống</small>
                 </div>
             </div>
         </div>
@@ -53,7 +52,7 @@
                 <div class="card-body">
                     <h6 class="text-uppercase text-muted small fw-bold text-truncate">Tin đang mở</h6>
                     <div class="d-flex align-items-center justify-content-between mt-3">
-                        <h2 class="fw-bold text-success mb-0">5</h2>
+                        <h2 class="fw-bold text-success mb-0">{{ active_jobs_count }}</h2>
                         <div class="bg-success bg-opacity-10 text-success rounded p-2">
                             <i class="bi bi-briefcase fs-5"></i>
                         </div>
@@ -66,36 +65,21 @@
         <div class="col">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <h6 class="text-uppercase text-muted small fw-bold text-truncate">Chờ phỏng vấn</h6>
+                    <h6 class="text-uppercase text-muted small fw-bold text-truncate">AI Score TB</h6>
                     <div class="d-flex align-items-center justify-content-between mt-3">
-                        <h2 class="fw-bold text-warning mb-0">8</h2>
-                        <div class="bg-warning bg-opacity-10 text-warning rounded p-2">
-                            <i class="bi bi-people fs-5"></i>
+                        <h2 class="fw-bold text-info mb-0">72%</h2>
+                        <div class="bg-info bg-opacity-10 text-info rounded p-2">
+                            <i class="bi bi-bar-chart fs-5"></i>
                         </div>
                     </div>
-                    <small class="text-muted mt-2 d-block">Kanban: Interview</small>
-                </div>
-            </div>
-        </div>
-
-        <div class="col">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body">
-                    <h6 class="text-uppercase text-muted small fw-bold text-truncate">Tỷ lệ Auto-Reject</h6>
-                    <div class="d-flex align-items-center justify-content-between mt-3">
-                        <h2 class="fw-bold text-danger mb-0">45%</h2>
-                        <div class="bg-danger bg-opacity-10 text-danger rounded p-2">
-                            <i class="bi bi-slash-circle fs-5"></i>
-                        </div>
-                    </div>
-                    <small class="text-muted mt-2 d-block text-truncate">AI lọc 58 hồ sơ rác</small>
+                    <small class="text-muted mt-2 d-block">Chất lượng ứng viên</small>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row">
-        <div class="col-lg-8 mb-4">
+        <div class="col-lg-12 mb-4">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 fw-bold"><i class="bi bi-person-plus me-2"></i> Ứng viên mới nhất (Cần duyệt)</h6>
@@ -106,83 +90,52 @@
                         <thead class="bg-light text-secondary small text-uppercase">
                         <tr>
                             <th class="ps-4">Ứng viên</th>
-                            <th>Vị trí</th>
+                            <th>Vị trí ứng tuyển</th>
+                            <th>Ngày nộp</th>
                             <th>Điểm AI</th>
                             <th>Trạng thái</th>
                             <th>Hành động</th>
                         </tr>
                         </thead>
                         <tbody>
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <img src="https://ui-avatars.com/api/?name=Nguyen+Van+A" class="rounded-circle me-2" width="32">
-                                    <div>
-                                        <div class="fw-bold">Nguyễn Văn A</div>
-                                        <div class="small text-muted">a.nguyen@email.com</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>Senior Python Dev</td>
-                            <td><span class="badge bg-success">92/100</span></td>
-                            <td><span class="badge bg-light text-dark border">Mới</span></td>
-                            <td>
-                                <a href="{{ url_for('hr.candidate_view', id=1) }}" class="btn btn-sm btn-outline-primary fw-bold">Xem</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <img src="https://ui-avatars.com/api/?name=Tran+Thi+B" class="rounded-circle me-2" width="32">
-                                    <div>
-                                        <div class="fw-bold">Trần Thị B</div>
-                                        <div class="small text-muted">b.tran@email.com</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>DevOps Engineer</td>
-                            <td><span class="badge bg-warning text-dark">65/100</span></td>
-                            <td><span class="badge bg-light text-dark border">Mới</span></td>
-                            <td>
-                                <a href="{{ url_for('hr.candidate_view', id=2) }}" class="btn btn-sm btn-outline-primary fw-bold">Xem</a>
-                            </td>
-                        </tr>
+                        {% if recent_applications %}
+                            {% for app in recent_applications %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ app.candidate.avatar_url or 'https://ui-avatars.com/api/?name=' + app.candidate.full_name }}" class="rounded-circle me-2" width="32">
+                                            <div>
+                                                <div class="fw-bold">{{ app.candidate.full_name }}</div>
+                                                <div class="small text-muted">{{ app.candidate.email }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ app.job.title }}</td>
+                                    <td>{{ app.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        {% if app.match_score %}
+                                            <span class="badge {% if app.match_score >= 80 %}bg-success{% elif app.match_score >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ app.match_score }}/100
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Pending AI</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info text-dark border border-info">{{ app.status }}</span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('hr.candidate_view', id=app.id) }}" class="btn btn-sm btn-outline-primary fw-bold">Xem</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">Chưa có ứng viên nào nộp hồ sơ.</td>
+                            </tr>
+                        {% endif %}
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white py-3">
-                    <h6 class="m-0 fw-bold"><i class="bi bi-graph-up me-2"></i> Tin tuyển dụng hiệu quả</h6>
-                </div>
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        <div>
-                            <h6 class="mb-1 text-primary fw-bold">Backend Python</h6>
-                            <small class="text-muted"><i class="bi bi-clock"></i> Đăng 3 ngày trước</small>
-                        </div>
-                        <span class="badge bg-primary rounded-pill">42 CV</span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        <div>
-                            <h6 class="mb-1 text-primary fw-bold">React Frontend</h6>
-                            <small class="text-muted"><i class="bi bi-clock"></i> Đăng 1 tuần trước</small>
-                        </div>
-                        <span class="badge bg-secondary rounded-pill">15 CV</span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        <div>
-                            <h6 class="mb-1 text-dark fw-bold">Golang Senior</h6>
-                            <small class="text-muted"><i class="bi bi-clock"></i> Đăng 2 tuần trước</small>
-                        </div>
-                        <span class="badge bg-secondary rounded-pill">8 CV</span>
-                    </div>
-                </div>
-                <div class="card-footer bg-white text-center py-2">
-                    <a href="{{ url_for('hr.my_jobs') }}" class="small text-decoration-none">Quản lý tất cả tin đăng</a>
                 </div>
             </div>
         </div>

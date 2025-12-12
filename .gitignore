@@ -1,17 +1,35 @@
-# Môi trường ảo
-.venv/
+# --- 1. Python cơ bản ---
+*.py[cod]
+*$py.class
+__pycache__/
 
-# Cấu hình IDE (PyCharm, VSCode)
+# --- 2. Môi trường ảo ---
+.venv/
+venv/
+
+# --- 3. Cấu hình IDE ---
 .idea/
 .vscode/
 
-# Python cache
-__pycache__/
+# --- 4. Cơ sở dữ liệu (PostgreSQL không lưu file trong repo, nhưng chặn file dump) ---
+# Đôi khi bạn dump dữ liệu ra file sql để backup, không nên commit nó
+*.sql
+*.dump
 
-# Dữ liệu (Theo Cấu trúc Thư mục đã thống nhất)
-*.db
-data/
-uploads/
+# (Đã xóa dòng *.sqlite3 thừa)
 
-# Biến môi trường
+# --- 5. Flask & System ---
+instance/
+.DS_Store
+Thumbs.db
+*.log
+
+# --- 6. Dữ liệu Uploads (Giữ cấu trúc, bỏ file) ---
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+app/static/avatars/*
+!app/static/avatars/.gitkeep
+
+# --- 7. Biến môi trường (QUAN TRỌNG) ---
 .env

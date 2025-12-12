@@ -3,50 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Xác thực - CVFlow{% endblock %}</title>
-
+    <title>{% block title %}CVFlow - Tuyển dụng thông minh{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }
-        .auth-card { border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
-        .auth-header { background: #fff; padding: 20px; text-align: center; border-bottom: 1px solid #eee; }
-        .brand-logo { color: #0077b5; font-weight: 700; font-size: 1.8rem; text-decoration: none; }
+        body {
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 500px; /* Giới hạn chiều rộng khung đăng nhập */
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+        .auth-logo {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #0d6efd;
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
     </style>
 </head>
-<body class="d-flex align-items-center min-vh-100 py-5">
+<body>
 
-<div class="container">
+<div class="auth-card">
     <div class="text-center mb-4">
-        <a href="{{ url_for('public.index') }}" class="brand-logo">
+        <a href="{{ url_for('public.index') }}" class="auth-logo">
             <i class="bi bi-robot"></i> CVFlow
         </a>
-        <p class="text-muted mt-2">Nền tảng tuyển dụng thông minh</p>
+        <p class="text-muted small mb-0">Nền tảng tuyển dụng thông minh</p>
     </div>
 
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show text-center" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
-    </div>
+    {% block content %}
+    {% endblock %}
 
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-5">
-            {% block auth_content %}{% endblock %}
-        </div>
-    </div>
-
-    <div class="text-center mt-4">
+    <div class="text-center mt-4 pt-3 border-top">
         <small class="text-muted">&copy; 2025 CVFlow Team</small>
     </div>
 </div>

@@ -1,25 +1,62 @@
 import os
+from dotenv import load_dotenv
 
-# Lấy đường dẫn tuyệt đối của thư mục chứa file config.py
-basedir = os.path.abspath(os.path.dirname(__file__))
+# Load biến môi trường từ file .env
+load_dotenv()
+
+# Đường dẫn gốc của dự án
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
-    """Cấu hình cơ sở cho ứng dụng."""
+    """Cấu hình cơ sở (Base Config) dùng chung cho mọi môi trường."""
 
-    # Khóa bí mật để bảo vệ form và session
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "cvflow-super-secret-key"
+    # 1. Bảo mật
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "cvflow-fallback-secret-key-2025"
 
-    # Cấu hình CSDL SQLite
-    # Đảm bảo CSDL nằm trong thư mục data/
+    # 2. Database (Mặc định dùng SQLite nếu không có Postgres)
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URI"
-    ) or "sqlite:///" + os.path.join(basedir, "data", "cvflow.db")
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    ) or "sqlite:///" + os.path.join(BASE_DIR, "data", "cvflow.db")
 
-    # Mật khẩu Admin (hard-coded cho MVP theo kế hoạch)
-    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD") or "cvflow_admin_123"
-
-    # Đường dẫn thư mục UPLOADS
-    UPLOAD_FOLDER = os.path.join(basedir, "data", "uploads")
+    # 3. Uploads
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, "app", "static", "uploads")
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # Giới hạn file 16MB
     ALLOWED_EXTENSIONS = {"pdf", "docx"}
+
+    # 4. Redis & Celery (Cho Crawler & Background Task)
+    CELERY_BROKER_URL = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
+
+
+class DevelopmentConfig(Config):
+    """Cấu hình cho môi trường Dev (Code & Debug)."""
+
+    DEBUG = True
+    SQLALCHEMY_ECHO = False  # Đặt True nếu muốn xem câu lệnh SQL in ra console
+
+
+class TestingConfig(Config):
+    """Cấu hình cho môi trường Test (Chạy Unit Test)."""
+
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"  # Dùng RAM cho nhanh
+    WTF_CSRF_ENABLED = False  # Tắt CSRF để test API dễ hơn
+
+
+class ProductionConfig(Config):
+    """Cấu hình cho môi trường Production (Chạy thật)."""
+
+    DEBUG = False
+    # Ở Prod, bắt buộc dùng biến môi trường mạnh
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URI")
+
+
+# Dictionary để ánh xạ tên config
+config = {
+    "development": DevelopmentConfig,
+    "testing": TestingConfig,
+    "production": ProductionConfig,
+    "default": DevelopmentConfig,
+}
