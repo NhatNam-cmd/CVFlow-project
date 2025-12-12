@@ -20,19 +20,19 @@
 
 <div class="d-flex">
     <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 260px;">
-        <a href="{{ url_for('admin.dashboard') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none px-3">
+        <a href="{{ url_for('module.admin.dashboard') }}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none px-3">
             <i class="bi bi-shield-lock-fill fs-3 me-2 text-warning"></i>
             <span class="fs-5 fw-bold">CVFlow Admin</span>
         </a>
         <hr>
         <ul class="nav nav-pills flex-column mb-auto">
             <li class="nav-item">
-                <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <a href="{{ url_for('module.admin.dashboard') }}" class="nav-link {% if request.endpoint == 'module.admin.dashboard' %}active{% endif %}">
                     <i class="bi bi-speedometer2"></i> Tổng quan
                 </a>
             </li>
             <li>
-                <a href="{{ url_for('admin.company_verification') }}" class="nav-link {% if request.endpoint == 'admin.company_verification' %}active{% endif %}">
+                <a href="{{ url_for('module.admin.company_verification') }}" class="nav-link {% if request.endpoint == 'module.admin.company_verification' %}active{% endif %}">
                     <i class="bi bi-building-check"></i> Duyệt Công Ty
                     {% if pending_count %}
                         <span class="badge bg-danger float-end rounded-pill">{{ pending_count }}</span>
@@ -40,18 +40,18 @@
                 </a>
             </li>
             <li>
-                <a href="{{ url_for('admin.crawler_manager') }}" class="nav-link {% if request.endpoint == 'admin.crawler_manager' %}active{% endif %}">
+                <a href="{{ url_for('module.admin.crawler_manager') }}" class="nav-link {% if request.endpoint == 'module.admin.crawler_manager' %}active{% endif %}">
                     <i class="bi bi-robot"></i> Quản lý Crawler
                 </a>
             </li>
             <li>
-                <a href="{{ url_for('admin.user_manager') }}" class="nav-link {% if request.endpoint == 'admin.user_manager' %}active{% endif %}">
+                <a href="{{ url_for('module.admin.user_manager') }}" class="nav-link {% if request.endpoint == 'module.admin.user_manager' %}active{% endif %}">
                     <i class="bi bi-people"></i> Quản lý User
                 </a>
             </li>
             <li class="mt-4">
                 <div class="text-uppercase small text-white-50 px-3 mb-2">Hệ thống</div>
-                <a href="{{ url_for('admin.settings') }}" class="nav-link text-danger">
+                <a href="{{ url_for('module.admin.settings') }}" class="nav-link text-danger">
                     <i class="bi bi-gear"></i> Cấu hình chung
                 </a>
             </li>
@@ -63,7 +63,7 @@
                 <strong>Admin</strong>
             </a>
             <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
-                <li><a class="dropdown-item" href="{{ url_for('admin.profile') }}">Cài đặt</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('module.admin.profile') }}">Cài đặt</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Đăng xuất</a></li>
             </ul>

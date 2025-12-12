@@ -325,42 +325,42 @@ def hr_profile():
 
 
 # --- PROTECTED ROUTES (ADMIN) ---
-@app.route("/admin/dashboard", endpoint="admin.dashboard")
+@app.route("/admin/dashboard", endpoint="module.admin.dashboard")
 def admin_dashboard():
     if login_required_mock():
         return redirect(url_for("auth.login"))
     return render_template("admin/dashboard.html")
 
 
-@app.route("/admin/verification", endpoint="admin.company_verification")
+@app.route("/admin/verification", endpoint="module.admin.company_verification")
 def admin_verification():
     if login_required_mock():
         return redirect(url_for("auth.login"))
     return render_template("admin/company_verification.html")
 
 
-@app.route("/admin/crawler", endpoint="admin.crawler_manager")
+@app.route("/admin/crawler", endpoint="module.admin.crawler_manager")
 def admin_crawler():
     if login_required_mock():
         return redirect(url_for("auth.login"))
     return render_template("admin/crawler_manager.html")
 
 
-@app.route("/admin/users", endpoint="admin.user_manager")
+@app.route("/admin/users", endpoint="module.admin.user_manager")
 def admin_users():
     if login_required_mock():
         return redirect(url_for("auth.login"))
     return render_template("admin/user_manager.html")
 
 
-@app.route("/admin/settings", endpoint="admin.settings")
+@app.route("/admin/settings", endpoint="module.admin.settings")
 def admin_settings():
     if login_required_mock():
         return redirect(url_for("auth.login"))
     return render_template("admin/settings.html")
 
 
-@app.route("/admin/profile", endpoint="admin.profile")
+@app.route("/admin/profile", endpoint="module.admin.profile")
 def admin_profile():
     if login_required_mock():
         return redirect(url_for("auth.login"))

@@ -20,7 +20,7 @@ def create_app(config_class=Config):
 
     from .adminTemp import bp as admin_bp
 
-    app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(admin_bp, url_prefix="/module.admin")
 
     if not os.path.exists(app.config["UPLOAD_FOLDER"]):
         os.makedirs(app.config["UPLOAD_FOLDER"])

@@ -65,7 +65,7 @@
                 {% if current_user.is_authenticated %}
 
                     {% if current_user.role == 'ADMIN' %}
-                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-dark fw-bold">
+                        <a href="{{ url_for('module.admin.dashboard') }}" class="btn btn-outline-dark fw-bold">
                             <i class="bi bi-shield-lock-fill"></i> Trang Quản Trị
                         </a>
                         <div class="dropdown">
@@ -73,7 +73,7 @@
                                 <img src="https://ui-avatars.com/api/?name={{ current_user.full_name }}&background=000&color=fff" class="rounded-circle border" width="35" height="35">
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                <li><a class="dropdown-item" href="{{ url_for('admin.profile') }}">Cài đặt tài khoản</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('module.admin.profile') }}">Cài đặt tài khoản</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Đăng xuất</a></li>
                             </ul>

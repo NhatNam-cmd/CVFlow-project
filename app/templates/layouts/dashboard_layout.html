@@ -137,7 +137,7 @@
 
                     {# CASE 3: NẾU LÀ ADMIN #}
                 {% elif current_user.role == 'ADMIN' %}
-                    <li><a class="dropdown-item" href="{{ url_for('admin.profile') }}">Cài đặt Admin</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('module.admin.profile') }}">Cài đặt Admin</a></li>
                 {% endif %}
 
                 <li><hr class="dropdown-divider"></li>
