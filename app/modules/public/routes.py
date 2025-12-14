@@ -253,7 +253,7 @@ def salary_tool():
 
     if form.validate_on_submit():
         # Gọi Service tính lương (Pure Python)
-        # Chúng ta sẽ tạo file services/analytics/salary.py sau
+        # Chúng ta sẽ tạo file services/analytics/salary_calculator.py sau
         # Tạm thời để logic giả lập ở đây để test UI
         gross = form.gross_salary.data
         net = gross * 0.895  # Giả lập trừ 10.5% bảo hiểm
