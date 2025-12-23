@@ -9,6 +9,10 @@ from app.models.application import Application
 from app.models.scheduler import Interview
 from datetime import datetime
 from datetime import timedelta
+from app.services.ai_engine.core import analyze_cv_matching
+import os
+from flask import current_app
+from sqlalchemy import func
 
 
 # Middleware kiểm tra quyền HR
@@ -20,41 +24,38 @@ def check_hr_role():
 
 
 @hr_bp.route("/dashboard")
+@login_required
 def dashboard():
-    # 1. Thống kê số lượng
-    active_jobs_count = Job.query.filter_by(
-        company_id=current_user.company_id, is_active=True
+    # 1. Các thống kê cũ (Giữ nguyên)
+    total_cvs = Application.query.count()
+    upcoming_interviews = Interview.query.filter(
+        Interview.start_time > datetime.utcnow()
     ).count()
+    active_jobs_count = Job.query.filter_by(is_active=True).count()
 
-    # 2. Tổng CV (Join bảng Application với Job)
-    total_cvs = (
-        Application.query.join(Job)
-        .filter(Job.company_id == current_user.company_id)
-        .count()
+    # 2. TÍNH ĐIỂM AI TRUNG BÌNH (Mới)
+    # Logic: Chỉ tính trung bình các hồ sơ ĐÃ ĐƯỢC CHẤM (match_score > 0)
+    avg_query = (
+        db.session.query(func.avg(Application.match_score))
+        .filter(Application.match_score > 0)
+        .scalar()
     )
 
-    # 3. Đếm số lịch phỏng vấn sắp tới (Cần bảng Interview)
-    upcoming_interviews = (
-        Interview.query.filter_by(recruiter_id=current_user.id)
-        .filter(Interview.start_time > datetime.utcnow())
-        .count()
-    )
+    # Nếu chưa có hồ sơ nào được chấm thì avg_query sẽ là None -> gán bằng 0
+    avg_ai_score = int(avg_query) if avg_query else 0
 
-    # 4. Lấy danh sách 5 ứng viên mới nộp gần nhất (Cho bảng "Ứng viên mới nhất")
+    # 3. Lấy danh sách ứng viên mới nhất
     recent_applications = (
-        Application.query.join(Job)
-        .filter(Job.company_id == current_user.company_id)
-        .order_by(Application.created_at.desc())
-        .limit(5)
-        .all()
+        Application.query.order_by(Application.created_at.desc()).limit(5).all()
     )
 
     return render_template(
         "hr/dashboard.html",
-        active_jobs_count=active_jobs_count,
         total_cvs=total_cvs,
         upcoming_interviews=upcoming_interviews,
+        active_jobs_count=active_jobs_count,
         recent_applications=recent_applications,
+        avg_ai_score=avg_ai_score,  # <-- Truyền biến này sang HTML
     )
 
 
@@ -315,3 +316,46 @@ def reject_application(app_id):
             ),
             500,
         )
+
+
+@hr_bp.route("/applications/<int:app_id>/analyze", methods=["POST"])
+@login_required
+def analyze_application_cv(app_id):
+    application = Application.query.get_or_404(app_id)
+
+    # 1. Kiểm tra xem có CV và Job Description không
+    if not application.cv or not application.job:
+        return jsonify({"success": False, "message": "Thiếu dữ liệu CV hoặc Job"}), 400
+
+    # 2. Lấy đường dẫn file CV
+    cv_path = os.path.join(current_app.config["UPLOAD_FOLDER"], application.cv.file_url)
+
+    if not os.path.exists(cv_path):
+        return (
+            jsonify({"success": False, "message": "File CV không tồn tại trên ổ cứng"}),
+            404,
+        )
+
+    # 3. Lấy nội dung JD
+    jd_text = application.job.description  # Giả sử cột mô tả là 'description'
+
+    try:
+        # 4. GỌI AI ENGINE
+        result = analyze_cv_matching(cv_path, jd_text)
+
+        if "error" in result:
+            return jsonify({"success": False, "message": result["error"]}), 500
+
+        # 5. Lưu kết quả vào DB
+        application.match_score = result.get("match_score", 0)
+        application.ai_analysis = result  # Lưu nguyên cục JSON
+
+        db.session.commit()
+
+        return jsonify(
+            {"success": True, "message": "Phân tích AI hoàn tất!", "data": result}
+        )
+
+    except Exception as e:
+        print(f"System Error: {e}")
+        return jsonify({"success": False, "message": "Lỗi hệ thống"}), 500

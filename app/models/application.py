@@ -1,5 +1,6 @@
 from app.extensions import db
 from datetime import datetime
+from sqlalchemy.dialects.postgresql import JSON
 
 
 class CV_File(db.Model):
@@ -39,7 +40,7 @@ class Application(db.Model):
 
     # AI Score riêng cho Job này
     match_score = db.Column(db.Integer)
-
+    ai_analysis = db.Column(JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Quan hệ
