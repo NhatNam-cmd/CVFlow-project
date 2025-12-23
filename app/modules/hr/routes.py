@@ -1,5 +1,5 @@
 from flask import render_template, redirect, url_for, flash, request, abort, jsonify
-from flask_login import current_user
+from flask_login import current_user, login_required
 from app.extensions import db
 from app.modules.hr import hr_bp
 from app.modules.hr.forms import CompanyProfileForm, JobPostForm
@@ -277,56 +277,41 @@ def create_interview(app_id):
 # File: app/modules/hr/routes.py
 
 
-@hr_bp.route("/hr/applications/<int:app_id>/reject", methods=["POST"])
+@hr_bp.route("/applications/<int:app_id>/reject", methods=["POST"])
+@login_required  # 1. BẮT BUỘC: Phải đăng nhập mới được dùng
 def reject_application(app_id):
-    print(f"👉 [DEBUG] Đã nhận request reject cho App ID: {app_id}")  # LOG 1
+    # 2. Tìm ứng viên (Dùng get_or_404 cho gọn, nếu không thấy tự trả về 404)
+    application = Application.query.get_or_404(app_id)
 
-    try:
-        # 1. Kiểm tra ID có tồn tại không
-        application = Application.query.get(app_id)
-        if not application:
-            print(f"❌ [ERROR] Không tìm thấy App ID: {app_id}")
-            return (
-                jsonify({"success": False, "message": "Không tìm thấy ứng viên"}),
-                404,
-            )
+    # 3. Lấy dữ liệu gửi lên
+    data = request.get_json()
 
-        # 2. Lấy dữ liệu gửi lên
-        data = request.get_json(silent=True)
-        print(f"👉 [DEBUG] Dữ liệu JSON nhận được: {data}")  # LOG 2
-
-        if not data:
-            print("❌ [ERROR] Không đọc được JSON")
-            return (
-                jsonify({"success": False, "message": "Lỗi định dạng dữ liệu gửi lên"}),
-                400,
-            )
-
-        reason = data.get("reason")
-        print(f"👉 [DEBUG] Lý do từ chối: {reason}")  # LOG 3
-
-        if not reason:
-            print("❌ [ERROR] Thiếu lý do")
-            return jsonify({"success": False, "message": "Vui lòng chọn lý do"}), 400
-
-        # 3. Cập nhật Database
-        print(
-            f"👉 [DEBUG] Trạng thái cũ: {application.status}, Lý do cũ: {application.rejection_reason}"
+    # Validation: Kiểm tra dữ liệu đầu vào
+    if not data or "reason" not in data:
+        return (
+            jsonify({"success": False, "message": "Vui lòng chọn lý do từ chối!"}),
+            400,
         )
 
-        application.status = "REJECTED"
-        application.rejection_reason = reason
+    reason = data["reason"]
 
-        db.session.add(application)  # Thêm dòng này cho chắc chắn
+    try:
+        # 4. Xử lý logic
+        application.status = "REJECTED"
+        application.rejected_reason = reason
+
+        # Lưu vào DB
         db.session.commit()
 
-        print("✅ [SUCCESS] Đã commit vào DB thành công!")  # LOG 4
-        return jsonify({"success": True, "message": "Đã từ chối thành công"})
+        return jsonify({"success": True, "message": "Đã từ chối ứng viên thành công."})
 
     except Exception as e:
+        # 5. Xử lý lỗi hệ thống (Database sập, lỗi mạng...)
         db.session.rollback()
-        print(f"🔥 [CRITICAL ERROR] Lỗi server: {str(e)}")  # LOG 5: In lỗi cụ thể ra
-        import traceback
-
-        traceback.print_exc()  # In chi tiết dòng code bị lỗi
-        return jsonify({"success": False, "message": f"Lỗi server: {str(e)}"}), 500
+        print(f"ERROR [Reject App]: {str(e)}")  # Chỉ in 1 dòng lỗi gọn gàng
+        return (
+            jsonify(
+                {"success": False, "message": "Lỗi hệ thống, vui lòng thử lại sau."}
+            ),
+            500,
+        )
