@@ -1,0 +1,130 @@
+<div class="modal fade" id="rejectReasonModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="rejectModalLabel">
+                    <i class="fas fa-user-times me-2"></i>Xác nhận từ chối
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <input type="hidden" id="rejectAppId"> <p class="mb-3 text-secondary">
+                Vui lòng chọn lý do chính khiến ứng viên này không phù hợp.
+                <br><small class="text-muted">(Dữ liệu này dùng để AI phân tích thị trường)</small>
+            </p>
+
+                <div class="d-grid gap-2">
+                    <input type="radio" class="btn-check" name="reject_reason" id="reason_skill" value="SKILL_GAP" autocomplete="off">
+                    <label class="btn btn-outline-danger text-start p-3 border-2" for="reason_skill">
+                        <strong>⚡ Thiếu kỹ năng chuyên môn</strong><br>
+                        <small class="text-muted">Tech stack chưa vững, không làm được bài test...</small>
+                    </label>
+
+                    <input type="radio" class="btn-check" name="reject_reason" id="reason_exp" value="EXP_GAP" autocomplete="off">
+                    <label class="btn btn-outline-warning text-start p-3 border-2" for="reason_exp">
+                        <strong>📉 Chưa đủ kinh nghiệm thực tế</strong><br>
+                        <small class="text-muted">Junior apply vào Senior, thiếu dự án thực tế...</small>
+                    </label>
+
+                    <input type="radio" class="btn-check" name="reject_reason" id="reason_lang" value="ENGLISH" autocomplete="off">
+                    <label class="btn btn-outline-info text-start p-3 border-2" for="reason_lang">
+                        <strong>🗣️ Rào cản ngôn ngữ</strong><br>
+                        <small class="text-muted">Tiếng Anh/Nhật không đạt yêu cầu giao tiếp.</small>
+                    </label>
+
+                    <input type="radio" class="btn-check" name="reject_reason" id="reason_salary" value="SALARY" autocomplete="off">
+                    <label class="btn btn-outline-success text-start p-3 border-2" for="reason_salary">
+                        <strong>💰 Mức lương quá cao (Over Budget)</strong><br>
+                        <small class="text-muted">Expectation cao hơn ngân sách dự án.</small>
+                    </label>
+
+                    <input type="radio" class="btn-check" name="reject_reason" id="reason_other" value="OTHER" autocomplete="off">
+                    <label class="btn btn-outline-secondary text-start p-3 border-2" for="reason_other">
+                        <strong>📝 Lý do khác / Không phù hợp văn hóa</strong>
+                    </label>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-link text-decoration-none text-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-danger px-4" onclick="submitRejection()">
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * Hàm mở Modal: Được gọi từ nút Reject ở danh sách/chi tiết
+     * @param {number} applicationId - ID của ứng viên
+     */
+    const csrfToken = "{{ csrf_token() if csrf_token else '' }}";
+    function openRejectModal(applicationId) {
+        // 1. Gán ID vào input ẩn
+        document.getElementById('rejectAppId').value = applicationId;
+
+        // 2. Reset các lựa chọn cũ (bỏ tick hết)
+        const radios = document.querySelectorAll('input[name="reject_reason"]');
+        radios.forEach(el => el.checked = false);
+
+        // 3. Hiển thị Modal bằng Bootstrap API
+        const modalElement = document.getElementById('rejectReasonModal');
+        const modalInstance = new bootstrap.Modal(modalElement);
+        modalInstance.show();
+    }
+
+    /**
+     * Hàm gửi dữ liệu về Server khi bấm "Xác nhận"
+     */
+    function submitRejection() {
+        const appId = document.getElementById('rejectAppId').value;
+        const selectedReason = document.querySelector('input[name="reject_reason"]:checked');
+
+        // Validation: Chưa chọn lý do thì báo lỗi
+        if (!selectedReason) {
+            alert("⚠️ Vui lòng chọn một lý do từ chối!");
+            return;
+        }
+
+        const reasonValue = selectedReason.value;
+        const submitBtn = document.querySelector('#rejectReasonModal .btn-danger');
+
+        // Hiệu ứng loading nút bấm
+        const originalText = submitBtn.innerText;
+        submitBtn.innerText = "Đang xử lý...";
+        submitBtn.disabled = true;
+
+        // Gọi API Backend
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        fetch(`/hr/applications/${appId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken // Gửi kèm thẻ bài qua cổng
+            },
+            body: JSON.stringify({ reason: reasonValue })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Thành công: Reload trang để cập nhật trạng thái
+                    window.location.reload();
+                } else {
+                    alert("❌ Lỗi: " + (data.message || "Không thể xử lý yêu cầu."));
+                    // Reset nút bấm
+                    submitBtn.innerText = originalText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("❌ Lỗi kết nối server!");
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            });
+    }
+</script>

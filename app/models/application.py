@@ -30,7 +30,6 @@ class Application(db.Model):
 
     # Kanban Status: NEW, SCREENED, INTERVIEW, OFFER, REJECTED
     status = db.Column(db.String(50), default="NEW")
-
     # Feature 2: Analytics (Tại sao trượt?)
     rejected_reason = db.Column(db.String(200))
 

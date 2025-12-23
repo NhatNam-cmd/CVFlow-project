@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request, abort
+from flask import render_template, redirect, url_for, flash, request, abort, jsonify
 from flask_login import current_user
 from app.extensions import db
 from app.modules.hr import hr_bp
@@ -272,3 +272,61 @@ def create_interview(app_id):
 
     flash("Đã lên lịch phỏng vấn thành công!", "success")
     return redirect(url_for("hr.candidate_view", id=app_id))
+
+
+# File: app/modules/hr/routes.py
+
+
+@hr_bp.route("/hr/applications/<int:app_id>/reject", methods=["POST"])
+def reject_application(app_id):
+    print(f"👉 [DEBUG] Đã nhận request reject cho App ID: {app_id}")  # LOG 1
+
+    try:
+        # 1. Kiểm tra ID có tồn tại không
+        application = Application.query.get(app_id)
+        if not application:
+            print(f"❌ [ERROR] Không tìm thấy App ID: {app_id}")
+            return (
+                jsonify({"success": False, "message": "Không tìm thấy ứng viên"}),
+                404,
+            )
+
+        # 2. Lấy dữ liệu gửi lên
+        data = request.get_json(silent=True)
+        print(f"👉 [DEBUG] Dữ liệu JSON nhận được: {data}")  # LOG 2
+
+        if not data:
+            print("❌ [ERROR] Không đọc được JSON")
+            return (
+                jsonify({"success": False, "message": "Lỗi định dạng dữ liệu gửi lên"}),
+                400,
+            )
+
+        reason = data.get("reason")
+        print(f"👉 [DEBUG] Lý do từ chối: {reason}")  # LOG 3
+
+        if not reason:
+            print("❌ [ERROR] Thiếu lý do")
+            return jsonify({"success": False, "message": "Vui lòng chọn lý do"}), 400
+
+        # 3. Cập nhật Database
+        print(
+            f"👉 [DEBUG] Trạng thái cũ: {application.status}, Lý do cũ: {application.rejection_reason}"
+        )
+
+        application.status = "REJECTED"
+        application.rejection_reason = reason
+
+        db.session.add(application)  # Thêm dòng này cho chắc chắn
+        db.session.commit()
+
+        print("✅ [SUCCESS] Đã commit vào DB thành công!")  # LOG 4
+        return jsonify({"success": True, "message": "Đã từ chối thành công"})
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"🔥 [CRITICAL ERROR] Lỗi server: {str(e)}")  # LOG 5: In lỗi cụ thể ra
+        import traceback
+
+        traceback.print_exc()  # In chi tiết dòng code bị lỗi
+        return jsonify({"success": False, "message": f"Lỗi server: {str(e)}"}), 500

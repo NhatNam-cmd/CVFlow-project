@@ -18,6 +18,9 @@ class User(UserMixin, db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey("companies.id"), nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    available_days = db.Column(db.String(50), nullable=True)
+    start_time = db.Column(db.Time, nullable=True)
+    end_time = db.Column(db.Time, nullable=True)
 
     # 1. Getter password (không cho đọc)
     @property

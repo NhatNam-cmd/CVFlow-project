@@ -11,11 +11,11 @@
 
             <div class="d-flex gap-2">
                 {% if application.status != 'REJECTED' %}
-                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='REJECTED') }}"
-                       class="btn btn-outline-danger fw-bold"
-                       onclick="return confirm('Bạn có chắc muốn từ chối ứng viên này?')">
+                    <button type="button"
+                            class="btn btn-outline-danger fw-bold"
+                            onclick="openRejectModal({{ application.id }})">
                         <i class="bi bi-x-circle me-1"></i> Từ chối
-                    </a>
+                    </button>
                 {% endif %}
 
                 {% if application.status == 'NEW' %}
@@ -230,4 +230,5 @@
             }
         }
     </script>
+    {% include 'hr/_reject_modal.html' %}
 {% endblock %}

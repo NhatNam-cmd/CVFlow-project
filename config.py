@@ -9,17 +9,17 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
-    """Cấu hình cơ sở (Base Config) dùng chung cho mọi môi trường."""
+    SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-key-nhung-khong-nen-dung"
 
-    # 1. Bảo mật
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "cvflow-fallback-secret-key-2025"
+    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
 
-    # 2. Database (Mặc định dùng SQLite nếu không có Postgres)
+    # Kiểm tra chặn ngay từ cửa
+    if not SQLALCHEMY_DATABASE_URI:
+        raise ValueError(
+            "❌ LỖI NGHIÊM TRỌNG: Chưa cấu hình DATABASE_URL trong file .env! Hệ thống bắt buộc dùng PostgreSQL."
+        )
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        "DATABASE_URI"
-    ) or "sqlite:///" + os.path.join(BASE_DIR, "data", "cvflow.db")
-
     # 3. Uploads
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "app", "static", "uploads")
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # Giới hạn file 16MB
