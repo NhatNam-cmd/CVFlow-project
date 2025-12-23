@@ -11,16 +11,13 @@
 
             <div class="d-flex gap-2">
                 {% if application.status != 'REJECTED' %}
-                    <button type="button"
-                            class="btn btn-outline-danger fw-bold"
-                            onclick="openRejectModal({{ application.id }})">
+                    <button type="button" class="btn btn-outline-danger fw-bold" onclick="openRejectModal({{ application.id }})">
                         <i class="bi bi-x-circle me-1"></i> Từ chối
                     </button>
                 {% endif %}
 
                 {% if application.status == 'NEW' %}
-                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='INTERVIEW') }}"
-                       class="btn btn-primary fw-bold shadow-sm px-4">
+                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='INTERVIEW') }}" class="btn btn-primary fw-bold shadow-sm px-4">
                         <i class="bi bi-calendar-check me-2"></i> Mời Phỏng vấn
                     </a>
                 {% elif application.status == 'INTERVIEW' %}
@@ -28,12 +25,9 @@
                         <i class="bi bi-clock-history me-2"></i> Lên lịch gặp mặt
                     </button>
                 {% elif application.status == 'OFFER' %}
-                    <button class="btn btn-success disabled">
-                        <i class="bi bi-trophy-fill me-2"></i> Đã tuyển dụng
-                    </button>
+                    <button class="btn btn-success disabled"><i class="bi bi-trophy-fill me-2"></i> Đã tuyển dụng</button>
                 {% elif application.status == 'REJECTED' %}
-                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='NEW') }}"
-                       class="btn btn-outline-secondary">
+                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='NEW') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-counterclockwise me-1"></i> Khôi phục hồ sơ
                     </a>
                 {% endif %}
@@ -46,114 +40,131 @@
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
-                            <span class="small font-monospace mb-0">Nguyen_Van_A_CV.pdf</span>
+                            <span class="small font-monospace mb-0">{{ application.cv.file_name }}</span>
                         </div>
-                        <a href="#" class="btn btn-sm btn-outline-light py-0" style="font-size: 0.8rem;">
+                        <a href="{{ url_for('static', filename='uploads/' + application.cv.file_url) }}" download class="btn btn-sm btn-outline-light py-0">
                             <i class="bi bi-download me-1"></i> Tải xuống
                         </a>
                     </div>
 
-                    <div class="card-body p-0 bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center position-relative" style="min-height: 700px;">
-                        <div class="text-center text-muted opacity-75">
-                            <i class="bi bi-file-earmark-text display-1"></i>
-                            <p class="mt-3 fw-bold">Khu vực hiển thị File PDF</p>
-                            <small>Trình duyệt sẽ render file CV tại đây</small>
-                        </div>
+                    <div class="card-body p-0 bg-secondary bg-opacity-25" style="min-height: 750px;">
+                        <iframe src="{{ url_for('static', filename='uploads/' + application.cv.file_url) }}"
+                                width="100%" height="100%" style="min-height: 750px; border: none;">
+                        </iframe>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-5">
 
-                <div class="card shadow-sm border-0 mb-4 border-start border-4 border-success">
+                <div class="card shadow-sm border-0 mb-4 border-start border-4 {{ 'border-success' if (application.match_score or 0) >= 70 else 'border-warning' }}">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="text-uppercase text-muted small fw-bold">AI Match Score</h6>
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success">Rất phù hợp</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <h1 class="fw-bold text-success mb-0 display-4">92%</h1>
-                            <div class="vr mx-2"></div>
-                            <div>
-                                <p class="small text-muted mb-0">Hồ sơ vượt trội hơn</p>
-                                <div class="fw-bold text-dark">95% ứng viên khác</div>
+                        {% if (application.match_score or 0) > 0 and application.ai_analysis %}
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="text-uppercase text-muted small fw-bold">AI Match Score</h6>
+                                {% if (application.match_score or 0) >= 80 %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success">Rất phù hợp</span>
+                                {% elif (application.match_score or 0) >= 50 %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">Tiềm năng</span>
+                                {% else %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Cân nhắc</span>
+                                {% endif %}
                             </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <h1 class="fw-bold {{ 'text-success' if (application.match_score or 0) >= 70 else 'text-dark' }} mb-0 display-4">
+                                    {{ application.match_score or 0 }}%
+                                </h1>
+                                <div class="vr mx-2"></div>
+                                <div>
+                                    <button onclick="triggerAIAnalysis()" id="btn-re-analyze" class="btn btn-sm btn-link text-decoration-none p-0 text-muted">
+                                        <i class="bi bi-arrow-clockwise"></i> Phân tích lại
+                                    </button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-stars text-primary display-4 mb-3"></i>
+                                <h5 class="fw-bold">Chưa có đánh giá AI</h5>
+                                <p class="text-muted small mb-3">Sử dụng AI để so khớp CV này với JD hiện tại.</p>
+                                <button id="btn-analyze" onclick="triggerAIAnalysis()" class="btn btn-primary fw-bold w-100">
+                                    <i class="bi bi-cpu me-2"></i> Phân tích ngay
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if (application.match_score or 0) > 0 and application.ai_analysis %}
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-white fw-bold text-primary py-3">
+                            <i class="bi bi-chat-square-quote me-2"></i> Tóm tắt bởi AI
+                        </div>
+                        <div class="card-body bg-light">
+                            <p class="card-text small text-dark mb-3 text-justify">
+                                {{ application.ai_analysis.get('summary', 'Không có dữ liệu tóm tắt.') }}
+                            </p>
                         </div>
                     </div>
-                </div>
 
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-white fw-bold text-primary py-3">
-                        <i class="bi bi-stars me-2"></i> Tóm tắt bởi AI
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-white fw-bold py-3">
+                            <i class="bi bi-list-check me-2"></i> Đánh giá chi tiết
+                        </div>
+                        <div class="card-body">
+                            <h6 class="small fw-bold text-success mb-2"><i class="bi bi-plus-circle me-1"></i> Điểm mạnh / Phù hợp</h6>
+                            <ul class="list-unstyled small mb-3">
+                                {% for item in application.ai_analysis.get('pros', []) %}
+                                    <li class="mb-1"><i class="bi bi-check2 text-success me-2"></i>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+
+                            <hr class="opacity-25">
+
+                            <h6 class="small fw-bold text-danger mb-2"><i class="bi bi-dash-circle me-1"></i> Hạn chế / Cần hỏi thêm</h6>
+                            <ul class="list-unstyled small mb-0">
+                                {% for item in application.ai_analysis.get('cons', []) %}
+                                    <li class="mb-1"><i class="bi bi-exclamation-circle text-danger me-2"></i>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
-                    <div class="card-body bg-light">
-                        <p class="card-text small text-dark mb-3 text-justify">
-                            Ứng viên có <strong>5 năm kinh nghiệm</strong> chuyên sâu với Python/Django.
-                            Điểm mạnh nổi bật là khả năng thiết kế hệ thống Microservices và tối ưu hóa PostgreSQL.
-                            <br><br>
-                            <em>Lưu ý:</em> Kỹ năng tiếng Anh giao tiếp ở mức trung bình, cần kiểm tra thêm trong buổi phỏng vấn.
-                        </p>
-
-                        <hr class="border-secondary opacity-25">
-
-                        <h6 class="small fw-bold text-uppercase text-muted mb-2">Thông tin liên hệ (Trích xuất)</h6>
-                        <ul class="list-unstyled small mb-0">
-                            <li class="mb-2 d-flex align-items-center">
-                                <i class="bi bi-envelope text-primary me-3"></i>
-                                <span class="fw-bold">a.nguyen@email.com</span>
-                            </li>
-                            <li class="mb-2 d-flex align-items-center">
-                                <i class="bi bi-phone text-primary me-3"></i>
-                                <span>0909 123 456</span>
-                            </li>
-                            <li class="d-flex align-items-center">
-                                <i class="bi bi-mortarboard text-primary me-3"></i>
-                                <span>ĐH Bách Khoa HN</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+                {% endif %}
 
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white fw-bold py-3">
-                        <i class="bi bi-check2-all me-2"></i> So khớp Kỹ năng
+                        <i class="bi bi-person-lines-fill me-2"></i> Thông tin liên hệ
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span class="fw-bold">Python & Django</span>
-                                <span class="text-success fw-bold"><i class="bi bi-check-lg"></i> Có</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" style="width: 100%"></div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span class="fw-bold">Docker & CI/CD</span>
-                                <span class="text-success fw-bold"><i class="bi bi-check-lg"></i> Có</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" style="width: 100%"></div>
-                            </div>
-                        </div>
-
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span class="fw-bold text-muted">Kubernetes (K8s)</span>
-                                <span class="text-danger fw-bold"><i class="bi bi-x-lg"></i> Thiếu</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-secondary opacity-25" style="width: 100%"></div>
-                            </div>
-                        </div>
+                        <ul class="list-unstyled small mb-0">
+                            <li class="mb-3 d-flex align-items-center">
+                                <div class="bg-light p-2 rounded-circle me-3"><i class="bi bi-person text-primary"></i></div>
+                                <div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">Họ và tên</div>
+                                    <div class="fw-bold">{{ application.candidate.full_name }}</div>
+                                </div>
+                            </li>
+                            <li class="mb-3 d-flex align-items-center">
+                                <div class="bg-light p-2 rounded-circle me-3"><i class="bi bi-envelope text-primary"></i></div>
+                                <div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">Email</div>
+                                    <div class="fw-bold">{{ application.candidate.email }}</div>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <div class="bg-light p-2 rounded-circle me-3"><i class="bi bi-phone text-primary"></i></div>
+                                <div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">Số điện thoại</div>
+                                    <div class="fw-bold">{{ application.candidate.phone or 'Chưa cập nhật' }}</div>
+                                </div>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
             </div>
         </div>
     </div>
+
     <div class="modal fade" id="scheduleModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -165,49 +176,23 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                     <div class="modal-body">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded border border-primary border-opacity-25">
-                            <div>
-                                <small class="fw-bold text-primary"><i class="bi bi-stars"></i> AI Smart Schedule</small>
-                                <div class="text-muted" style="font-size: 0.75rem;">Tự động tìm giờ rảnh chung tốt nhất</div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary bg-white" onclick="alert('Tính năng đang phát triển!\nChúng tôi đang tích hợp thuật toán tìm lịch tối ưu.')">
-                                <i class="bi bi-magic"></i> Gợi ý ngay
-                            </button>
-                        </div>
-                        <hr class="my-3">
-                        <div class="alert alert-info small">
-                            Hệ thống sẽ lưu lịch và hiển thị bên phía ứng viên <strong>{{ application.candidate.full_name }}</strong>.
-                        </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-bold">Ngày & Giờ bắt đầu</label>
                             <input type="datetime-local" name="start_time" class="form-control" required>
                         </div>
-
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Thời lượng dự kiến</label>
+                            <label class="form-label fw-bold">Thời lượng</label>
                             <select name="duration" class="form-select">
-                                <option value="30">30 phút</option>
-                                <option value="45">45 phút</option>
-                                <option value="60" selected>60 phút (1 tiếng)</option>
-                                <option value="90">90 phút</option>
+                                <option value="60">60 phút</option>
                             </select>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label fw-bold">Hình thức / Địa điểm</label>
-                            <select name="location_type" class="form-select mb-2" onchange="toggleLocation(this)">
-                                <option value="online">Online (Google Meet/Zoom)</option>
-                                <option value="offline">Offline (Tại văn phòng)</option>
+                            <select name="location_type" class="form-select mb-2">
+                                <option value="online">Online</option>
+                                <option value="offline">Offline</option>
                             </select>
-                            <input type="text" name="location_detail" id="locationInput" class="form-control"
-                                   placeholder="Nhập link cuộc họp (VD: meet.google.com/abc...)" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Ghi chú cho ứng viên</label>
-                            <textarea name="note" class="form-control" rows="2" placeholder="VD: Vui lòng mang theo laptop..."></textarea>
+                            <input type="text" name="location_detail" class="form-control" placeholder="Link hoặc địa chỉ..." required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -218,17 +203,45 @@
             </div>
         </div>
     </div>
+    {% include 'hr/_reject_modal.html' %}
 
     <script>
-        function toggleLocation(select) {
-            const input = document.getElementById('locationInput');
-            if (select.value === 'online') {
-                input.placeholder = "Nhập link cuộc họp (VD: meet.google.com/abc...)";
-            } else {
-                input.placeholder = "Nhập tên phòng họp / Địa chỉ văn phòng";
-                input.value = "{{ application.job.company.address }}"; // Gợi ý địa chỉ cty
-            }
+        function triggerAIAnalysis() {
+            const btn = document.getElementById('btn-analyze') || document.getElementById('btn-re-analyze');
+            const originalText = btn.innerHTML;
+
+            // 1. Hiệu ứng Loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang phân tích...';
+
+            // 2. Lấy CSRF Token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // 3. Gọi API
+            fetch("{{ url_for('hr.analyze_application_cv', app_id=application.id) }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload trang để hiển thị kết quả mới
+                        window.location.reload();
+                    } else {
+                        alert("❌ Lỗi: " + data.message);
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("❌ Lỗi kết nối đến Server!");
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
         }
     </script>
-    {% include 'hr/_reject_modal.html' %}
 {% endblock %}
