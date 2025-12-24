@@ -1,11 +1,21 @@
-import os
 import time
 from datetime import datetime
-from flask import render_template, redirect, url_for, flash, current_app, request
-from flask_login import current_user
+from flask import (
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    current_app,
+    request,
+    jsonify,
+)
+from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.modules.candidate import candidate_bp
+from app.services.ai_engine.core import review_cv_content
+from app.services.ai_engine.parser import extract_text_from_pdf
+import os
 
 # Import forms
 from app.modules.candidate.forms import CandidateProfileForm, CVUploadForm
@@ -177,3 +187,81 @@ def interview_list():
         .all()
     )
     return render_template("candidate/interview_list.html", interviews=interviews)
+
+
+@candidate_bp.route("/cv-manager/review/<int:cv_id>", methods=["POST"])
+@login_required
+def ai_review_cv(cv_id):
+    """
+    API để Candidate yêu cầu AI chấm điểm CV của mình
+    """
+    # 1. Lấy CV từ DB (Đúng model CV_File)
+    cv = CV_File.query.get_or_404(cv_id)
+
+    # 2. Bảo mật: Chỉ chủ sở hữu mới được xem
+    if cv.user_id != current_user.id:
+        return (
+            jsonify(
+                {"success": False, "message": "Bạn không có quyền truy cập CV này"}
+            ),
+            403,
+        )
+
+    try:
+        # 3. Kiểm tra xem đã có raw_text chưa (Tối ưu hóa)
+        cv_text = cv.raw_text
+
+        if not cv_text:
+            # Nếu chưa có text, phải đọc từ file PDF
+            file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], cv.file_url)
+
+            if not os.path.exists(file_path):
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "message": "File gốc không tồn tại trên server",
+                        }
+                    ),
+                    404,
+                )
+
+            print(f"📄 Đang trích xuất text từ file: {cv.file_name}")
+            cv_text = extract_text_from_pdf(file_path)
+
+            # Lưu lại text vào DB để lần sau không phải đọc nữa
+            if cv_text:
+                cv.raw_text = cv_text
+                db.session.commit()
+            else:
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "message": "Không thể đọc nội dung text từ file PDF",
+                        }
+                    ),
+                    400,
+                )
+
+        # 4. Gửi cho AI Review
+        print(f"🤖 Đang gửi yêu cầu Review cho CV ID: {cv_id}")
+        ai_result = review_cv_content(cv_text)
+
+        if "error" in ai_result:
+            return jsonify({"success": False, "message": ai_result["error"]}), 500
+
+        # 5. Lưu kết quả vào DB
+        cv.ai_score = ai_result.get("score", 0)
+        cv.ai_matching_data = ai_result  # Tận dụng cột này để lưu kết quả Review
+
+        db.session.commit()
+
+        return jsonify(
+            {"success": True, "message": "Đã phân tích xong!", "data": ai_result}
+        )
+
+    except Exception as e:
+        print(f"❌ System Error: {e}")
+        db.session.rollback()
+        return jsonify({"success": False, "message": f"Lỗi hệ thống: {str(e)}"}), 500
