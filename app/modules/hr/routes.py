@@ -27,27 +27,52 @@ def check_hr_role():
 @hr_bp.route("/dashboard")
 @login_required
 def dashboard():
-    # 1. Các thống kê cũ (Giữ nguyên)
-    total_cvs = Application.query.count()
-    upcoming_interviews = Interview.query.filter(
-        Interview.start_time > datetime.utcnow()
-    ).count()
-    active_jobs_count = Job.query.filter_by(is_active=True).count()
+    # Kiểm tra nếu HR chưa có công ty (tránh lỗi)
+    if not current_user.company_id:
+        return render_template("hr/dashboard.html", error="Chưa liên kết công ty")
 
-    # 2. TÍNH ĐIỂM AI TRUNG BÌNH (Mới)
-    # Logic: Chỉ tính trung bình các hồ sơ ĐÃ ĐƯỢC CHẤM (match_score > 0)
+    company_id = current_user.company_id
+
+    # 1. TỔNG SỐ CV NHẬN ĐƯỢC (Chỉ tính cho các Job thuộc công ty này)
+    # Join bảng Application với Job, lọc theo company_id của Job
+    total_cvs = Application.query.join(Job).filter(Job.company_id == company_id).count()
+
+    # 2. LỊCH PHỎNG VẤN SẮP TỚI (Của công ty này)
+    # Join Interview -> Application -> Job -> Lọc company_id
+    upcoming_interviews = (
+        Interview.query.join(Application)
+        .join(Job)
+        .filter(
+            Job.company_id == company_id,
+            Interview.start_time > datetime.utcnow(),
+            Interview.status == "SCHEDULED",
+        )
+        .count()
+    )
+
+    # 3. TIN ĐANG MỞ (SỬA LỖI CỦA BẠN TẠI ĐÂY)
+    # Thêm điều kiện company_id == company_id
+    active_jobs_count = Job.query.filter(
+        Job.is_active == True, Job.company_id == company_id
+    ).count()
+
+    # 4. ĐIỂM AI TRUNG BÌNH (Chỉ tính hồ sơ nộp vào công ty này)
     avg_query = (
         db.session.query(func.avg(Application.match_score))
-        .filter(Application.match_score > 0)
+        .join(Job)
+        .filter(Job.company_id == company_id, Application.match_score > 0)
         .scalar()
     )
 
-    # Nếu chưa có hồ sơ nào được chấm thì avg_query sẽ là None -> gán bằng 0
     avg_ai_score = int(avg_query) if avg_query else 0
 
-    # 3. Lấy danh sách ứng viên mới nhất
+    # 5. DANH SÁCH ỨNG VIÊN MỚI NHẤT (Của công ty này)
     recent_applications = (
-        Application.query.order_by(Application.created_at.desc()).limit(5).all()
+        Application.query.join(Job)
+        .filter(Job.company_id == company_id)
+        .order_by(Application.created_at.desc())
+        .limit(5)
+        .all()
     )
 
     return render_template(
@@ -56,7 +81,7 @@ def dashboard():
         upcoming_interviews=upcoming_interviews,
         active_jobs_count=active_jobs_count,
         recent_applications=recent_applications,
-        avg_ai_score=avg_ai_score,  # <-- Truyền biến này sang HTML
+        avg_ai_score=avg_ai_score,
     )
 
 

@@ -8,6 +8,9 @@ from sqlalchemy import func
 from datetime import datetime
 from app.models import Job, Company, CV_File
 from app.services.ai_engine.recommender import recommend_jobs_for_cv  # Import hàm gợi ý
+from app.models.market import MarketData
+from app.services.analytics.market_analyzer import MarketAnalyzer
+import json
 
 # --- TRANG CHỦ & TÌM KIẾM ---
 
@@ -292,5 +295,154 @@ def salary_tool():
 
 @public_bp.route("/market-report")
 def market_report():
-    # Trang này sẽ gọi API để vẽ biểu đồ JS
-    return render_template("public/market_report.html")
+    if MarketData.query.count() == 0:
+        analyzer = MarketAnalyzer()
+        analyzer.analyze_and_save()
+
+    selected_position = request.args.get("position", "All")
+
+    # Lấy toàn bộ danh sách vị trí để làm dropdown
+    all_positions = [
+        r.job_title_normalized
+        for r in MarketData.query.with_entities(
+            MarketData.job_title_normalized
+        ).distinct()
+    ]
+
+    # --- XỬ LÝ DỮ LIỆU BIỂU ĐỒ & THẺ SỐ ---
+    chart_labels = []
+    chart_salary = []
+
+    current_data = {
+        "salary": 0,
+        "demand_score": 0,
+        "job_count": 0,
+        "competition_ratio": "1:1",
+        "competition_text": "Thấp",
+        "competition_color": "success",
+        "demand_text": "Thấp",
+        "demand_color": "secondary",
+    }
+
+    #   raw_reports = []
+
+    # CASE 1: XEM TẤT CẢ (ALL) -> HIỂN THỊ TOP 10 LƯƠNG CAO
+    if selected_position == "All":
+        # Gom nhóm theo Title (vì DB đang lưu chia nhỏ theo Level)
+        # Query tất cả và xử lý Python cho nhanh (vì data market ko quá lớn)
+        all_rows = MarketData.query.all()
+
+        # Dictionary để gom: {'Python': [lương1, lương2...], ...}
+        agg_data = {}
+        total_job_count = 0
+
+        for row in all_rows:
+            if row.job_title_normalized not in agg_data:
+                agg_data[row.job_title_normalized] = []
+            agg_data[row.job_title_normalized].append(row.avg_salary_max)
+            total_job_count += row.demand_score  # demand_score đang lưu job_count
+
+        # Tính trung bình cho từng Title
+        final_list = []
+        for title, salaries in agg_data.items():
+            avg = sum(salaries) / len(salaries)
+            final_list.append({"label": title, "value": avg})
+
+        # Sắp xếp giảm dần theo lương và lấy TOP 10
+        final_list.sort(key=lambda x: x["value"], reverse=True)
+        top_10 = final_list[:10]
+
+        chart_labels = [item["label"] for item in top_10]
+        chart_salary = [int(item["value"] / 1000000) for item in top_10]
+
+        # Số liệu tổng quan
+        if final_list:
+            current_data["salary"] = int(
+                sum([x["value"] for x in final_list]) / len(final_list)
+            )
+            current_data["job_count"] = total_job_count
+            current_data["demand_text"] = "Toàn thị trường"
+
+    # CASE 2: XEM CỤ THỂ -> HIỂN THỊ THEO LEVEL
+    else:
+        # Lấy các dòng thuộc vị trí này (VD: Python-Fresher, Python-Senior...)
+        reports = MarketData.query.filter_by(
+            job_title_normalized=selected_position
+        ).all()
+
+        # Định nghĩa thứ tự Level để biểu đồ vẽ từ thấp đến cao
+        level_order = {"FRESHER": 1, "JUNIOR": 2, "MIDDLE": 3, "SENIOR": 4, "LEAD": 5}
+
+        # Sắp xếp reports theo level_order
+        reports.sort(key=lambda x: level_order.get(x.level, 100))
+
+        chart_labels = [r.level for r in reports]
+        chart_salary = [int(r.avg_salary_max / 1000000) for r in reports]
+
+        # Tính số liệu tổng quan cho vị trí này
+        if reports:
+            total_sal = sum([r.avg_salary_max for r in reports])
+            current_data["salary"] = int(total_sal / len(reports))
+            current_data["job_count"] = sum([r.demand_score for r in reports])
+
+            # Tính lại Demand Score %
+            total_market_jobs = (
+                db.session.query(func.sum(MarketData.demand_score)).scalar() or 1
+            )
+            share = (current_data["job_count"] / total_market_jobs) * 100
+            score = min(int(share * 5), 100)
+
+            current_data["demand_score"] = score
+            if score >= 80:
+                current_data["demand_text"], current_data["demand_color"] = (
+                    "Rất Cao",
+                    "danger",
+                )
+            elif score >= 50:
+                current_data["demand_text"], current_data["demand_color"] = (
+                    "Cao",
+                    "warning",
+                )
+            else:
+                current_data["demand_text"], current_data["demand_color"] = (
+                    "Trung Bình",
+                    "primary",
+                )
+
+            # Tính cạnh tranh (như cũ)
+            app_count = (
+                Application.query.join(Job)
+                .filter(Job.title.ilike(f"%{selected_position.split(' ')[0]}%"))
+                .count()
+            )
+            ratio = round(app_count / max(current_data["job_count"], 1), 1)
+            current_data["competition_ratio"] = f"1 : {ratio}"
+
+    # Dữ liệu Skill & Rejection (Giữ nguyên logic cũ)
+    rejection_stats = MarketAnalyzer.get_rejection_stats(selected_position)
+    reject_labels = list(rejection_stats.keys())
+    reject_data = list(rejection_stats.values())
+
+    # Lấy skill mẫu từ dòng đầu tiên tìm được
+    skill_labels, skill_data = [], []
+    sample_report = MarketData.query.filter_by(
+        job_title_normalized=(
+            selected_position if selected_position != "All" else all_positions[0]
+        )
+    ).first()
+    if sample_report and sample_report.top_skills:
+        skill_labels = sample_report.top_skills
+        skill_data = [100, 80, 60, 40, 20][: len(skill_labels)]
+
+    return render_template(
+        "public/market_report.html",
+        all_positions=all_positions,
+        selected_position=selected_position,
+        current_data=current_data,
+        chart_labels=json.dumps(chart_labels),
+        chart_salary=json.dumps(chart_salary),
+        reject_labels=json.dumps(reject_labels),
+        reject_data=json.dumps(reject_data),
+        skill_labels=json.dumps(skill_labels),
+        skill_data=json.dumps(skill_data),
+    )
