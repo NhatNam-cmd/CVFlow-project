@@ -33,3 +33,5 @@ app/static/avatars/*
 
 # --- 7. Biến môi trường (QUAN TRỌNG) ---
 .env
+
+data/cvflow.db
