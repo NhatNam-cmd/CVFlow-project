@@ -2,12 +2,12 @@ import numpy as np
 from app import db
 from app.models import Job, MarketData, Application
 from app.services.ai_engine.gemini_client import get_text_embedding
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from datetime import datetime
 
 
 class MarketAnalyzer:
-    # Danh sách các nhóm chuẩn mà chúng ta muốn thống kê
+    # Danh sách các nhóm chuẩn
     STANDARD_CATEGORIES = [
         "Backend Developer",
         "Frontend Developer",
@@ -22,69 +22,75 @@ class MarketAnalyzer:
     ]
 
     def __init__(self):
-        # Cache vector của các nhóm chuẩn để không phải gọi API nhiều lần
+        # Lazy load: Không load vector ngay khi init
         self.category_vectors = {}
 
-    def _preload_category_vectors(self):
-        """Tạo vector cho các nhóm chuẩn ngay khi khởi tạo class"""
-        print("📥 Đang tạo vector cho danh mục chuẩn...")
-        for cat in self.STANDARD_CATEGORIES:
-            vec = get_text_embedding(cat)
-            if vec:
-                self.category_vectors[cat] = vec
-
     def analyze_and_save(self):
+        """
+        Hàm chính: Phân tích thị trường và lưu vào bảng MarketData (Breakdown theo Level)
+        """
+        # Load vector nếu chưa có
         if not self.category_vectors:
             self._preload_category_vectors()
-        print("📊 Đang phân tích thị trường bằng AI Semantic Matching...")
+
+        print("📊 Đang phân tích thị trường (Chi tiết Level)...")
 
         # 1. Xóa dữ liệu cũ
         MarketData.query.delete()
 
-        # 2. Lấy job active
+        # 2. Lấy dữ liệu jobs
         jobs = Job.query.filter_by(is_active=True).all()
+        #  total_market_jobs = len(jobs) if jobs else 1
 
-        data_buckets = {}  # { 'Backend Developer': {'salaries': [], ...} }
+        # Cấu trúc: Key là tuple (JobTitle, JobLevel)
+        data_buckets = {}
 
         for job in jobs:
-            # --- BƯỚC QUAN TRỌNG: DÙNG VECTOR ĐỂ PHÂN LOẠI ---
             standard_title = self._semantic_classify(job)
 
-            if standard_title not in data_buckets:
-                data_buckets[standard_title] = {
-                    "salaries": [],
-                    "skills": [],
-                    "count": 0,
-                }
+            # Chuẩn hóa Level
+            level = job.level.upper() if job.level else "MIDDLE"
+            if "SENIOR" in level:
+                level = "SENIOR"
+            elif "JUNIOR" in level:
+                level = "JUNIOR"
+            elif "FRESHER" in level or "INTERN" in level:
+                level = "FRESHER"
+            elif "LEAD" in level or "MANAGER" in level:
+                level = "LEAD"
+            else:
+                level = "MIDDLE"
 
-            # Gom dữ liệu
-            # Ưu tiên lấy max salary để báo cáo cho hấp dẫn, hoặc lấy trung bình của min-max
+            key = (standard_title, level)
+
+            if key not in data_buckets:
+                data_buckets[key] = {"salaries": [], "skills": [], "job_count": 0}
+
+            # Gom dữ liệu lương
             salary = job.salary_max if job.salary_max else job.salary_min
             if salary:
-                data_buckets[standard_title]["salaries"].append(salary)
+                data_buckets[key]["salaries"].append(salary)
 
+            # Gom dữ liệu kỹ năng
             if job.skills_required:
-                data_buckets[standard_title]["skills"].extend(job.skills_required)
+                data_buckets[key]["skills"].extend(job.skills_required)
 
-            data_buckets[standard_title]["count"] += 1
+            data_buckets[key]["job_count"] += 1
 
-        # 3. Lưu vào DB
-        for title, data in data_buckets.items():
+        # 3. Tính toán và Lưu DB
+        for (title, level), data in data_buckets.items():
             if not data["salaries"]:
                 continue
 
             avg_salary = sum(data["salaries"]) / len(data["salaries"])
             top_skills = self._get_top_frequency(data["skills"], 5)
 
-            # Demand score: normalize theo số lượng job nhiều nhất
-            max_job_count = (
-                max([d["count"] for d in data_buckets.values()]) if data_buckets else 1
-            )
-            demand_score = int((data["count"] / max_job_count) * 100)
+            # Lưu số lượng job vào demand_score tạm để tính toán sau
+            demand_score = data["job_count"]
 
             report = MarketData(
                 job_title_normalized=title,
-                level="ALL",
+                level=level,  # Lưu Level cụ thể
                 avg_salary_min=0,
                 avg_salary_max=avg_salary,
                 demand_score=demand_score,
@@ -94,26 +100,26 @@ class MarketAnalyzer:
             db.session.add(report)
 
         db.session.commit()
-        print("✅ Đã cập nhật Báo cáo thị trường (AI Semantic).")
+        print("✅ Đã cập nhật Báo cáo thị trường.")
+
+    def _preload_category_vectors(self):
+        print("📥 Đang tạo vector cho danh mục chuẩn...")
+        for cat in self.STANDARD_CATEGORIES:
+            vec = get_text_embedding(cat)
+            if vec:
+                self.category_vectors[cat] = vec
 
     def _semantic_classify(self, job):
-        """
-        Phân loại Job dựa trên so khớp Vector
-        """
-        # Nếu Job chưa có vector (do lỗi gì đó), fallback về rule-based hoặc tạo vector ngay
+        """Phân loại Job dựa trên so khớp Vector"""
         if not job.vector_embedding:
-            # Fallback đơn giản hoặc gọi API tạo vector ngay tại đây (tùy chọn)
             return "Uncategorized"
 
         job_vec = np.array(job.vector_embedding)
-        best_match = "Uncategorized"
+        best_match = "Other IT Jobs"
         highest_score = -1
 
-        # So sánh vector job với từng vector category
         for cat, cat_vec in self.category_vectors.items():
             cat_vec_np = np.array(cat_vec)
-
-            # Tính Cosine Similarity
             score = np.dot(job_vec, cat_vec_np) / (
                 np.linalg.norm(job_vec) * np.linalg.norm(cat_vec_np)
             )
@@ -122,24 +128,10 @@ class MarketAnalyzer:
                 highest_score = score
                 best_match = cat
 
-        # Ngưỡng chấp nhận (ví dụ > 0.4 mới tính, ko thì cho vào nhóm Khác)
         if highest_score < 0.4:
             return "Other IT Jobs"
 
         return best_match
-
-    @staticmethod
-    def get_rejection_stats():
-        results = (
-            db.session.query(Application.rejected_reason, func.count(Application.id))
-            .filter(
-                Application.status == "REJECTED",
-                Application.rejected_reason is not None,
-            )
-            .group_by(Application.rejected_reason)
-            .all()
-        )
-        return {r[0]: r[1] for r in results}
 
     def _get_top_frequency(self, items, top_n=5):
         from collections import Counter
@@ -147,3 +139,49 @@ class MarketAnalyzer:
         if not items:
             return []
         return [item[0] for item in Counter(items).most_common(top_n)]
+
+    @staticmethod
+    def get_rejection_stats(position_filter="All"):
+        """
+        Thống kê lý do từ chối (Static Method)
+        """
+        query = (
+            db.session.query(Application.rejected_reason, func.count(Application.id))
+            .join(Job)
+            .filter(
+                Application.status == "REJECTED",
+                Application.rejected_reason is not None,
+            )
+        )
+
+        if position_filter != "All":
+            # Mapping từ khóa tìm kiếm
+            keywords = {
+                "Python Developer": ["python", "django", "flask", "ai", "data"],
+                "Java Developer": ["java", "spring", "j2ee"],
+                "Frontend Developer": ["frontend", "react", "vue", "angular", "js"],
+                "Backend Developer": [
+                    "backend",
+                    "node",
+                    "php",
+                    "golang",
+                    "java",
+                    "python",
+                ],
+                "DevOps / SRE": ["devops", "aws", "cloud", "docker"],
+                "Tester / QA / QC": ["test", "qa", "qc"],
+                "Data Scientist / AI": ["data", "ai", "learning"],
+                "Fullstack Developer": ["fullstack", "node", "react", "vue"],
+                "Mobile Developer": ["mobile", "android", "ios", "flutter"],
+                "Business Analyst (BA)": ["ba", "analyst"],
+                "Project Manager / PO": ["manager", "po", "product"],
+            }
+
+            search_terms = keywords.get(
+                position_filter, [position_filter.split(" ")[0].lower()]
+            )
+            conditions = [Job.title.ilike(f"%{term}%") for term in search_terms]
+            query = query.filter(or_(*conditions))
+
+        results = query.group_by(Application.rejected_reason).all()
+        return {r[0]: r[1] for r in results}
