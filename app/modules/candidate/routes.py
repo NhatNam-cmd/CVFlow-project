@@ -16,6 +16,7 @@ from app.modules.candidate import candidate_bp
 from app.services.ai_engine.core import review_cv_content
 from app.services.ai_engine.parser import extract_text_from_pdf
 import os
+from app.services.ai_engine.gemini_client import get_text_embedding
 
 # Import forms
 from app.modules.candidate.forms import CandidateProfileForm, CVUploadForm
@@ -160,15 +161,17 @@ def set_main_cv(cv_id):
     # Reset tất cả về False
     CV_File.query.filter_by(user_id=current_user.id).update({"is_main": False})
 
-    # Set file được chọn thành True
-    target_cv = CV_File.query.filter_by(id=cv_id, user_id=current_user.id).first()
-    if target_cv:
-        target_cv.is_main = True
-        db.session.commit()
-        flash("Đã đặt làm CV chính.", "success")
-    else:
-        flash("Không tìm thấy CV.", "danger")
+    # 2. Lấy CV được chọn
+    target_cv = CV_File.query.get_or_404(cv_id)
+    target_cv.is_main = True
 
+    # 3. TẠO VECTOR NẾU CHƯA CÓ (Lazy Loading)
+    if not target_cv.vector_embedding and target_cv.raw_text:
+        print("⚡ Đang tạo Vector Embedding cho CV...")
+        target_cv.vector_embedding = get_text_embedding(target_cv.raw_text)
+
+    db.session.commit()
+    flash("Đã cập nhật CV chính & đồng bộ dữ liệu AI.", "success")
     return redirect(url_for("candidate.cv_manager"))
 
 

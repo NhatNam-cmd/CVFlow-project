@@ -13,6 +13,7 @@ from app.services.ai_engine.core import analyze_cv_matching
 import os
 from flask import current_app
 from sqlalchemy import func
+from app.services.ai_engine.gemini_client import get_text_embedding
 
 
 # Middleware kiểm tra quyền HR
@@ -111,6 +112,8 @@ def post_job():
             mini_test_config=mini_test_json,
             created_at=datetime.utcnow(),
         )
+        full_text = f"{job.title} . {job.description} . {job.requirements}"
+        job.vector_embedding = get_text_embedding(full_text)
         db.session.add(job)
         db.session.commit()
         flash("Đăng tin tuyển dụng thành công!", "success")

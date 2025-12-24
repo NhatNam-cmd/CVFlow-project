@@ -180,40 +180,71 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <h3 class="fw-bold text-primary mb-0"><i class="bi bi-stars"></i> Việc Làm Dành Riêng Cho Bạn</h3>
-                        <p class="text-muted small mb-0">Dựa trên phân tích hồ sơ CV chính của bạn</p>
+                        <p class="text-muted small mb-0">AI chọn lọc dựa trên hồ sơ của bạn.</p>
                     </div>
-                    <a href="{{ url_for('candidate.job_manager') }}" class="btn btn-outline-primary btn-sm">Xem tất cả</a>
+                    <a href="{{ url_for('candidate.job_manager') }}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                        Xem tất cả <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
+
                 <div class="row g-3">
-                    {% for job in recommended_jobs[:3] %}
-                        <div class="col-md-4">
-                            <div class="card h-100 border-primary border-2 shadow-sm position-relative overflow-hidden">
-                                <div class="position-absolute top-0 end-0 bg-success text-white px-2 py-1 small fw-bold" style="border-bottom-left-radius: 8px;">
-                                    {{ job.match_score }}% Match
-                                </div>
-                                <div class="card-body">
-                                    <h5 class="card-title text-truncate fw-bold text-primary mb-1">{{ job.title }}</h5>
-                                    <p class="text-muted small mb-2">{{ job.company_name }}</p>
-                                    <div class="d-flex gap-2 mb-3 small">
-                                        <span class="bg-light px-2 py-1 rounded text-secondary"><i class="bi bi-geo-alt"></i> {{ job.location }}</span>
-                                        <span class="bg-light px-2 py-1 rounded text-success fw-bold"><i class="bi bi-cash"></i> {{ job.salary_range }}</span>
+                    {% if recommended_jobs %}
+                        {% for job in recommended_jobs %}
+                            <div class="col-md-4">
+                                <div class="card h-100 border-primary border-opacity-25 shadow-sm position-relative overflow-hidden hover-effect">
+
+                                    <div class="position-absolute top-0 end-0 text-white px-3 py-1 small fw-bold"
+                                         style="border-bottom-left-radius: 12px; background: linear-gradient(45deg, #198754, #20c997);">
+                                        <i class="bi bi-lightning-fill me-1"></i>{{ job.match_score }}% Match
                                     </div>
-                                    <a href="{{ url_for('public.job_detail', id=job.id) }}" class="btn btn-sm btn-outline-primary w-100">
-                                        {% if job.source == 'INTERNAL' %}
-                                            Xem & Ứng tuyển
-                                        {% else %}
-                                            Xem chi tiết <i class="bi bi-box-arrow-up-right"></i>
-                                        {% endif %}
-                                    </a>
+
+                                    <div class="card-body pt-4">
+                                        <h5 class="card-title text-truncate fw-bold text-dark mb-1">
+                                            <a href="{{ url_for('public.job_detail', id=job.id) }}" class="text-decoration-none text-dark stretched-link">
+                                                {{ job.title }}
+                                            </a>
+                                        </h5>
+                                        <p class="text-muted small mb-3">
+                                            <i class="bi bi-building me-1"></i> {{ job.company.name if job.company else 'Công ty ẩn danh' }}
+                                        </p>
+
+                                        <div class="d-flex gap-2 mb-3 small flex-wrap">
+                                            <span class="bg-light border px-2 py-1 rounded text-secondary">
+                                                <i class="bi bi-geo-alt"></i> {{ job.location }}
+                                            </span>
+                                            <span class="bg-success bg-opacity-10 text-success px-2 py-1 rounded fw-bold border border-success border-opacity-25">
+                                                <i class="bi bi-cash"></i>
+                                                {% if job.salary_min %}
+                                                    {{ "{:,.0f}".format(job.salary_min/1000000) }} - {{ "{:,.0f}".format(job.salary_max/1000000) }} Tr
+                                                {% else %}
+                                                    Thỏa thuận
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-white border-0 pb-3 pt-0">
+                                        <small class="text-muted fst-italic" style="font-size: 0.75rem;">
+                                            <i class="bi bi-robot me-1"></i>AI thấy bạn phù hợp kỹ năng này
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        {% endfor %}
                     {% else %}
-                        <div class="col-12 text-center py-4 bg-light rounded border border-dashed">
-                            <i class="bi bi-cloud-upload fs-1 text-muted"></i>
-                            <p class="mt-2 text-muted">Hãy <a href="{{ url_for('candidate.cv_manager') }}">tải lên CV chính</a> để nhận gợi ý việc làm từ AI.</p>
+                        <div class="col-12">
+                            <div class="text-center py-5 bg-white border border-dashed rounded-3">
+                                <i class="bi bi-robot display-4 text-muted opacity-50 mb-3"></i>
+                                <h5 class="fw-bold text-muted">Chưa có gợi ý phù hợp</h5>
+                                <p class="small text-muted mb-3">
+                                    Hệ thống cần <strong>CV Chính</strong> để phân tích kỹ năng của bạn.<br>
+                                    Hoặc hiện tại chưa có công việc nào khớp trên 15% với hồ sơ của bạn.
+                                </p>
+                                <a href="{{ url_for('candidate.cv_manager') }}" class="btn btn-primary btn-sm fw-bold">
+                                    <i class="bi bi-file-earmark-person me-2"></i> Quản lý CV
+                                </a>
+                            </div>
                         </div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
             </div>
         {% endif %}

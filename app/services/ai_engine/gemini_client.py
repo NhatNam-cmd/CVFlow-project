@@ -55,3 +55,22 @@ def call_gemini_pro(prompt):
 
             # In ra tất cả lỗi để dễ debug hơn
     return {"error": f"Thất bại toàn tập. Chi tiết lỗi: {'; '.join(errors)}"}
+
+
+def get_text_embedding(text):
+    """
+    Chuyển đổi văn bản thành Vector (Embedding) sử dụng model text-embedding-004
+    """
+    if not client:
+        return None
+
+    try:
+        # Model embedding chuẩn của Google
+        result = client.models.embed_content(
+            model="models/text-embedding-004", contents=text
+        )
+        # Trả về list số thực (Vector)
+        return result.embeddings[0].values
+    except Exception as e:
+        print(f"⚠️ Lỗi Embedding: {e}")
+        return None
