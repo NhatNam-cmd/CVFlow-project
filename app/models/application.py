@@ -13,7 +13,7 @@ class CV_File(db.Model):
 
     # AI Analysis
     raw_text = db.Column(db.Text)
-    ai_score = db.Column(db.Integer)
+    ai_score = db.Column(db.Integer, default=0)
     ai_matching_data = db.Column(db.JSON)
     vector_embedding = db.Column(db.PickleType)
 

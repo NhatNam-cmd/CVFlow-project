@@ -31,3 +31,5 @@ sentence-transformers==2.2.2
 # 7. Feature: Background Tasks
 redis==5.0.1
 celery==5.3.6
+
+google-genai

@@ -1,7 +1,7 @@
 # services/ai_engine/core.py
-from .parser import extract_text_from_pdf
-from .prompts import MATCHING_PROMPT_TEMPLATE
+from .prompts import MATCHING_PROMPT_TEMPLATE, CV_REVIEW_PROMPT_TEMPLATE
 from .gemini_client import call_gemini_pro
+from .parser import extract_text_from_pdf
 
 
 def analyze_cv_matching(cv_path, jd_text):
@@ -21,5 +21,21 @@ def analyze_cv_matching(cv_path, jd_text):
 
     if not ai_result:
         return {"error": "Lỗi khi phân tích AI"}
+
+    return ai_result
+
+
+def review_cv_content(cv_text):
+    """
+    Chấm điểm và nhận xét CV dựa trên nội dung text.
+    """
+    if not cv_text or len(cv_text) < 50:
+        return {"error": "Nội dung CV quá ngắn hoặc không đọc được."}
+
+    # 1. Ghép prompt
+    final_prompt = CV_REVIEW_PROMPT_TEMPLATE.format(cv_text=cv_text)
+
+    # 2. Gọi AI
+    ai_result = call_gemini_pro(final_prompt)
 
     return ai_result
