@@ -8,6 +8,7 @@ from sqlalchemy import func
 from datetime import datetime
 from app.models import Job, Company, CV_File
 from app.services.ai_engine.recommender import recommend_jobs_for_cv  # Import hàm gợi ý
+from app.utils.salary_helper import SalaryCalculator
 
 # --- TRANG CHỦ & TÌM KIẾM ---
 
@@ -271,21 +272,27 @@ def salary_tool():
     form = SalaryToolForm()
     result = None
 
+    # Set giá trị default từ request arguments nếu có (để giữ trạng thái sau khi POST)
+    if request.method == "GET":
+        # Mặc định form load ra
+        pass
+
     if form.validate_on_submit():
-        # Gọi Service tính lương (Pure Python)
-        # Chúng ta sẽ tạo file services/analytics/salary_calculator.py sau
-        # Tạm thời để logic giả lập ở đây để test UI
-        gross = form.gross_salary.data
-        net = gross * 0.895  # Giả lập trừ 10.5% bảo hiểm
-        result = {
-            "gross": gross,
-            "net": net,
-            "bhxh": gross * 0.08,
-            "bhyt": gross * 0.015,
-            "bhtn": gross * 0.01,
-            "income_before_tax": gross - (gross * 0.105),
-            "tax": 0,  # Tạm tính
-        }
+        salary_input = form.gross_salary.data
+        dependents = form.dependents.data
+        region = int(form.region.data)
+        mode = form.calc_mode.data
+
+        if mode == "NET_TO_GROSS":
+            # Tính Gross từ Net
+            result = SalaryCalculator.net_to_gross(
+                target_net=salary_input, region_id=region, num_dependents=dependents
+            )
+        else:
+            # Tính Net từ Gross (Mặc định)
+            result = SalaryCalculator.gross_to_net(
+                gross_salary=salary_input, region_id=region, num_dependents=dependents
+            )
 
     return render_template("public/tool_salary.html", form=form, result=result)
 
