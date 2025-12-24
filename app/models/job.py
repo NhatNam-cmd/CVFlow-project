@@ -34,4 +34,4 @@ class Job(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    vector_embedding = db.Column(db.PickleType)
+    vector_embedding = db.Column(db.PickleType, nullable=True)

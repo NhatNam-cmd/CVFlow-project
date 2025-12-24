@@ -3,34 +3,53 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.modules.public import public_bp
 from app.modules.public.forms import SalaryToolForm
-from app.models.job import Job
-from app.models.user import Company
 from app.models.application import Application
 from sqlalchemy import func
-from sqlalchemy import or_
-from app.models.application import CV_File
 from datetime import datetime
+from app.models import Job, Company, CV_File
+from app.services.ai_engine.recommender import recommend_jobs_for_cv  # Import hàm gợi ý
 
 # --- TRANG CHỦ & TÌM KIẾM ---
 
 
 @public_bp.route("/")
 def index():
-    # 1. Lấy Job mới nhất (Giữ nguyên code cũ)
+    # ==========================================
+    # 1. LẤY VIỆC LÀM MỚI NHẤT (Cho phần "Việc làm mới nhất")
+    # ==========================================
     jobs = (
         Job.query.filter_by(is_active=True)
         .order_by(Job.created_at.desc())
-        .limit(6)
+        .limit(8)  # Lấy 8 tin cho đẹp grid (4x2)
         .all()
     )
 
-    # 2. Recommendation (Giữ nguyên code cũ)
+    # ==========================================
+    # 2. XỬ LÝ GỢI Ý VIỆC LÀM TỪ AI (Cho Candidate)
+    # ==========================================
     recommended_jobs = []
-    if current_user.is_authenticated and current_user.role == "CANDIDATE":
-        recommended_jobs = Job.query.filter_by(is_active=True).limit(3).all()
 
-    # 3. LẤY TOP CÔNG TY (LOGIC MỚI)
+    if current_user.is_authenticated and current_user.role == "CANDIDATE":
+        # Tìm CV chính của user
+        main_cv = CV_File.query.filter_by(user_id=current_user.id, is_main=True).first()
+
+        # Chỉ chạy AI nếu CV chính có vector embedding
+        if main_cv and main_cv.vector_embedding:
+            # Gọi hàm gợi ý AI (Lấy top 3 để hiện trang chủ)
+            # Hàm này trả về list dict: [{'job': job_obj, 'match_score': 85}, ...]
+            ai_results = recommend_jobs_for_cv(main_cv.vector_embedding, top_n=3)
+
+            # Xử lý dữ liệu để truyền sang template
+            for item in ai_results:
+                job_obj = item["job"]
+                # Gán match_score vào object job để hiển thị trên giao diện
+                job_obj.match_score = item["match_score"]
+                recommended_jobs.append(job_obj)
+
+    # ==========================================
+    # 3. LẤY TOP CÔNG TY (LOGIC CỦA BẠN)
     # Logic: Lấy cty đã xác thực + Join với bảng Job + Đếm số Job active + Sắp xếp giảm dần
+    # ==========================================
     top_companies = (
         db.session.query(Company)
         .join(Job, Company.id == Job.company_id)
@@ -51,63 +70,64 @@ def index():
             .all()
         )
 
-    # Truyền biến top_companies ra view
     return render_template(
         "public/index.html",
         jobs=jobs,
-        recommended_jobs=recommended_jobs,
-        top_companies=top_companies,
-    )  # <--- Thêm cái này
+        top_companies=top_companies,  # Danh sách công ty nổi bật
+        recommended_jobs=recommended_jobs,  # Danh sách việc làm AI gợi ý
+    )
 
 
-@public_bp.route("/job/search")
+@public_bp.route("/jobs")
 def job_search():
     # 1. Lấy tham số từ URL
     keyword = request.args.get("q", "").strip()
     location = request.args.get("location", "All")
     level = request.args.get("level", "All")
-    min_sal_input = request.args.get("min_salary", type=int)
-    max_sal_input = request.args.get("max_salary", type=int)
+    min_salary = request.args.get("min_salary", type=int)
+    max_salary = request.args.get("max_salary", type=int)
 
-    # 2. Query cơ bản: Chỉ lấy job đang active
-    query = Job.query.filter_by(is_active=True)
+    # Tham số phân trang (Mặc định trang 1, 10 job/trang)
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
 
-    # 3. Áp dụng các bộ lọc
+    # 2. Xây dựng Query cơ bản
+    query = Job.query.filter(Job.is_active == True)
 
-    # Lọc Từ khóa (Tìm trong Title hoặc Kỹ năng)
+    # 3. Áp dụng bộ lọc (Filter)
     if keyword:
-        # Dùng ilike để tìm không phân biệt hoa thường
-        # Tìm trong Title HOẶC trong mảng Skill (ép kiểu JSON về text để tìm)
-        search_term = f"%{keyword}%"
+        # Tìm kiếm trong tiêu đề hoặc mô tả (Case-insensitive)
         query = query.filter(
-            or_(
-                Job.title.ilike(search_term),
-                db.cast(Job.skills_required, db.String).ilike(search_term),
-            )
+            (Job.title.ilike(f"%{keyword}%")) | (Job.description.ilike(f"%{keyword}%"))
         )
 
-    # Lọc Địa điểm
     if location and location != "All":
-        query = query.filter(Job.location == location)
+        query = query.filter(Job.location.ilike(f"%{location}%"))
 
-    # Lọc Cấp bậc
     if level and level != "All":
-        query = query.filter(Job.level == level)
+        query = query.filter(Job.level.ilike(f"%{level}%"))
 
-    # Lọc Lương (Logic: Lương Max của job phải lớn hơn Mức Min người dùng tìm)
-    # Quy đổi: Người dùng nhập 10 -> Code hiểu là 10.000.000
-    if min_sal_input:
-        real_min = min_sal_input * 1_000_000
-        query = query.filter(Job.salary_max >= real_min)
+    if min_salary:
+        query = query.filter(Job.salary_min >= min_salary * 1000000)  # Đổi sang triệu
 
-    if max_sal_input:
-        real_max = max_sal_input * 1_000_000
-        query = query.filter(Job.salary_min <= real_max)
+    if max_salary:
+        query = query.filter(Job.salary_max <= max_salary * 1000000)
 
-    # 4. Sắp xếp & Thực thi
-    jobs = query.order_by(Job.created_at.desc()).all()
+    # 4. Sắp xếp (Mới nhất lên đầu)
+    query = query.order_by(Job.created_at.desc())
 
-    return render_template("public/job_search.html", jobs=jobs)
+    # 5. PHÂN TRANG (Quan trọng)
+    # Thay vì .all(), ta dùng .paginate()
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    jobs = pagination.items  # Lấy danh sách job của trang hiện tại
+
+    return render_template(
+        "public/job_search.html",
+        jobs=jobs,  # List job của trang hiện tại
+        pagination=pagination,  # Object phân trang để vẽ thanh điều hướng
+        total_jobs=pagination.total,  # Tổng số kết quả tìm được
+    )
 
 
 # --- CHI TIẾT JOB & CÔNG TY ---
