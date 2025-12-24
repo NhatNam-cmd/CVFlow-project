@@ -8,6 +8,9 @@ from sqlalchemy import func
 from datetime import datetime
 from app.models import Job, Company, CV_File
 from app.services.ai_engine.recommender import recommend_jobs_for_cv  # Import hàm gợi ý
+from app.models.market import MarketData
+from app.services.analytics.market_analyzer import MarketAnalyzer
+import json
 
 # --- TRANG CHỦ & TÌM KIẾM ---
 
@@ -292,5 +295,40 @@ def salary_tool():
 
 @public_bp.route("/market-report")
 def market_report():
-    # Trang này sẽ gọi API để vẽ biểu đồ JS
-    return render_template("public/market_report.html")
+    # 1. Kiểm tra xem đã có báo cáo trong DB chưa
+    existing_report_count = MarketData.query.count()
+
+    # 2. Nếu chưa có dòng nào -> Mới gọi AI chạy phân tích
+    if existing_report_count == 0:
+        print("⚡ Data not found. Running AI Analysis...")
+        analyzer = MarketAnalyzer()
+        analyzer.analyze_and_save()
+
+    # 3. Lấy dữ liệu báo cáo (Lúc này chắc chắn đã có)
+    reports = MarketData.query.order_by(MarketData.avg_salary_max.desc()).all()
+
+    # 4. Lấy thống kê từ chối (Gọi qua Static Method, rất nhanh)
+    rejection_stats = MarketAnalyzer.get_rejection_stats()
+
+    # --- PHẦN DƯỚI GIỮ NGUYÊN ---
+    # Chuẩn bị dữ liệu biểu đồ
+    chart_labels = [r.job_title_normalized for r in reports]
+    chart_salary = [int(r.avg_salary_max / 1000000) for r in reports]
+
+    reject_labels = list(rejection_stats.keys())
+    reject_data = list(rejection_stats.values())
+
+    # Fake data skill demo
+    skill_labels = reports[0].top_skills if reports else []
+    skill_data = [10, 8, 6, 5, 4]
+
+    return render_template(
+        "public/market_report.html",
+        reports=reports,
+        chart_labels=json.dumps(chart_labels),
+        chart_salary=json.dumps(chart_salary),
+        reject_labels=json.dumps(reject_labels),
+        reject_data=json.dumps(reject_data),
+        skill_labels=json.dumps(skill_labels),
+        skill_data=json.dumps(skill_data),
+    )

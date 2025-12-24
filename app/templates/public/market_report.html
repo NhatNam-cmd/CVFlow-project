@@ -1,70 +1,14 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}Báo cáo Thị trường IT - CVFlow{% endblock %}
+{% block title %}Báo Cáo Thị Trường IT 2025{% endblock %}
 
 {% block content %}
-    <div class="container py-5">
-
-        <div class="d-flex justify-content-between align-items-end mb-4">
-            <div>
-                <h1 class="fw-bold text-dark">Market Intelligence</h1>
-                <p class="text-muted mb-0">Dữ liệu thực tế được phân tích từ <strong class="text-primary">1,250</strong> tin tuyển dụng.</p>
-            </div>
-            <div class="d-flex gap-2">
-                <select class="form-select">
-                    <option>Tất cả vị trí</option>
-                    <option selected>Python Developer</option>
-                    <option>Java Developer</option>
-                    <option>Frontend (React/Vue)</option>
-                </select>
-                <button class="btn btn-primary px-4"><i class="bi bi-filter"></i> Lọc</button>
-            </div>
-        </div>
-
-        <div class="row g-4 mb-5">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100 border-start border-4 border-success">
-                    <div class="card-body">
-                        <h6 class="text-uppercase text-muted small fw-bold mb-2">Lương Trung Vị (Median)</h6>
-                        <div class="d-flex align-items-end gap-2">
-                            <h2 class="fw-bold text-dark mb-0">28,500,000</h2>
-                            <small class="text-muted mb-1">VNĐ</small>
-                        </div>
-                        <p class="small text-success mb-0 mt-2"><i class="bi bi-arrow-up"></i> Tăng 12% so với năm ngoái</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100 border-start border-4 border-warning">
-                    <div class="card-body">
-                        <h6 class="text-uppercase text-muted small fw-bold mb-2">Nhu cầu Tuyển dụng</h6>
-                        <div class="d-flex align-items-end gap-2">
-                            <h2 class="fw-bold text-dark mb-0">Cao</h2>
-                            <span class="badge bg-warning text-dark mb-1">Hot Trend</span>
-                        </div>
-                        <p class="small text-muted mb-0 mt-2">Đang có <strong>342</strong> job active.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100 border-start border-4 border-danger">
-                    <div class="card-body">
-                        <h6 class="text-uppercase text-muted small fw-bold mb-2">Độ cạnh tranh</h6>
-                        <div class="d-flex align-items-end gap-2">
-                            <h2 class="fw-bold text-dark mb-0">1 : 15</h2>
-                            <small class="text-muted mb-1">(1 chọi 15)</small>
-                        </div>
-                        <p class="small text-danger mb-0 mt-2">Cần chuẩn bị kỹ thuật toán.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+    <div class="container mb-5">
         <div class="row g-4 mb-5">
             <div class="col-lg-8">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white py-3 fw-bold">
-                        <i class="bi bi-bar-chart-fill text-primary me-2"></i> Phân bổ mức lương theo Kinh nghiệm
+                        <i class="bi bi-bar-chart-fill text-primary me-2"></i> Mức Lương Trung Bình Theo Vị Trí
                     </div>
                     <div class="card-body">
                         <canvas id="salaryChart" height="120"></canvas>
@@ -73,88 +17,100 @@
             </div>
 
             <div class="col-lg-4">
-                <div class="card border-0 shadow-sm h-100">
+                <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-white py-3 fw-bold">
-                        <i class="bi bi-tags-fill text-warning me-2"></i> Top Kỹ năng đi kèm
+                        <i class="bi bi-x-octagon-fill text-danger me-2"></i> Lý Do Từ Chối Phổ Biến
                     </div>
-                    <div class="card-body">
-                        <canvas id="skillChart" height="250"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card border-0 shadow-sm bg-dark text-white mb-5" style="background: linear-gradient(45deg, #212529, #343a40);">
-            <div class="card-body p-4">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <h4 class="fw-bold mb-3"><i class="bi bi-lightbulb"></i> Tại sao tôi bị từ chối?</h4>
-                        <p class="opacity-75">Dựa trên dữ liệu từ 500 hồ sơ bị loại, đây là các lý do phổ biến nhất cho vị trí Python Developer:</p>
-                        <ul class="list-unstyled mt-3">
-                            <li class="mb-2"><span class="badge bg-danger me-2">45%</span> Thiếu kinh nghiệm thực tế (Project)</li>
-                            <li class="mb-2"><span class="badge bg-warning text-dark me-2">30%</span> Tiếng Anh giao tiếp yếu</li>
-                            <li class="mb-2"><span class="badge bg-info text-dark me-2">15%</span> Deal lương quá cao so với Budget</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6 text-center">
-                        <div style="width: 250px; height: 250px; margin: 0 auto;">
-                            <canvas id="rejectChart"></canvas>
-                        </div>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                        <canvas id="rejectChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
+        <h4 class="fw-bold mb-3 border-start border-4 border-primary ps-3">Chi Tiết Theo Ngôn Ngữ / Vị Trí</h4>
+        <div class="card shadow-sm border-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary text-uppercase small">
+                    <tr>
+                        <th class="ps-4">Vị trí (Normalized)</th>
+                        <th class="text-center">Nhu Cầu</th>
+                        <th>Lương TB (Max)</th>
+                        <th>Top Kỹ Năng Yêu Cầu</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% if reports %}
+                        {% for row in reports %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-primary">{{ row.job_title_normalized }}</td>
+                                <td class="text-center">
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        <div class="progress flex-grow-1" style="width: 80px; height: 6px;">
+                                            <div class="progress-bar bg-success" style="width: {{ row.demand_score }}%"></div>
+                                        </div>
+                                        <small class="fw-bold text-success">{{ row.demand_score }}</small>
+                                    </div>
+                                </td>
+                                <td>{{ "{:,.0f}".format(row.avg_salary_max/1000000) }} Tr</td>
+                                <td>
+                                    {% for skill in row.top_skills %}
+                                        <span class="badge bg-light text-dark border me-1">{{ skill }}</span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // 1. Config Chart Lương
-        const ctxSalary = document.getElementById('salaryChart').getContext('2d');
-        new Chart(ctxSalary, {
+        // --- 1. BIỂU ĐỒ LƯƠNG (Dữ liệu đã chuẩn hóa) ---
+        const salaryCtx = document.getElementById('salaryChart').getContext('2d');
+        new Chart(salaryCtx, {
             type: 'bar',
             data: {
-                labels: ['Fresher (<1 năm)', 'Junior (1-3 năm)', 'Senior (3-5 năm)', 'Lead/Manager'],
+                labels: JSON.parse('{{ chart_labels | safe }}'), // ["Python Dev", "Java Dev"...]
                 datasets: [{
-                    label: 'Mức lương trung bình (Triệu VNĐ)',
-                    data: [8.5, 18.5, 35.0, 55.0], // Dữ liệu giả lập
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
+                    label: 'Lương TB (Triệu VNĐ)',
+                    data: JSON.parse('{{ chart_salary | safe }}'),
+                    backgroundColor: '#0d6efd',
+                    borderRadius: 4
                 }]
             },
-            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+            options: { responsive: true }
         });
 
-        // 2. Config Chart Skills
-        const ctxSkill = document.getElementById('skillChart').getContext('2d');
-        new Chart(ctxSkill, {
+        // --- 2. BIỂU ĐỒ TỪ CHỐI (Dữ liệu Rejection) ---
+        // Kiểm tra xem có dữ liệu không, nếu không thì ẩn hoặc hiện fake data
+        const rejectDataRaw = JSON.parse('{{ reject_data | safe }}');
+
+        const rejectCtx = document.getElementById('rejectChart').getContext('2d');
+        new Chart(rejectCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Django', 'Flask', 'SQL', 'Docker', 'AWS'],
+                labels: JSON.parse('{{ reject_labels | safe }}'), // ["Chuyên môn yếu", "Tiếng Anh"...]
                 datasets: [{
-                    data: [35, 25, 20, 15, 5],
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'
-                    ]
-                }]
-            }
-        });
-
-        // 3. Config Chart Reject
-        const ctxReject = document.getElementById('rejectChart').getContext('2d');
-        new Chart(ctxReject, {
-            type: 'pie',
-            data: {
-                labels: ['Thiếu KN', 'Tiếng Anh', 'Lương cao', 'Khác'],
-                datasets: [{
-                    data: [45, 30, 15, 10],
-                    backgroundColor: ['#dc3545', '#ffc107', '#0dcaf0', '#6c757d'],
+                    data: rejectDataRaw.length ? rejectDataRaw : [1], // Tránh lỗi chart rỗng
+                    backgroundColor: ['#dc3545', '#ffc107', '#6c757d', '#0dcaf0'],
                     borderWidth: 0
                 }]
             },
             options: {
-                plugins: { legend: { display: false } } // Ẩn chú thích cho gọn
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    title: {
+                        display: rejectDataRaw.length === 0,
+                        text: 'Chưa có dữ liệu từ chối'
+                    }
+                }
             }
         });
     </script>

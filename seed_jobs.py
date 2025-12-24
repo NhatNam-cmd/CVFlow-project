@@ -127,6 +127,7 @@ def seed_data():
                     is_active=True,
                     company_id=company.id,
                     recruiter_id=hr_user.id,  # Người đăng tin
+                    skills_required=template["skills"],
                 )
 
                 # --- QUAN TRỌNG: TẠO VECTOR ---
