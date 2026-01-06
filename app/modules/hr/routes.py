@@ -12,6 +12,9 @@ from datetime import timedelta
 from app.services.ai_engine.cv_analyzer import CVAnalyzer
 from sqlalchemy import func
 from app.services.ai_engine.gemini_client import get_text_embedding
+from app.services.scheduler.engine import SchedulerEngine
+from app.services.scheduler.ics_generator import ICSGenerator
+from app.models.scheduler import Availability
 
 
 # Middleware kiểm tra quyền HR
@@ -196,9 +199,18 @@ def candidate_list():
 def candidate_view(id):
     application = db.session.get(Application, id)
     if not application or application.job.company_id != current_user.company_id:
-        abort(403)  # Không được xem ứng viên của cty khác
+        abort(403)
 
-    return render_template("hr/candidate_view.html", application=application)
+    # 👇 Tìm xem hồ sơ này có lịch nào đang Active không
+    active_interview = Interview.query.filter_by(
+        application_id=application.id, status="SCHEDULED"
+    ).first()
+
+    return render_template(
+        "hr/candidate_view.html",
+        application=application,
+        active_interview=active_interview,
+    )
 
 
 @hr_bp.route("/schedule")
@@ -233,9 +245,56 @@ def schedule_calendar():
     return render_template("hr/schedule_calendar.html", events=events)
 
 
-@hr_bp.route("/profile")
+@hr_bp.route("/profile", methods=["GET", "POST"])
+@login_required
 def profile():
-    return render_template("hr/profile.html")
+    if request.method == "POST":
+        # 1. Xử lý Tab Thông tin cá nhân
+        if "full_name" in request.form:
+            current_user.full_name = request.form.get("full_name")
+            current_user.phone = request.form.get("phone")
+            # ... lưu các field khác ...
+            db.session.commit()
+            flash("Cập nhật thông tin thành công!", "success")
+
+        # 2. Xử lý Tab Cấu hình Lịch (Availability)
+        # Form gửi lên dạng: day_0_active, day_0_start, day_0_end...
+        if "save_availability" in request.form:
+            try:
+                # Xóa cấu hình cũ để lưu mới
+                Availability.query.filter_by(user_id=current_user.id).delete()
+
+                # Duyệt qua 7 ngày (0=Mon -> 6=Sun)
+                for i in range(7):
+                    is_active = request.form.get(f"day_{i}_active") == "on"
+                    if is_active:
+                        start_str = request.form.get(f"day_{i}_start")
+                        end_str = request.form.get(f"day_{i}_end")
+
+                        if start_str and end_str:
+                            new_avail = Availability(
+                                user_id=current_user.id,
+                                day_of_week=i,
+                                start_time=datetime.strptime(start_str, "%H:%M").time(),
+                                end_time=datetime.strptime(end_str, "%H:%M").time(),
+                            )
+                            db.session.add(new_avail)
+
+                db.session.commit()
+                flash("Đã lưu cấu hình lịch làm việc!", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Lỗi lưu lịch: {str(e)}", "danger")
+
+    # Load dữ liệu Availability cũ để hiển thị lên form
+    availabilities = Availability.query.filter_by(user_id=current_user.id).all()
+    # Chuyển về dict để dễ truy xuất trong template: {0: {'start':..., 'end':...}}
+    avail_map = {
+        a.day_of_week: {"start": a.start_time, "end": a.end_time}
+        for a in availabilities
+    }
+
+    return render_template("hr/profile.html", avail_map=avail_map)
 
 
 @hr_bp.route("/candidate/status/<int:id>/<string:new_status>")
@@ -268,6 +327,7 @@ def update_status(id, new_status):
 
 
 @hr_bp.route("/interview/create/<int:app_id>", methods=["POST"])
+@login_required
 def create_interview(app_id):
     # 1. Lấy dữ liệu
     application = db.session.get(Application, app_id)
@@ -275,27 +335,70 @@ def create_interview(app_id):
         abort(403)
 
     start_time_str = request.form.get("start_time")
-    duration = int(request.form.get("duration", 60))
-    location_detail = request.form.get("location_detail")
+    # 👇 Lấy duration từ form, mặc định 60 nếu lỗi
+    try:
+        duration = int(request.form.get("duration", 60))
+    except ValueError:
+        duration = 60
 
-    # 2. Tính toán thời gian
-    start_time = datetime.strptime(start_time_str, "%Y-%m-%dT%H:%M")
+    location_detail = request.form.get("location_detail")
+    location_type = request.form.get("location_type")  # online/offline
+
+    # 2. Xử lý thời gian
+    try:
+        start_time = datetime.strptime(start_time_str, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        flash("Định dạng thời gian không hợp lệ", "danger")
+        return redirect(url_for("hr.candidate_view", id=app_id))
+
+    # 3. 👇 CHECK TRÙNG LỊCH (QUAN TRỌNG) 👇
+    is_conflict, conflict_msg = SchedulerEngine.check_conflict(
+        recruiter_id=current_user.id,
+        candidate_id=application.user_id,
+        start_time=start_time,
+        duration_minutes=duration,
+    )
+
+    if is_conflict:
+        flash(f"⚠️ Xung đột lịch: {conflict_msg}", "danger")
+        return redirect(url_for("hr.candidate_view", id=app_id))
+
+    # 4. Tính end_time và tạo Record
     end_time = start_time + timedelta(minutes=duration)
 
-    # 3. Tạo record Interview
+    # Format lại location cho đẹp
+    final_location = location_detail
+    if location_type == "online" and "http" not in location_detail:
+        final_location = f"Online: {location_detail}"
+
     interview = Interview(
         application_id=application.id,
         recruiter_id=current_user.id,
         start_time=start_time,
         end_time=end_time,
-        location=location_detail,
+        location=final_location,
         meeting_link=location_detail if "http" in location_detail else None,
         status="SCHEDULED",
         created_at=datetime.utcnow(),
     )
 
+    # 5. Lưu DB trước để có ID dùng cho tên file ICS
     db.session.add(interview)
     db.session.commit()
+
+    # 6. 👇 TẠO FILE ICS 👇
+    try:
+        ics_filename = ICSGenerator.create_ics_file(interview)
+        interview.ics_file_url = ics_filename
+        db.session.commit()
+    except Exception as e:
+        print(f"Lỗi tạo ICS: {e}")
+        # Không return lỗi, vẫn cho phép tạo lịch dù file ics lỗi
+
+    # Cập nhật trạng thái Kanban sang INTERVIEW (nếu đang ở NEW)
+    if application.status == "NEW":
+        application.status = "INTERVIEW"
+        db.session.commit()
 
     flash("Đã lên lịch phỏng vấn thành công!", "success")
     return redirect(url_for("hr.candidate_view", id=app_id))
@@ -362,3 +465,84 @@ def analyze_application_cv(app_id):  # <-- Đổi tên hàm thành analyze_appli
         print(f"Error HR Analyze: {e}")
 
     return redirect(request.referrer)
+
+
+@hr_bp.route("/api/suggest-slots/<int:app_id>")
+@login_required
+def get_interview_suggestions(app_id):
+    application = db.session.get(Application, app_id)
+    if not application:
+        return jsonify({"error": "Not found"}), 404
+
+    duration = request.args.get("duration", 60, type=int)
+
+    result = SchedulerEngine.get_suggested_slots(
+        recruiter_id=current_user.id,
+        candidate_id=application.user_id,
+        duration_minutes=duration,
+    )
+
+    # Nếu kết quả là Dictionary có key 'error', trả về nguyên văn
+    if isinstance(result, dict) and "error" in result:
+        return jsonify(result)
+
+    # Nếu là List (thành công hoặc rỗng)
+    return jsonify(result)
+
+
+@hr_bp.route("/interview/update/<int:interview_id>", methods=["POST"])
+@login_required
+def update_interview(interview_id):
+    # Lấy cuộc phỏng vấn cũ
+    interview = db.session.get(Interview, interview_id)
+    if not interview or interview.recruiter_id != current_user.id:
+        abort(403)
+
+    app_id = interview.application_id
+
+    # Lấy dữ liệu form mới
+    start_time_str = request.form.get("start_time")
+    duration = int(request.form.get("duration", 60))
+    location_detail = request.form.get("location_detail")
+    location_type = request.form.get("location_type")
+
+    try:
+        start_time = datetime.strptime(start_time_str, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        flash("Lỗi định dạng thời gian", "danger")
+        return redirect(url_for("hr.candidate_view", id=app_id))
+
+    # 👇 Check conflict (nhớ truyền ID để loại trừ chính nó)
+    is_conflict, msg = SchedulerEngine.check_conflict(
+        current_user.id,
+        interview.application.user_id,
+        start_time,
+        duration,
+        exclude_interview_id=interview.id,  # <--- QUAN TRỌNG
+    )
+
+    if is_conflict:
+        flash(f"Không thể đổi lịch: {msg}", "danger")
+        return redirect(url_for("hr.candidate_view", id=app_id))
+
+    # Cập nhật thông tin
+    interview.start_time = start_time
+    interview.end_time = start_time + timedelta(minutes=duration)
+
+    final_location = location_detail
+    if location_type == "online" and "http" not in location_detail:
+        final_location = f"Online: {location_detail}"
+
+    interview.location = final_location
+    interview.meeting_link = location_detail if "http" in location_detail else None
+
+    # Regenerate ICS file
+    try:
+        new_ics = ICSGenerator.create_ics_file(interview)
+        interview.ics_file_url = new_ics
+    except Exception as e:
+        print(f"Lỗi tạo ICS update: {e}")
+
+    db.session.commit()
+    flash("Đã cập nhật lịch phỏng vấn!", "success")
+    return redirect(url_for("hr.candidate_view", id=app_id))

@@ -1,0 +1,12 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:ics.py - http://git.io/lLljaA
+BEGIN:VEVENT
+DESCRIPTION:\n        Cuộc phỏng vấn với Tech Corp.\n        Vị trí: AI ENGINEER\n        Link họp (nếu có): N/A\n
+DURATION:PT1H
+LOCATION:Online: test
+DTSTART:20260107T080000Z
+SUMMARY:Phỏng vấn: AI ENGINEER
+UID:0eb2c903-0e75-4f6c-ba85-18c00982ea91@0eb2.org
+END:VEVENT
+END:VCALENDAR

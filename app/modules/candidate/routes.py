@@ -70,7 +70,7 @@ def dashboard():
 
 @candidate_bp.route("/profile", methods=["GET", "POST"])
 def profile():
-    # (Giữ nguyên code cũ của bạn)
+
     form = CandidateProfileForm()
     if request.method == "GET":
         form.phone.data = current_user.phone if current_user.phone else ""
