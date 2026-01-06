@@ -24,6 +24,7 @@ from app.services.ai_engine.gemini_client import get_text_embedding
 from app.modules.candidate.forms import CandidateProfileForm, CVUploadForm
 from app.models.application import CV_File, Application
 from app.models.scheduler import Interview
+from app.services.cv_scorer import CVScorer
 
 
 @candidate_bp.before_request
@@ -200,7 +201,7 @@ def interview_list():
 @candidate_bp.route("/cv-manager/review/<int:cv_id>", methods=["POST"])
 @login_required
 def ai_review_cv(cv_id):
-    # (Code cũ giữ nguyên - Không thay đổi)
+    # 1. KIỂM TRA QUYỀN TRUY CẬP
     cv = CV_File.query.get_or_404(cv_id)
     if cv.user_id != current_user.id:
         return (
@@ -211,6 +212,7 @@ def ai_review_cv(cv_id):
         )
 
     try:
+        # 2. XỬ LÝ TEXT (Nếu chưa có thì extract lại)
         cv_text = cv.raw_text
         if not cv_text:
             file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], cv.file_url)
@@ -220,33 +222,66 @@ def ai_review_cv(cv_id):
                     404,
                 )
 
-            print(f"📄 Đang trích xuất text từ file: {cv.file_name}")
-            cv_text = extract_text_from_pdf(file_path)  # Dùng parser cũ
+            print(f"📄 [Review] Đang trích xuất text từ file: {cv.file_name}")
+            cv_text = extract_text_from_pdf(file_path)
+
             if cv_text:
                 cv.raw_text = cv_text
                 db.session.commit()
             else:
                 return (
                     jsonify(
-                        {"success": False, "message": "Không thể đọc nội dung text"}
+                        {
+                            "success": False,
+                            "message": "Không thể đọc nội dung text từ file PDF",
+                        }
                     ),
                     400,
                 )
 
-        print(f"🤖 Đang gửi yêu cầu Review cho CV ID: {cv_id}")
+        # --- BẮT ĐẦU LOGIC MỚI ---
+
+        # 3. PHẦN 1: CHẤM ĐIỂM "CỨNG" (ATS SCORE) - Logic Python thuần
+        # Phần này đảm bảo điểm số luôn nhất quán, không phụ thuộc AI
+        print(f"🧮 [Review] Đang tính điểm chuẩn ATS cho CV ID: {cv_id}")
+        scorer = CVScorer()
+        ats_score, ats_details = scorer.evaluate(cv_text)
+
+        # 4. PHẦN 2: NHẬN XÉT "MỀM" (AI REVIEW) - Dùng Gemini
+        # Phần này chỉ lấy lời khuyên, không lấy điểm số
+        print("🤖 [Review] Đang gửi yêu cầu nhận xét tới AI...")
         ai_result = review_cv_content(cv_text)
 
         if "error" in ai_result:
-            return jsonify({"success": False, "message": ai_result["error"]}), 500
+            # Nếu AI lỗi, vẫn trả về điểm ATS nhưng báo lỗi phần nhận xét
+            print(f"⚠️ [Review] AI Error: {ai_result['error']}")
+            ai_result = {
+                "summary": "Hệ thống AI đang bận, chỉ có thể chấm điểm chuẩn ATS.",
+                "strengths": [],
+                "weaknesses": [],
+                "improvements": [],
+            }
 
-        cv.ai_score = ai_result.get("score", 0)
-        cv.ai_matching_data = ai_result
+        # 5. GỘP DỮ LIỆU (MERGE)
+        # Cấu trúc JSON mới để lưu vào DB và trả về Frontend
+        final_result = {
+            "score": ats_score,  # Điểm số uy tín (từ 0-100)
+            "checklist": ats_details,  # Mảng các tiêu chí đạt/không đạt (VD: ["✅ Có Email", "❌ Thiếu kỹ năng"])
+            "ai_review": ai_result,  # Nội dung nhận xét chi tiết từ AI
+        }
+
+        # 6. LƯU VÀO DATABASE
+        cv.ai_score = ats_score  # Lưu điểm số cứng
+        cv.ai_matching_data = final_result  # Lưu trọn bộ dữ liệu phân tích
         db.session.commit()
+
+        print(f"✅ [Review] Hoàn tất! Điểm: {ats_score}/100")
+
         return jsonify(
-            {"success": True, "message": "Đã phân tích xong!", "data": ai_result}
+            {"success": True, "message": "Đã phân tích xong CV!", "data": final_result}
         )
 
     except Exception as e:
-        print(f"❌ System Error: {e}")
+        print(f"❌ System Error [Review CV]: {e}")
         db.session.rollback()
         return jsonify({"success": False, "message": f"Lỗi hệ thống: {str(e)}"}), 500

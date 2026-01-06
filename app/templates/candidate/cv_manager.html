@@ -6,7 +6,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="h3 mb-0 fw-bold"><i class="bi bi-robot me-2 text-primary"></i>Quản Lý CV & Phân Tích AI</h2>
-            <p class="text-muted small mb-0">Chọn <strong>CV Chính</strong> để hệ thống gợi ý việc làm chính xác hơn.</p>
+            <p class="text-muted small mb-0">Hệ thống sử dụng <strong>ATS Scoring (Thuật toán)</strong> kết hợp <strong>GenAI (Nhận xét)</strong>.</p>
         </div>
         <button class="btn btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#uploadCVModal">
             <i class="bi bi-cloud-arrow-up me-2"></i> Tải CV Mới
@@ -27,6 +27,9 @@
     <div class="row g-4">
         {% if cvs %}
             {% for cv in cvs %}
+                {% set ai_data = cv.ai_matching_data.get('ai_review', {}) if cv.ai_matching_data else {} %}
+                {% set checklist = cv.ai_matching_data.get('checklist', []) if cv.ai_matching_data else [] %}
+
                 <div class="col-md-6 col-xl-4">
                     <div class="card h-100 shadow-sm border-0 {% if cv.is_main %}ring-2 ring-success{% endif %}" style="transition: transform 0.2s;">
 
@@ -57,11 +60,6 @@
                                             <i class="bi bi-download me-2"></i> Tải xuống
                                         </a>
                                     </li>
-                                    <li>
-                                        <button class="dropdown-item text-danger" onclick="confirmDelete({{ cv.id }})">
-                                            <i class="bi bi-trash me-2"></i> Xóa CV
-                                        </button>
-                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -80,10 +78,10 @@
                             </div>
 
                             <div class="bg-light rounded p-3 position-relative overflow-hidden">
-                                {% if (cv.ai_score or 0) > 0 and cv.ai_matching_data %}
+                                {% if (cv.ai_score or 0) > 0 %}
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <div>
-                                            <div class="text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700;">Chất lượng hồ sơ</div>
+                                            <div class="text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700;">Điểm chuẩn ATS</div>
                                             <h2 class="mb-0 fw-bold {% if (cv.ai_score or 0) >= 80 %}text-success{% elif (cv.ai_score or 0) >= 50 %}text-warning{% else %}text-danger{% endif %}">
                                                 {{ cv.ai_score or 0 }}/100
                                             </h2>
@@ -104,12 +102,12 @@
                                 {% else %}
                                     <div class="text-center py-2">
                                         <i class="bi bi-stars text-warning fs-4 mb-2 d-block"></i>
-                                        <h6 class="fw-bold mb-1">Chưa phân tích AI</h6>
-                                        <p class="small text-muted mb-2">Xem điểm mạnh/yếu của hồ sơ này.</p>
+                                        <h6 class="fw-bold mb-1">Chưa kiểm tra ATS</h6>
+                                        <p class="small text-muted mb-2">Kiểm tra lỗi định dạng & Nội dung.</p>
                                         <button class="btn btn-sm btn-primary w-100 fw-bold"
                                                 id="btn-analyze-{{ cv.id }}"
                                                 onclick="requestAIReview({{ cv.id }})">
-                                            <i class="bi bi-cpu me-1"></i> Chấm điểm ngay
+                                            <i class="bi bi-cpu me-1"></i> Phân tích ngay
                                         </button>
                                     </div>
                                 {% endif %}
@@ -118,7 +116,7 @@
                     </div>
                 </div>
 
-                {% if (cv.ai_score or 0) > 0 and cv.ai_matching_data %}
+                {% if (cv.ai_score or 0) > 0 %}
                     <div class="modal fade" id="aiResultModal{{ cv.id }}" tabindex="-1" aria-hidden="true">
                         <div class="modal-dialog modal-lg modal-dialog-scrollable">
                             <div class="modal-content">
@@ -129,11 +127,33 @@
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body bg-light">
+
+                                    <div class="card border-0 shadow-sm mb-3">
+                                        <div class="card-header bg-white fw-bold text-dark">
+                                            <i class="bi bi-list-check me-2 text-primary"></i>Tiêu chí chuẩn hóa ATS (Logic cứng)
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="list-unstyled mb-0 row">
+                                                {% for check in checklist %}
+                                                    <li class="col-md-6 mb-2">
+                                                        {% if '✅' in check %}
+                                                            <span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-2"></i>{{ check|replace('✅', '') }}</span>
+                                                        {% elif '❌' in check %}
+                                                            <span class="text-danger fw-bold"><i class="bi bi-x-circle-fill me-2"></i>{{ check|replace('❌', '') }}</span>
+                                                        {% else %}
+                                                            <span class="text-warning fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ check|replace('⚠️', '') }}</span>
+                                                        {% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </div>
+
                                     <div class="card border-0 shadow-sm mb-3">
                                         <div class="card-body">
-                                            <h6 class="fw-bold text-primary"><i class="bi bi-quote me-2"></i>Nhận xét tổng quan</h6>
+                                            <h6 class="fw-bold text-primary"><i class="bi bi-quote me-2"></i>Góc nhìn chuyên gia (AI)</h6>
                                             <p class="text-dark mb-0 fst-italic">
-                                                "{{ cv.ai_matching_data.get('summary', 'Chưa có nhận xét.') }}"
+                                                "{{ ai_data.get('summary', 'AI đang bận, chưa thể đưa ra nhận xét chi tiết.') }}"
                                             </p>
                                         </div>
                                     </div>
@@ -142,9 +162,9 @@
                                         <div class="col-md-6">
                                             <div class="card border-0 shadow-sm h-100 border-start border-4 border-success">
                                                 <div class="card-body">
-                                                    <h6 class="fw-bold text-success mb-3"><i class="bi bi-check-circle-fill me-2"></i>Điểm mạnh</h6>
+                                                    <h6 class="fw-bold text-success mb-3"><i class="bi bi-check-circle-fill me-2"></i>Điểm mạnh nội dung</h6>
                                                     <ul class="list-unstyled mb-0 small">
-                                                        {% for item in cv.ai_matching_data.get('strengths', []) %}
+                                                        {% for item in ai_data.get('strengths', []) %}
                                                             <li class="mb-2 d-flex align-items-start">
                                                                 <i class="bi bi-check2 text-success me-2 fw-bold"></i>
                                                                 <span>{{ item }}</span>
@@ -160,7 +180,7 @@
                                                 <div class="card-body">
                                                     <h6 class="fw-bold text-danger mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>Cần khắc phục</h6>
                                                     <ul class="list-unstyled mb-0 small">
-                                                        {% for item in cv.ai_matching_data.get('weaknesses', []) %}
+                                                        {% for item in ai_data.get('weaknesses', []) %}
                                                             <li class="mb-2 d-flex align-items-start">
                                                                 <i class="bi bi-x text-danger me-2 fw-bold"></i>
                                                                 <span>{{ item }}</span>
@@ -174,9 +194,9 @@
                                         <div class="col-12">
                                             <div class="card border-0 shadow-sm border-start border-4 border-info">
                                                 <div class="card-body">
-                                                    <h6 class="fw-bold text-info mb-3"><i class="bi bi-lightbulb-fill me-2"></i>Gợi ý cải thiện</h6>
+                                                    <h6 class="fw-bold text-info mb-3"><i class="bi bi-lightbulb-fill me-2"></i>Lời khuyên cải thiện</h6>
                                                     <ul class="list-group list-group-flush small">
-                                                        {% for item in cv.ai_matching_data.get('improvements', []) %}
+                                                        {% for item in ai_data.get('improvements', []) %}
                                                             <li class="list-group-item bg-transparent border-0 px-0 py-1 d-flex">
                                                                 <i class="bi bi-arrow-right-circle text-info me-2"></i>
                                                                 {{ item }}
@@ -205,7 +225,7 @@
                     <i class="bi bi-folder2-open display-4 text-muted opacity-50"></i>
                 </div>
                 <h5 class="text-muted fw-bold">Bạn chưa có CV nào</h5>
-                <p class="small text-muted mb-4">Tải CV lên để AI giúp bạn kiểm tra lỗi và gợi ý việc làm.</p>
+                <p class="small text-muted mb-4">Tải CV lên để hệ thống chấm điểm chuẩn ATS và gợi ý sửa lỗi.</p>
                 <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#uploadCVModal">
                     <i class="bi bi-upload me-2"></i> Tải CV Ngay
                 </button>
@@ -243,21 +263,16 @@
 
     <script>
         function requestAIReview(cvId) {
-            // 1. Tạo hiệu ứng Loading cho nút bấm
             const btn = document.getElementById(`btn-analyze-${cvId}`);
             const originalContent = btn ? btn.innerHTML : '';
 
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang đọc PDF...';
-            } else {
-                alert("Hệ thống đang phân tích lại... Vui lòng chờ!");
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang phân tích ATS & AI...';
             }
 
-            // 2. Lấy CSRF Token
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            // 3. Gọi API
             fetch(`/candidate/cv-manager/review/${cvId}`, {
                 method: "POST",
                 headers: {
@@ -279,7 +294,7 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    alert("❌ Lỗi kết nối đến Server!");
+                    alert("❌ Lỗi kết nối!");
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = originalContent;
@@ -288,8 +303,8 @@
         }
 
         function confirmDelete(id) {
-            if(confirm("Bạn có chắc chắn muốn xóa CV này không? Hành động này không thể hoàn tác.")) {
-                alert("Tính năng xóa đang cập nhật...");
+            if(confirm("Bạn có chắc chắn muốn xóa CV này không?")) {
+                alert("Tính năng đang bảo trì.");
             }
         }
     </script>

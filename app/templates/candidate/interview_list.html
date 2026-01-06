@@ -49,6 +49,15 @@
 
                             <div class="d-flex gap-2">
                                 <a href="{{ url_for('public.job_detail', id=interview.application.job.id) }}" class="btn btn-sm btn-outline-secondary w-100">Xem Job</a>
+
+                                {% if interview.ics_file_url %}
+                                    <a href="{{ url_for('static', filename='invites/' + interview.ics_file_url) }}"
+                                       class="btn btn-sm btn-outline-success w-100"
+                                       title="Thêm vào lịch Google/Outlook"
+                                       download>
+                                        <i class="bi bi-calendar-plus"></i> Lưu Lịch
+                                    </a>
+                                {% endif %}
                                 {% if 'http' in interview.location and interview.status == 'SCHEDULED' %}
                                     <a href="{{ interview.location }}" target="_blank" class="btn btn-sm btn-primary w-100 fw-bold">Tham gia ngay</a>
                                 {% endif %}

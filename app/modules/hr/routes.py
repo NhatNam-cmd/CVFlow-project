@@ -138,8 +138,8 @@ def post_job():
             mini_test_config=mini_test_json,
             created_at=datetime.utcnow(),
         )
-        full_text = f"{job.title} . {job.description} . {job.requirements}"
-        job.vector_embedding = get_text_embedding(full_text)
+        full_text_for_embedding = f"{job.title} . {job.description} . {job.requirements}"
+        job.vector_embedding = get_text_embedding(full_text_for_embedding)
         db.session.add(job)
         db.session.commit()
         flash("Đăng tin tuyển dụng thành công!", "success")
