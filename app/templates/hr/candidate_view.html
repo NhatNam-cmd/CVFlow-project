@@ -21,9 +21,15 @@
                         <i class="bi bi-calendar-check me-2"></i> Mời Phỏng vấn
                     </a>
                 {% elif application.status == 'INTERVIEW' %}
-                    <button type="button" class="btn btn-warning fw-bold shadow-sm px-3 me-2" data-bs-toggle="modal" data-bs-target="#scheduleModal">
-                        <i class="bi bi-clock-history me-2"></i> Lên lịch gặp mặt
+
+                    <button type="button" class="btn {{ 'btn-primary' if active_interview else 'btn-warning' }} fw-bold shadow-sm px-3 me-2" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                        {% if active_interview %}
+                            <i class="bi bi-pencil-square me-2"></i> Quản lý lịch hẹn
+                        {% else %}
+                            <i class="bi bi-clock-history me-2"></i> Lên lịch gặp mặt
+                        {% endif %}
                     </button>
+
                 {% elif application.status == 'OFFER' %}
                     <button class="btn btn-success disabled"><i class="bi bi-trophy-fill me-2"></i> Đã tuyển dụng</button>
                 {% elif application.status == 'REJECTED' %}
@@ -166,43 +172,180 @@
     </div>
 
     <div class="modal fade" id="scheduleModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-calendar-plus"></i> Thiết lập cuộc hẹn</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+                <div class="modal-header {{ 'bg-primary text-white' if active_interview else 'bg-warning' }}">
+                    <h5 class="modal-title fw-bold {{ 'text-white' if active_interview else 'text-dark' }}">
+                        {% if active_interview %}
+                            <i class="bi bi-pencil-square"></i> Thay đổi lịch phỏng vấn
+                        {% else %}
+                            <i class="bi bi-calendar-plus"></i> Thiết lập cuộc hẹn mới
+                        {% endif %}
+                    </h5>
+                    <button type="button" class="btn-close {{ 'btn-close-white' if active_interview }}" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="{{ url_for('hr.create_interview', app_id=application.id) }}" method="POST">
+
+                <form action="{{ url_for('hr.update_interview', interview_id=active_interview.id) if active_interview else url_for('hr.create_interview', app_id=application.id) }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Ngày & Giờ bắt đầu</label>
-                            <input type="datetime-local" name="start_time" class="form-control" required>
-                        </div>
+                        {% if active_interview %}
+                            <div class="alert alert-info small">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Bạn đang sửa lịch hẹn ngày <strong>{{ active_interview.start_time.strftime('%d/%m/%Y %H:%M') }}</strong>.
+                            </div>
+                        {% endif %}
+
                         <div class="mb-3">
                             <label class="form-label fw-bold">Thời lượng</label>
-                            <select name="duration" class="form-select">
-                                <option value="60">60 phút</option>
+                            <select name="duration" id="durationSelect" class="form-select" onchange="loadSuggestions()">
+                                {% set current_dur = 60 %}
+                                {% if active_interview %}
+                                    {% set current_dur = ((active_interview.end_time - active_interview.start_time).seconds / 60) | int %}
+                                {% endif %}
+
+                                <option value="30" {{ 'selected' if current_dur == 30 }}>30 phút</option>
+                                <option value="45" {{ 'selected' if current_dur == 45 }}>45 phút</option>
+                                <option value="60" {{ 'selected' if current_dur == 60 }}>60 phút</option>
+                                <option value="90" {{ 'selected' if current_dur == 90 }}>90 phút</option>
                             </select>
                         </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-success">
+                                <i class="bi bi-stars"></i> Đề xuất thời gian (Khớp lịch rảnh cả 2)
+                            </label>
+                            <div id="suggestion-container" class="d-flex flex-wrap gap-2">
+                                <span class="text-muted small fst-italic">Đang tính toán...</span>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Thời gian (Thủ công):</label>
+                            <input type="datetime-local" name="start_time" id="manualTimeInput" class="form-control" required
+                                   value="{{ active_interview.start_time.strftime('%Y-%m-%dT%H:%M') if active_interview else '' }}">
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label fw-bold">Hình thức / Địa điểm</label>
-                            <select name="location_type" class="form-select mb-2">
-                                <option value="online">Online</option>
-                                <option value="offline">Offline</option>
-                            </select>
-                            <input type="text" name="location_detail" class="form-control" placeholder="Link hoặc địa chỉ..." required>
+                            <div class="input-group mb-2">
+                                <select name="location_type" class="form-select" style="max-width: 120px;">
+                                    <option value="online" {{ 'selected' if active_interview and 'Online' in active_interview.location }}>Online</option>
+                                    <option value="offline" {{ 'selected' if active_interview and 'Online' not in active_interview.location }}>Offline</option>
+                                </select>
+                                <input type="text" name="location_detail" class="form-control" placeholder="Link họp hoặc địa chỉ..." required
+                                       value="{{ active_interview.meeting_link if (active_interview and active_interview.meeting_link) else (active_interview.location | replace('Online: ', '') if active_interview else '') }}">
+                            </div>
                         </div>
                     </div>
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                        <button type="submit" class="btn btn-warning fw-bold text-dark">Lưu Lịch Hẹn</button>
+
+                        {% if active_interview %}
+                            <button type="submit" class="btn btn-primary fw-bold">
+                                <i class="bi bi-check-circle me-1"></i> Cập nhật Lịch
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-warning fw-bold text-dark">
+                                <i class="bi bi-plus-circle me-1"></i> Tạo Lịch Hẹn
+                            </button>
+                        {% endif %}
                     </div>
                 </form>
             </div>
         </div>
     </div>
+    mời pho
+
+    <script>
+        // Khi modal mở lên thì gọi hàm loadSuggestions
+        document.getElementById('scheduleModal').addEventListener('shown.bs.modal', function () {
+            loadSuggestions();
+        });
+
+        function loadSuggestions() {
+            const container = document.getElementById('suggestion-container');
+            const duration = document.getElementById('durationSelect').value;
+            const manualInput = document.getElementById('manualTimeInput');
+
+            container.innerHTML = '<div class="spinner-border spinner-border-sm text-warning" role="status"></div> Đang tìm khung giờ vàng...';
+
+            fetch(`{{ url_for('hr.get_interview_suggestions', app_id=application.id) }}?duration=${duration}`)
+                .then(res => res.json())
+                .then(data => {
+                    container.innerHTML = '';
+
+                    // 👇 TRƯỜNG HỢP 1: Ứng viên chưa cài lịch
+                    if (data.error === 'CANDIDATE_NO_SETTINGS') {
+                        container.innerHTML = `
+                        <div class="alert alert-warning border-0 d-flex align-items-center w-100 mb-0">
+                            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                            <div>
+                                <strong>Ứng viên chưa cài đặt lịch rảnh!</strong><br>
+                                <span class="small">Hệ thống không thể gợi ý tự động. Vui lòng liên hệ ứng viên để thỏa thuận và nhập thủ công bên dưới.</span>
+                            </div>
+                        </div>`;
+                        return;
+                    }
+
+                    // 👇 TRƯỜNG HỢP 2: HR chưa cài lịch
+                    if (data.error === 'HR_NO_SETTINGS') {
+                        container.innerHTML = `
+                        <div class="alert alert-danger border-0 w-100 mb-0">
+                            <strong>Bạn chưa cấu hình lịch làm việc!</strong><br>
+                            Vui lòng vào <a href="{{ url_for('hr.profile') }}" target="_blank">Hồ sơ cá nhân</a> để cài đặt lịch rảnh trước.
+                        </div>`;
+                        return;
+                    }
+
+                    // 👇 TRƯỜNG HỢP 3: Cả 2 đều có lịch nhưng KHÔNG KHỚP (List rỗng)
+                    if (Array.isArray(data) && data.length === 0) {
+                        container.innerHTML = `
+                        <div class="alert alert-secondary border-0 w-100 mb-0">
+                            <i class="bi bi-calendar-x me-2"></i>
+                            Không tìm thấy khung giờ chung trong 7 ngày tới. Hãy thử đổi thời lượng hoặc nhập thủ công.
+                        </div>`;
+                        return;
+                    }
+
+                    // 👇 TRƯỜNG HỢP 4: Có kết quả (Thành công)
+                    data.forEach(slot => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-outline-success'; // CSS Class
+                        btn.style.minWidth = "140px"; // Style cho đẹp
+                        btn.innerHTML = `
+                        <div class="fw-bold">${slot.weekday}</div>
+                        <div class="small">${slot.date}</div>
+                        <div class="fw-bold fs-5 mt-1">${slot.start} - ${slot.end}</div>
+                    `;
+
+                        btn.onclick = function() {
+                            manualInput.value = slot.value;
+                            // Xóa active cũ
+                            Array.from(container.children).forEach(c => {
+                                if(c.tagName === 'BUTTON') {
+                                    c.classList.remove('btn-success', 'text-white');
+                                    c.classList.add('btn-outline-success');
+                                }
+                            });
+                            // Active nút hiện tại
+                            this.classList.remove('btn-outline-success');
+                            this.classList.add('btn-success', 'text-white');
+                        };
+                        container.appendChild(btn);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = '<span class="text-danger small">Lỗi kết nối server.</span>';
+                });
+        }
+    </script>
     {% include 'hr/_reject_modal.html' %}
 
     <script>

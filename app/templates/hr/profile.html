@@ -50,7 +50,7 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-bold">Họ và tên</label>
-                                        <input type="text" class="form-control" value="{{ current_user.full_name }}">
+                                        <input type="text" class="form-control" name="full_name" value="{{ current_user.full_name }}">
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-bold">Chức vụ</label>
@@ -58,11 +58,11 @@
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-bold">Email đăng nhập</label>
-                                        <input type="email" class="form-control bg-light" value="hr@fpt.com" readonly>
+                                        <input type="email" class="form-control bg-light" value="{{ current_user.email }}" readonly>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-bold">Số điện thoại</label>
-                                        <input type="text" class="form-control" value="0901234567">
+                                        <input type="text" class="form-control" name="phone" value="{{ current_user.phone }}">
                                     </div>
                                 </div>
                                 <div class="mt-4 text-end">
@@ -73,7 +73,15 @@
                             <div class="tab-pane fade" id="availability">
                                 <div class="alert alert-info small border-0 mb-4">
                                     <i class="bi bi-info-circle-fill me-2"></i>
-                                    Hệ thống sẽ dùng các khung giờ này để <strong>tự động gợi ý</strong> lịch phỏng vấn phù hợp với Ứng viên (Thuật toán Intersection).
+                                    Cấu hình này sẽ được dùng để gợi ý lịch phỏng vấn tự động.
+                                </div>
+
+                                <input type="hidden" name="save_availability" value="1">
+
+                                <div class="mb-3 text-end">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="applyMondayToAll()">
+                                        <i class="bi bi-arrow-repeat"></i> Sao chép Thứ 2 cho cả tuần
+                                    </button>
                                 </div>
 
                                 <div class="table-responsive">
@@ -87,82 +95,35 @@
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        <tr>
-                                            <td class="fw-bold">Thứ 2</td>
-                                            <td>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" checked>
-                                                </div>
-                                            </td>
-                                            <td><input type="time" class="form-control" value="08:30"></td>
-                                            <td><input type="time" class="form-control" value="17:30"></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Thứ 3</td>
-                                            <td>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" checked>
-                                                </div>
-                                            </td>
-                                            <td><input type="time" class="form-control" value="08:30"></td>
-                                            <td><input type="time" class="form-control" value="17:30"></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Thứ 4</td>
-                                            <td>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" checked>
-                                                </div>
-                                            </td>
-                                            <td><input type="time" class="form-control" value="08:30"></td>
-                                            <td><input type="time" class="form-control" value="17:30"></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Thứ 5</td>
-                                            <td>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" checked>
-                                                </div>
-                                            </td>
-                                            <td><input type="time" class="form-control" value="08:30"></td>
-                                            <td><input type="time" class="form-control" value="17:30"></td>
-                                        </tr>
-                                        <tr>
-                                            <td class="fw-bold">Thứ 6</td>
-                                            <td>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" checked>
-                                                </div>
-                                            </td>
-                                            <td><input type="time" class="form-control" value="08:30"></td>
-                                            <td><input type="time" class="form-control" value="17:00"></td>
-                                        </tr>
-                                        <tr class="bg-light bg-opacity-50">
-                                            <td class="fw-bold text-muted">Thứ 7</td>
-                                            <td>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox">
-                                                </div>
-                                            </td>
-                                            <td><input type="time" class="form-control" disabled></td>
-                                            <td><input type="time" class="form-control" disabled></td>
-                                        </tr>
-                                        <tr class="bg-light bg-opacity-50">
-                                            <td class="fw-bold text-muted">Chủ Nhật</td>
-                                            <td>
-                                                <div class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox">
-                                                </div>
-                                            </td>
-                                            <td><input type="time" class="form-control" disabled></td>
-                                            <td><input type="time" class="form-control" disabled></td>
-                                        </tr>
+                                        {% set days_label = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'] %}
+                                        {% for i in range(7) %}
+                                            <tr>
+                                                <td class="fw-bold {{ 'text-danger' if i == 6 }}">{{ days_label[i] }}</td>
+                                                <td>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox"
+                                                               name="day_{{ i }}_active"
+                                                               {% if i in avail_map %}checked{% endif %}>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <input type="time" class="form-control"
+                                                           name="day_{{ i }}_start"
+                                                           value="{{ avail_map[i]['start'].strftime('%H:%M') if i in avail_map else '08:30' }}">
+                                                </td>
+                                                <td>
+                                                    <input type="time" class="form-control"
+                                                           name="day_{{ i }}_end"
+                                                           value="{{ avail_map[i]['end'].strftime('%H:%M') if i in avail_map else '17:30' }}">
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
                                         </tbody>
                                     </table>
                                 </div>
 
-                                <div class="mt-4 text-end">
-                                    <button type="submit" class="btn btn-warning fw-bold px-4">
+                                <div class="mt-4 text-end border-top pt-3">
+                                    <button type="submit" class="btn btn-warning fw-bold px-4 shadow-sm">
                                         <i class="bi bi-save me-2"></i> Lưu Cấu Hình Lịch
                                     </button>
                                 </div>
@@ -194,4 +155,21 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function applyMondayToAll() {
+            // Lấy giá trị của Thứ 2 (index 0)
+            const start = document.querySelector('input[name="day_0_start"]').value;
+            const end = document.querySelector('input[name="day_0_end"]').value;
+            const active = document.querySelector('input[name="day_0_active"]').checked;
+
+            // Áp dụng cho Thứ 3 đến Thứ 6 (index 1 -> 4)
+            for (let i = 1; i <= 4; i++) {
+                document.querySelector(`input[name="day_${i}_start"]`).value = start;
+                document.querySelector(`input[name="day_${i}_end"]`).value = end;
+                document.querySelector(`input[name="day_${i}_active"]`).checked = active;
+            }
+            alert("Đã áp dụng giờ làm việc hành chính (T2 -> T6)!");
+        }
+    </script>
 {% endblock %}
