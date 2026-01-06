@@ -1,4 +1,5 @@
 import time
+import os
 from datetime import datetime
 from flask import (
     render_template,
@@ -14,8 +15,9 @@ from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.modules.candidate import candidate_bp
 from app.services.ai_engine.core import review_cv_content
+
+# 👇 Đảm bảo import đúng parser cũ của bạn
 from app.services.ai_engine.parser import extract_text_from_pdf
-import os
 from app.services.ai_engine.gemini_client import get_text_embedding
 
 # Import forms
@@ -31,14 +33,16 @@ def check_candidate_role():
         return redirect(url_for("auth.login"))
 
 
+# ... (Route dashboard, profile giữ nguyên) ...
+
+
 @candidate_bp.route("/dashboard")
 def dashboard():
+    # (Giữ nguyên code cũ của bạn)
     applied_count = Application.query.filter_by(user_id=current_user.id).count()
     interested_count = Application.query.filter(
         Application.user_id == current_user.id, Application.status != "NEW"
     ).count()
-
-    # Lấy lịch phỏng vấn sắp tới
     upcoming_interviews = (
         Interview.query.join(Application)
         .filter(
@@ -48,14 +52,12 @@ def dashboard():
         .order_by(Interview.start_time.asc())
         .all()
     )
-
     recent_activities = (
         Application.query.filter_by(user_id=current_user.id)
         .order_by(Application.created_at.desc())
         .limit(5)
         .all()
     )
-
     return render_template(
         "candidate/dashboard.html",
         applied_count=applied_count,
@@ -68,49 +70,36 @@ def dashboard():
 
 @candidate_bp.route("/profile", methods=["GET", "POST"])
 def profile():
+    # (Giữ nguyên code cũ của bạn)
     form = CandidateProfileForm()
-
     if request.method == "GET":
-        # 1. Load dữ liệu cơ bản
         form.phone.data = current_user.phone if current_user.phone else ""
         form.bio.data = current_user.bio if current_user.bio else ""
-
-        # 2. Load dữ liệu Lịch rảnh (Availability)
-        # Database lưu chuỗi "Mon,Tue" -> Form cần list ['Mon', 'Tue']
         if current_user.available_days:
             form.available_days.data = current_user.available_days.split(",")
-
-        # Load giờ rảnh (Python Time object -> Form Field tự hiểu)
         form.start_time.data = current_user.start_time
         form.end_time.data = current_user.end_time
 
     if form.validate_on_submit():
-        # Cập nhật thông tin cơ bản
         current_user.phone = form.phone.data
         current_user.bio = form.bio.data
-
-        # Cập nhật Lịch rảnh
-        # Form trả về List ['Mon', 'Tue'] -> Database cần lưu chuỗi "Mon,Tue"
         if form.available_days.data:
             current_user.available_days = ",".join(form.available_days.data)
         else:
-            current_user.available_days = ""  # Xử lý trường hợp bỏ chọn hết
-
+            current_user.available_days = ""
         current_user.start_time = form.start_time.data
         current_user.end_time = form.end_time.data
-
         try:
             db.session.commit()
             flash("Cập nhật hồ sơ thành công!", "success")
         except Exception as e:
             db.session.rollback()
             flash(f"Lỗi khi lưu dữ liệu: {str(e)}", "danger")
-
         return redirect(url_for("candidate.profile"))
-
     return render_template("candidate/profile.html", form=form)
 
 
+# 👇 ROUTE QUAN TRỌNG ĐÃ ĐƯỢC CẬP NHẬT 👇
 @candidate_bp.route("/cv", methods=["GET", "POST"])
 def cv_manager():
     form = CVUploadForm()
@@ -119,7 +108,7 @@ def cv_manager():
         f = form.cv_file.data
         filename = secure_filename(f.filename)
 
-        # Tạo tên file duy nhất để tránh trùng lặp
+        # Tạo tên file duy nhất
         timestamp = int(time.time())
         unique_filename = f"{current_user.id}_{timestamp}_{filename}"
 
@@ -131,14 +120,30 @@ def cv_manager():
         try:
             f.save(file_path)
 
-            # Tắt cờ CV chính của các file cũ nếu cần (tùy logic, ở đây mình cứ lưu bình thường)
-            # Nếu muốn file mới auto là chính thì thêm logic update ở đây.
+            # --- 👇 BẮT ĐẦU ĐOẠN CODE MỚI: TRÍCH XUẤT TEXT ---
+            print(f"📄 Đang xử lý file: {filename}")
+            extracted_text = ""
+
+            # Chỉ parse text nếu là file PDF (theo hàm parser cũ của bạn)
+            if filename.lower().endswith(".pdf"):
+                try:
+                    extracted_text = extract_text_from_pdf(file_path) or ""
+                    print(
+                        f"✅ Parser PDF thành công. Độ dài text: {len(extracted_text)}"
+                    )
+                except Exception as p_err:
+                    print(f"❌ Lỗi Parser PDF: {p_err}")
+            else:
+                print("⚠️ File không phải PDF, bỏ qua bước trích xuất text.")
+            # --------------------------------------------------
 
             new_cv = CV_File(
                 user_id=current_user.id,
                 file_url=unique_filename,
                 file_name=filename,
-                is_main=False,  # Mặc định CV mới chưa là chính
+                # 👇 LƯU TEXT VÀO DB ĐỂ AI DÙNG SAU NÀY
+                raw_text=extracted_text,
+                is_main=False,
             )
             db.session.add(new_cv)
             db.session.commit()
@@ -195,13 +200,8 @@ def interview_list():
 @candidate_bp.route("/cv-manager/review/<int:cv_id>", methods=["POST"])
 @login_required
 def ai_review_cv(cv_id):
-    """
-    API để Candidate yêu cầu AI chấm điểm CV của mình
-    """
-    # 1. Lấy CV từ DB (Đúng model CV_File)
+    # (Code cũ giữ nguyên - Không thay đổi)
     cv = CV_File.query.get_or_404(cv_id)
-
-    # 2. Bảo mật: Chỉ chủ sở hữu mới được xem
     if cv.user_id != current_user.id:
         return (
             jsonify(
@@ -211,55 +211,37 @@ def ai_review_cv(cv_id):
         )
 
     try:
-        # 3. Kiểm tra xem đã có raw_text chưa (Tối ưu hóa)
         cv_text = cv.raw_text
-
         if not cv_text:
-            # Nếu chưa có text, phải đọc từ file PDF
             file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], cv.file_url)
-
             if not os.path.exists(file_path):
                 return (
-                    jsonify(
-                        {
-                            "success": False,
-                            "message": "File gốc không tồn tại trên server",
-                        }
-                    ),
+                    jsonify({"success": False, "message": "File gốc không tồn tại"}),
                     404,
                 )
 
             print(f"📄 Đang trích xuất text từ file: {cv.file_name}")
-            cv_text = extract_text_from_pdf(file_path)
-
-            # Lưu lại text vào DB để lần sau không phải đọc nữa
+            cv_text = extract_text_from_pdf(file_path)  # Dùng parser cũ
             if cv_text:
                 cv.raw_text = cv_text
                 db.session.commit()
             else:
                 return (
                     jsonify(
-                        {
-                            "success": False,
-                            "message": "Không thể đọc nội dung text từ file PDF",
-                        }
+                        {"success": False, "message": "Không thể đọc nội dung text"}
                     ),
                     400,
                 )
 
-        # 4. Gửi cho AI Review
         print(f"🤖 Đang gửi yêu cầu Review cho CV ID: {cv_id}")
         ai_result = review_cv_content(cv_text)
 
         if "error" in ai_result:
             return jsonify({"success": False, "message": ai_result["error"]}), 500
 
-        # 5. Lưu kết quả vào DB
         cv.ai_score = ai_result.get("score", 0)
-        cv.ai_matching_data = ai_result  # Tận dụng cột này để lưu kết quả Review
-
+        cv.ai_matching_data = ai_result
         db.session.commit()
-
         return jsonify(
             {"success": True, "message": "Đã phân tích xong!", "data": ai_result}
         )

@@ -9,9 +9,7 @@ from app.models.application import Application
 from app.models.scheduler import Interview
 from datetime import datetime
 from datetime import timedelta
-from app.services.ai_engine.core import analyze_cv_matching
-import os
-from flask import current_app
+from app.services.ai_engine.cv_analyzer import CVAnalyzer
 from sqlalchemy import func
 from app.services.ai_engine.gemini_client import get_text_embedding
 
@@ -346,44 +344,21 @@ def reject_application(app_id):
         )
 
 
-@hr_bp.route("/applications/<int:app_id>/analyze", methods=["POST"])
+@hr_bp.route("/analyze-cv/<int:app_id>", methods=["POST"])
 @login_required
-def analyze_application_cv(app_id):
-    application = Application.query.get_or_404(app_id)
-
-    # 1. Kiểm tra xem có CV và Job Description không
-    if not application.cv or not application.job:
-        return jsonify({"success": False, "message": "Thiếu dữ liệu CV hoặc Job"}), 400
-
-    # 2. Lấy đường dẫn file CV
-    cv_path = os.path.join(current_app.config["UPLOAD_FOLDER"], application.cv.file_url)
-
-    if not os.path.exists(cv_path):
-        return (
-            jsonify({"success": False, "message": "File CV không tồn tại trên ổ cứng"}),
-            404,
-        )
-
-    # 3. Lấy nội dung JD
-    jd_text = application.job.description  # Giả sử cột mô tả là 'description'
-
+def analyze_application_cv(app_id):  # <-- Đổi tên hàm thành analyze_application_cv
+    """
+    Route xử lý khi HR bấm nút 'Phân tích lại'
+    """
     try:
-        # 4. GỌI AI ENGINE
-        result = analyze_cv_matching(cv_path, jd_text)
+        analyzer = CVAnalyzer()
 
-        if "error" in result:
-            return jsonify({"success": False, "message": result["error"]}), 500
+        # Gọi Service để chấm điểm (force_refresh=True để ép chấm lại)
+        analyzer.analyze_application(app_id, force_refresh=True)
 
-        # 5. Lưu kết quả vào DB
-        application.match_score = result.get("match_score", 0)
-        application.ai_analysis = result  # Lưu nguyên cục JSON
-
-        db.session.commit()
-
-        return jsonify(
-            {"success": True, "message": "Phân tích AI hoàn tất!", "data": result}
-        )
-
+        flash("Đã phân tích xong!", "success")
     except Exception as e:
-        print(f"System Error: {e}")
-        return jsonify({"success": False, "message": "Lỗi hệ thống"}), 500
+        flash(f"Lỗi khi phân tích: {str(e)}", "danger")
+        print(f"Error HR Analyze: {e}")
+
+    return redirect(request.referrer)

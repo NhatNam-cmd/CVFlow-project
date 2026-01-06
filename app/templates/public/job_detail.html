@@ -30,10 +30,26 @@
                                     Thỏa thuận
                                 {% endif %}
                             </span>
-                            <span class="badge bg-light text-dark border fs-6 px-3 py-2"><i class="bi bi-geo-alt"></i> {{ job.location }}</span>
-                            <span class="badge bg-light text-dark border fs-6 px-3 py-2"><i class="bi bi-briefcase"></i> {{ job.level }}</span>
+                            <span class="badge bg-light text-dark border fs-6 px-3 py-2">
+                                <i class="bi bi-geo-alt"></i> {{ job.location }}
+                            </span>
+                            <span class="badge bg-light text-dark border fs-6 px-3 py-2">
+                                <i class="bi bi-briefcase"></i> {{ job.level }}
+                            </span>
                         </div>
 
+                        {% if job.skills_required %}
+                            <div class="mb-4">
+                                <h6 class="text-uppercase text-secondary small fw-bold mb-2">Kỹ năng bắt buộc:</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    {% for skill in job.skills_required %}
+                                        <span class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-2">
+                                        {{ skill }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
                         <div class="d-grid gap-2 d-md-block">
                             {% if current_user.is_authenticated and current_user.role == 'CANDIDATE' %}
                                 {% if has_applied %}
@@ -97,15 +113,11 @@
                     <h5 class="modal-title">Ứng tuyển: {{ job.title }}</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-
                 <form action="{{ url_for('public.apply') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
                     <input type="hidden" name="job_id" value="{{ job.id }}">
-
                     <div class="modal-body">
                         <p class="fw-bold">Chọn CV bạn muốn sử dụng:</p>
-
                         {% if user_cvs %}
                             <div class="list-group mb-3">
                                 {% for cv in user_cvs %}
@@ -127,9 +139,20 @@
 
                         {% if job.mini_test_config %}
                             <div class="alert alert-info small mt-3">
-                                <strong><i class="bi bi-lightbulb"></i> Câu hỏi từ nhà tuyển dụng:</strong>
+                                <strong><i class="bi bi-lightbulb"></i> Bài Test Nhanh (Bắt buộc):</strong>
                                 <p class="mb-2 mt-1">{{ job.mini_test_config.question }}</p>
-                                <input type="text" class="form-control form-control-sm" placeholder="Nhập câu trả lời của bạn..." disabled title="Tính năng đang phát triển">
+
+                                <div class="list-group">
+                                    {% for opt_key in ['option1', 'option2', 'option3', 'option4'] %}
+                                        {% set opt_val = job.mini_test_config[opt_key] %}
+                                        {% if opt_val %}
+                                            <label class="list-group-item list-group-item-action">
+                                                <input class="form-check-input me-1" type="radio" name="test_answer" value="{{ opt_key[-1] }}" required>
+                                                {{ opt_key[-1] }}. {{ opt_val }}
+                                            </label>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
                             </div>
                         {% endif %}
                     </div>
