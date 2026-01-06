@@ -8,9 +8,12 @@ from sqlalchemy import func
 from datetime import datetime
 from app.models import Job, Company, CV_File
 from app.services.ai_engine.recommender import recommend_jobs_for_cv  # Import hàm gợi ý
-from app.models.market import MarketData
+from app.utils.salary_helper import SalaryCalculator
 from app.services.analytics.market_analyzer import MarketAnalyzer
+from app.models.market import MarketData
 import json
+from app.services.ai_engine.cv_analyzer import CVAnalyzer
+import traceback
 
 # --- TRANG CHỦ & TÌM KIẾM ---
 
@@ -207,6 +210,7 @@ def apply():
     # 2. Lấy dữ liệu thô
     job_id_raw = request.form.get("job_id")
     cv_id_raw = request.form.get("cv_id")
+    #   cover_letter = request.form.get("cover_letter", "")  # Lấy thêm cover letter
 
     # 3. Validate cơ bản: Kiểm tra rỗng
     if not job_id_raw or not cv_id_raw:
@@ -222,9 +226,7 @@ def apply():
         return redirect(url_for("public.index"))
 
     # 5. Validate logic: Job có tồn tại và đang mở không?
-    job = db.session.get(
-        Job, job_id
-    )  # Dùng db.session.get thay vì Job.query.get (SQLAlchemy 2.0 style)
+    job = db.session.get(Job, job_id)
     if not job or not job.is_active:
         flash("Công việc này không tồn tại hoặc đã đóng.", "danger")
         return redirect(url_for("public.index"))
@@ -245,23 +247,46 @@ def apply():
 
     # --- NẾU VƯỢT QUA HẾT CÁC ẢI TRÊN THÌ MỚI LƯU ---
     try:
+        print("🚀 [DEBUG] Bắt đầu tạo Application...")
         new_app = Application(
             job_id=job_id,
             user_id=current_user.id,
-            cv_id=cv_id,  # Lưu ID CV đã chọn
+            cv_id=cv_id,
             status="NEW",
+            cover_letter=request.form.get("cover_letter", ""),
             created_at=datetime.utcnow(),
         )
         db.session.add(new_app)
         db.session.commit()
+        print(f"✅ [DEBUG] Đã lưu Application ID: {new_app.id}")
 
-        flash("Ứng tuyển thành công! Nhà tuyển dụng sẽ sớm liên hệ với bạn.", "success")
-        return redirect(
-            url_for("candidate.job_manager")
-        )  # Chuyển hướng về trang quản lý việc làm
+        # --- GỌI AI CHẤM ĐIỂM ---
+        print("🤖 [DEBUG] Chuẩn bị gọi CVAnalyzer...")
+        try:
+            # Kiểm tra xem Import có đúng không
+            print(f"🔍 [DEBUG] CVAnalyzer class: {CVAnalyzer}")
+
+            analyzer = CVAnalyzer()
+            print(
+                "👉 [DEBUG] Init CVAnalyzer thành công. Đang gọi analyze_application..."
+            )
+
+            analyzer.analyze_application(new_app.id)
+            print("🎉 [DEBUG] AI Chấm điểm XONG!")
+
+        except Exception as ai_error:
+            print("🔥 [DEBUG] LỖI AI NGHIÊM TRỌNG:")
+            print(f"   Lỗi: {str(ai_error)}")
+            print("🔻 Traceback chi tiết:")
+            traceback.print_exc()  # In chi tiết dòng nào bị lỗi
+        # ------------------------
+
+        flash("Ứng tuyển thành công! (Check Console xem AI có chạy không)", "success")
+        return redirect(url_for("candidate.job_manager"))
 
     except Exception as e:
         db.session.rollback()
+        print(f"☠️ [DEBUG] Lỗi Database: {e}")
         flash(f"Có lỗi xảy ra: {str(e)}", "danger")
         return redirect(url_for("public.job_detail", id=job_id))
 
@@ -274,21 +299,27 @@ def salary_tool():
     form = SalaryToolForm()
     result = None
 
+    # Set giá trị default từ request arguments nếu có (để giữ trạng thái sau khi POST)
+    if request.method == "GET":
+        # Mặc định form load ra
+        pass
+
     if form.validate_on_submit():
-        # Gọi Service tính lương (Pure Python)
-        # Chúng ta sẽ tạo file services/analytics/salary_calculator.py sau
-        # Tạm thời để logic giả lập ở đây để test UI
-        gross = form.gross_salary.data
-        net = gross * 0.895  # Giả lập trừ 10.5% bảo hiểm
-        result = {
-            "gross": gross,
-            "net": net,
-            "bhxh": gross * 0.08,
-            "bhyt": gross * 0.015,
-            "bhtn": gross * 0.01,
-            "income_before_tax": gross - (gross * 0.105),
-            "tax": 0,  # Tạm tính
-        }
+        salary_input = form.gross_salary.data
+        dependents = form.dependents.data
+        region = int(form.region.data)
+        mode = form.calc_mode.data
+
+        if mode == "NET_TO_GROSS":
+            # Tính Gross từ Net
+            result = SalaryCalculator.net_to_gross(
+                target_net=salary_input, region_id=region, num_dependents=dependents
+            )
+        else:
+            # Tính Net từ Gross (Mặc định)
+            result = SalaryCalculator.gross_to_net(
+                gross_salary=salary_input, region_id=region, num_dependents=dependents
+            )
 
     return render_template("public/tool_salary.html", form=form, result=result)
 

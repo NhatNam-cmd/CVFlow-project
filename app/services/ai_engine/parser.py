@@ -1,5 +1,6 @@
-# services/ai_engine/parser.py
+# app/services/ai_engine/parser.py
 import pdfplumber
+import os
 
 
 def extract_text_from_pdf(pdf_path):
@@ -8,6 +9,9 @@ def extract_text_from_pdf(pdf_path):
     """
     text = ""
     try:
+        if not os.path.exists(pdf_path):
+            return None
+
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
                 page_text = page.extract_text()
