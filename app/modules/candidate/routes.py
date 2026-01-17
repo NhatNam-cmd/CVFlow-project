@@ -16,11 +16,11 @@ from app.extensions import db
 from app.modules.candidate import candidate_bp
 from app.services.ai_engine.core import review_cv_content
 
-# 👇 Đảm bảo import đúng parser cũ của bạn
+
 from app.services.ai_engine.parser import extract_text_from_pdf
 from app.services.ai_engine.gemini_client import get_text_embedding
 
-# Import forms
+
 from app.modules.candidate.forms import CandidateProfileForm, CVUploadForm
 from app.models.application import CV_File, Application
 from app.models.scheduler import Interview
@@ -34,12 +34,9 @@ def check_candidate_role():
         return redirect(url_for("auth.login"))
 
 
-# ... (Route dashboard, profile giữ nguyên) ...
-
-
 @candidate_bp.route("/dashboard")
 def dashboard():
-    # (Giữ nguyên code cũ của bạn)
+
     applied_count = Application.query.filter_by(user_id=current_user.id).count()
     interested_count = Application.query.filter(
         Application.user_id == current_user.id, Application.status != "NEW"
@@ -100,7 +97,6 @@ def profile():
     return render_template("candidate/profile.html", form=form)
 
 
-# 👇 ROUTE QUAN TRỌNG ĐÃ ĐƯỢC CẬP NHẬT 👇
 @candidate_bp.route("/cv", methods=["GET", "POST"])
 def cv_manager():
     form = CVUploadForm()
@@ -109,7 +105,6 @@ def cv_manager():
         f = form.cv_file.data
         filename = secure_filename(f.filename)
 
-        # Tạo tên file duy nhất
         timestamp = int(time.time())
         unique_filename = f"{current_user.id}_{timestamp}_{filename}"
 
@@ -121,11 +116,9 @@ def cv_manager():
         try:
             f.save(file_path)
 
-            # --- 👇 BẮT ĐẦU ĐOẠN CODE MỚI: TRÍCH XUẤT TEXT ---
             print(f"📄 Đang xử lý file: {filename}")
             extracted_text = ""
 
-            # Chỉ parse text nếu là file PDF (theo hàm parser cũ của bạn)
             if filename.lower().endswith(".pdf"):
                 try:
                     extracted_text = extract_text_from_pdf(file_path) or ""
@@ -142,7 +135,6 @@ def cv_manager():
                 user_id=current_user.id,
                 file_url=unique_filename,
                 file_name=filename,
-                # 👇 LƯU TEXT VÀO DB ĐỂ AI DÙNG SAU NÀY
                 raw_text=extracted_text,
                 is_main=False,
             )
@@ -241,19 +233,15 @@ def ai_review_cv(cv_id):
 
         # --- BẮT ĐẦU LOGIC MỚI ---
 
-        # 3. PHẦN 1: CHẤM ĐIỂM "CỨNG" (ATS SCORE) - Logic Python thuần
-        # Phần này đảm bảo điểm số luôn nhất quán, không phụ thuộc AI
         print(f"🧮 [Review] Đang tính điểm chuẩn ATS cho CV ID: {cv_id}")
         scorer = CVScorer()
         ats_score, ats_details = scorer.evaluate(cv_text)
 
-        # 4. PHẦN 2: NHẬN XÉT "MỀM" (AI REVIEW) - Dùng Gemini
-        # Phần này chỉ lấy lời khuyên, không lấy điểm số
         print("🤖 [Review] Đang gửi yêu cầu nhận xét tới AI...")
         ai_result = review_cv_content(cv_text)
 
         if "error" in ai_result:
-            # Nếu AI lỗi, vẫn trả về điểm ATS nhưng báo lỗi phần nhận xét
+
             print(f"⚠️ [Review] AI Error: {ai_result['error']}")
             ai_result = {
                 "summary": "Hệ thống AI đang bận, chỉ có thể chấm điểm chuẩn ATS.",
@@ -262,17 +250,15 @@ def ai_review_cv(cv_id):
                 "improvements": [],
             }
 
-        # 5. GỘP DỮ LIỆU (MERGE)
-        # Cấu trúc JSON mới để lưu vào DB và trả về Frontend
         final_result = {
-            "score": ats_score,  # Điểm số uy tín (từ 0-100)
-            "checklist": ats_details,  # Mảng các tiêu chí đạt/không đạt (VD: ["✅ Có Email", "❌ Thiếu kỹ năng"])
-            "ai_review": ai_result,  # Nội dung nhận xét chi tiết từ AI
+            "score": ats_score,
+            "checklist": ats_details,
+            "ai_review": ai_result,
         }
 
         # 6. LƯU VÀO DATABASE
-        cv.ai_score = ats_score  # Lưu điểm số cứng
-        cv.ai_matching_data = final_result  # Lưu trọn bộ dữ liệu phân tích
+        cv.ai_score = ats_score
+        cv.ai_matching_data = final_result
         db.session.commit()
 
         print(f"✅ [Review] Hoàn tất! Điểm: {ats_score}/100")

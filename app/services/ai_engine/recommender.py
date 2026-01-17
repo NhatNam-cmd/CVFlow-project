@@ -29,9 +29,6 @@ def recommend_jobs_for_cv(cv_vector, top_n=10):
     if not cv_vector:
         return []
 
-    # 1. Lấy tất cả các Job đang active và ĐÃ CÓ vector
-    # (Lưu ý: Với dữ liệu lớn hàng triệu dòng thì phải dùng pgvector,
-    # nhưng với đồ án vài nghìn job thì load lên RAM tính vẫn nhanh chán)
     jobs = Job.query.filter(
         Job.is_active == True, Job.vector_embedding.isnot(None)
     ).all()
