@@ -25,7 +25,7 @@ from app.modules.candidate.forms import CandidateProfileForm, CVUploadForm
 from app.models.application import CV_File, Application
 from app.models.scheduler import Interview
 from app.services.cv_scorer import CVScorer
-
+from app.services.ai_engine.chatbot import CareerChatbot
 
 @candidate_bp.before_request
 def check_candidate_role():
@@ -271,3 +271,36 @@ def ai_review_cv(cv_id):
         print(f"❌ System Error [Review CV]: {e}")
         db.session.rollback()
         return jsonify({"success": False, "message": f"Lỗi hệ thống: {str(e)}"}), 500
+
+
+bot_service = CareerChatbot()
+@candidate_bp.route('/api/chat', methods=['POST'])
+@login_required
+def chat_with_advisor():
+    """
+    API Chatbot tư vấn nghề nghiệp
+    Payload: { "message": "Tôi muốn tìm việc lương cao" }
+    """
+    data = request.get_json()
+    user_message = data.get('message', '').strip()
+
+    if not user_message:
+        return jsonify({'error': 'Vui lòng nhập nội dung tin nhắn'}), 400
+
+    try:
+        # Gọi service xử lý
+        reply = bot_service.chat(current_user.id, user_message)
+
+        return jsonify({
+            'status': 'success',
+            'reply': reply
+        })
+    except Exception as e:
+        print(f"Chatbot Error: {e}")
+        return jsonify({'error': 'Có lỗi xảy ra phía server'}), 500
+
+@candidate_bp.route('/career-advisor', methods=['GET'])
+@login_required
+def career_advisor():
+    """Trang giao diện Chat toàn màn hình"""
+    return render_template('candidate/chat_full.html')
