@@ -34,3 +34,4 @@ celery==5.3.6
 google-genai
 fpdf
 unidecode
+Flask-Mail
