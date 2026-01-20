@@ -15,31 +15,36 @@ class CareerChatbot:
         Chuyển đổi list dictionary từ Matcher thành văn bản để AI đọc hiểu
         """
         if not jobs_data:
-            return "Hiện tại hệ thống chưa tìm thấy công việc nào khớp với kỹ năng của bạn."
+            return "Hệ thống đã quét nhưng chưa tìm thấy công việc phù hợp với yêu cầu này."
 
         text = ""
         for i, job in enumerate(jobs_data, 1):
             text += (
                 f"{i}. {job['title']} (tại {job['company']})\n"
-                f"   - Độ phù hợp: {job['score']}%\n"
+                f"   - Độ phù hợp: {job['score']}% ({job.get('reason', '')})\n"
                 f"   - Lương: {job['salary_min']} - {job['salary_max']} triệu\n"
-                f"   - Kỹ năng bạn đã có: {', '.join(job['matched_skills'])}\n"
-                f"   - Kỹ năng bạn CẦN HỌC THÊM: {', '.join(job['missing_skills'])}\n\n"
+                f"   - Kỹ năng trùng khớp: {', '.join(job['matched_skills'])}\n\n"
             )
         return text
 
     def chat(self, user_id: int, user_message: str):
-        # 1. Lấy thông tin User
         user = User.query.get(user_id)
         if not user:
             return "Không tìm thấy thông tin người dùng."
 
-        # 2. Gọi Python Logic để tìm việc (Core Feature)
-        matched_jobs = self.matcher.find_top_matches(user_id)
+        # 1. Phân tích ý định (Optional):
+        # Nếu user message quá ngắn (ví dụ "Hi"), không nên dùng nó để search job.
+        search_query = user_message if len(user_message.split()) > 3 else None
 
-        # 3. Chuẩn bị dữ liệu cho AI
-        user_skills_list = list(self.matcher.get_user_skills(user))
-        user_skills_str = ", ".join(user_skills_list) if user_skills_list else "Chưa cập nhật (hãy cập nhật Bio)"
+        # 2. Gọi Hybrid Matching (Truyền thêm search_query)
+        # Logic mới: Nếu user hỏi "Tìm việc lương cao", matcher sẽ vector hóa câu đó để tìm job phù hợp.
+        matched_jobs = self.matcher.find_top_matches(user_id, limit=3, user_query_text=search_query)
+
+        # 3. Chuẩn bị dữ liệu cho Prompt
+        # Lấy skill để AI biết background user
+        # (Lưu ý: Logic lấy skill nên được đóng gói gọn, ở đây lấy tạm từ bio hoặc hàm helper cũ)
+        user_skills_str = user.bio if user.bio else "Chưa cập nhật"
+
         job_list_text = self._format_job_list_for_ai(matched_jobs)
 
         # 4. Điền vào Prompt
@@ -50,11 +55,10 @@ class CareerChatbot:
             user_message=user_message
         )
 
-        # 5. Gọi Gemini để sinh câu trả lời tự nhiên
-        # Lưu ý: Hàm generate_text trả về string
+        # 5. Gọi Gemini
         response = self.ai_client.generate_text(final_prompt)
 
         if not response:
-            return "Xin lỗi, hệ thống AI đang bận. Nhưng dựa vào dữ liệu, tôi thấy bạn nên xem qua các công việc Python Developer."
+            return "Xin lỗi, tôi đang gặp chút trục trặc kết nối. Bạn có thể hỏi lại sau được không?"
 
         return response
