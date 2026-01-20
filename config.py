@@ -1,28 +1,51 @@
 import os
 from dotenv import load_dotenv
 
+# Load biến môi trường từ file .env
 load_dotenv()
 
+# Đường dẫn gốc của dự án
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
+    # =========================================================
+    # 1. SECURITY & DATABASE
+    # =========================================================
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-key-nhung-khong-nen-dung"
 
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
 
+    # Kiểm tra chặn ngay từ cửa
     if not SQLALCHEMY_DATABASE_URI:
         raise ValueError(
             "❌ LỖI NGHIÊM TRỌNG: Chưa cấu hình DATABASE_URL trong file .env! Hệ thống bắt buộc dùng PostgreSQL."
         )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # =========================================================
+    # 2. UPLOADS & FILES
+    # =========================================================
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "app", "static", "uploads")
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # Giới hạn file 16MB
     ALLOWED_EXTENSIONS = {"pdf", "docx"}
 
+    # =========================================================
+    # 3. REDIS & CELERY (Cho Background Tasks)
+    # =========================================================
     CELERY_BROKER_URL = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
+
+    # =========================================================
+    # 4. EMAIL CONFIGURATION (Từ Code Đồng đội)
+    # =========================================================
+    MAIL_SERVER = os.environ.get("MAIL_SERVER") or "smtp.gmail.com"
+    MAIL_PORT = int(os.environ.get("MAIL_PORT") or 587)
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS") == "True"
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
 
 
 class DevelopmentConfig(Config):
@@ -43,15 +66,18 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
 
+    # Ghi đè init để kiểm tra chặt chẽ hơn
     def __init__(self):
         super().__init__()
 
+        # 1. Bắt buộc phải có DATABASE_URI (Thường dùng cho Heroku/Render)
         self.SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URI")
         if not self.SQLALCHEMY_DATABASE_URI:
             raise ValueError(
                 "FATAL ERROR: Biến môi trường 'DATABASE_URI' chưa được thiết lập cho Production!"
             )
 
+        # 2. Bắt buộc phải có SECRET_KEY và không được dùng key mặc định
         self.SECRET_KEY = os.environ.get("SECRET_KEY")
         if not self.SECRET_KEY or self.SECRET_KEY == "cvflow-fallback-secret-key-2025":
             raise ValueError(
@@ -59,6 +85,7 @@ class ProductionConfig(Config):
             )
 
 
+# Dictionary để ánh xạ tên config
 config = {
     "development": DevelopmentConfig,
     "testing": TestingConfig,

@@ -1,6 +1,6 @@
 from flask import Flask
 from config import config
-from app.extensions import db, migrate, login_manager, bcrypt, csrf
+from app.extensions import db, migrate, login_manager, bcrypt, csrf, mail
 
 
 def create_app(config_name="default"):
@@ -16,6 +16,7 @@ def create_app(config_name="default"):
     login_manager.init_app(app)
     bcrypt.init_app(app)
     csrf.init_app(app)
+    mail.init_app(app)
 
     from app.modules.public import public_bp
     from app.modules.auth import auth_bp

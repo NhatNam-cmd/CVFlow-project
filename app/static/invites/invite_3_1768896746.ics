@@ -1,0 +1,14 @@
+BEGIN:VCALENDAR
+METHOD:PUBLISH
+PRODID:-//CVFlow-FINAL//VN
+VERSION:2.0
+PRODID:ics.py - http://git.io/lLljaA
+BEGIN:VEVENT
+DESCRIPTION:Ứng viên Thảo My\nLink: nhà riêng
+DTEND:20260126T094200Z
+LOCATION:Online: nhà riêng - Link: nhà riêng
+DTSTART:20260126T081200Z
+SUMMARY:PV: Python dev
+UID:cvflow-3@cvflow.vn
+END:VEVENT
+END:VCALENDAR

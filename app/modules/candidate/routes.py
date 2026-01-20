@@ -9,23 +9,41 @@ from flask import (
     current_app,
     request,
     jsonify,
+    send_file,  # Import từ code của bạn
 )
 
 from flask_login import current_user, login_required
 from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.modules.candidate import candidate_bp
-from app.services.ai_engine.core import review_cv_content
-from app.services.pdf_generator import PDFGenerator
-from flask import send_file
-from app.services.ai_engine.parser import extract_text_from_pdf
-from app.services.ai_engine.gemini_client import get_text_embedding
-from app.services.ai_engine.recommender import recommend_jobs_for_cv
-
 from app.modules.candidate.forms import CandidateProfileForm, CVUploadForm
 from app.models.application import CV_File, Application
 from app.models.scheduler import Interview
+
+# --- SERVICES ---
+from app.services.ai_engine.core import review_cv_content
+from app.services.ai_engine.parser import extract_text_from_pdf
+from app.services.ai_engine.gemini_client import get_text_embedding
 from app.services.cv_scorer import CVScorer
+
+# Import từ Code của BẠN (Feature)
+from app.services.pdf_generator import PDFGenerator
+from app.services.ai_engine.recommender import recommend_jobs_for_cv
+
+# Import từ Code ĐỒNG ĐỘI (Dev)
+from app.services.ai_engine.chatbot import CareerChatbot
+
+
+# =========================================================
+# GLOBAL OBJECTS
+# =========================================================
+# Khởi tạo Chatbot Service (Từ code đồng đội)
+bot_service = CareerChatbot()
+
+
+# =========================================================
+# ROUTES
+# =========================================================
 
 
 @candidate_bp.before_request
@@ -37,6 +55,7 @@ def check_candidate_role():
 
 @candidate_bp.route("/dashboard")
 def dashboard():
+    # Sử dụng logic của BẠN (đầy đủ hơn vì có gợi ý việc làm)
     applied_count = Application.query.filter_by(user_id=current_user.id).count()
     interested_count = Application.query.filter(
         Application.user_id == current_user.id, Application.status != "NEW"
@@ -60,7 +79,6 @@ def dashboard():
     )
 
     suggested_jobs = []
-
     main_cv = CV_File.query.filter_by(user_id=current_user.id, is_main=True).first()
 
     if main_cv:
@@ -80,7 +98,6 @@ def dashboard():
 
 @candidate_bp.route("/profile", methods=["GET", "POST"])
 def profile():
-
     form = CandidateProfileForm()
     if request.method == "GET":
         form.phone.data = current_user.phone if current_user.phone else ""
@@ -201,6 +218,7 @@ def interview_list():
 @candidate_bp.route("/cv-manager/review/<int:cv_id>", methods=["POST"])
 @login_required
 def ai_review_cv(cv_id):
+    # Sử dụng logic của BẠN (vì xử lý được cả CV Builder và Upload PDF)
     cv = CV_File.query.get_or_404(cv_id)
     if cv.user_id != current_user.id:
         return (
@@ -217,7 +235,6 @@ def ai_review_cv(cv_id):
         if cv.cv_source == "BUILDER":
             cv_text = cv.raw_text
             source_type = "CV Builder (Dữ liệu có cấu trúc)"
-
         else:
             source_type = "File Upload (PDF Parsing)"
 
@@ -254,7 +271,9 @@ def ai_review_cv(cv_id):
 
         print(f"🧮 [Review] Đang tính điểm chuẩn ATS cho CV ID: {cv_id}")
         scorer = CVScorer()
-        ats_score, ats_details = scorer.evaluate(cv)
+        ats_score, ats_details = scorer.evaluate(
+            cv
+        )  # Lưu ý: scorer của bạn nhận object cv
 
         print("🤖 [Review] Đang gửi yêu cầu nhận xét tới AI...")
         ai_result = review_cv_content(cv_text, source_type=source_type)
@@ -288,6 +307,11 @@ def ai_review_cv(cv_id):
         print(f"❌ System Error [Review CV]: {e}")
         db.session.rollback()
         return jsonify({"success": False, "message": f"Lỗi hệ thống: {str(e)}"}), 500
+
+
+# =========================================================
+# TÍNH NĂNG MỚI TỪ NHÁNH CỦA BẠN (CV Builder & PDF)
+# =========================================================
 
 
 @candidate_bp.route("/cv/builder", defaults={"cv_id": None}, methods=["GET", "POST"])
@@ -340,7 +364,6 @@ def cv_builder(cv_id):
 
                 msg = "Đã cập nhật CV thành công!"
             else:
-
                 timestamp = int(datetime.utcnow().timestamp())
                 filename = f"Digital_CV_{current_user.id}_{timestamp}.pdf"
 
@@ -362,8 +385,8 @@ def cv_builder(cv_id):
                 )
                 db.session.add(target_cv)
                 msg = "Đã tạo CV mới thành công!"
-            target_cv.vector_embedding = get_text_embedding(raw_text_content)
 
+            target_cv.vector_embedding = get_text_embedding(raw_text_content)
             db.session.commit()
 
             return jsonify({"success": True, "message": msg})
@@ -393,7 +416,6 @@ def delete_cv(cv_id):
         return redirect(url_for("candidate.cv_manager"))
 
     try:
-
         if cv.file_url:
             file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], cv.file_url)
             if os.path.exists(file_path):
@@ -430,7 +452,6 @@ def download_cv_pdf(cv_id):
     ):
         print(f"⚠️ File PDF {cv.file_url} bị thiếu. Đang tạo lại từ dữ liệu...")
         try:
-
             if not os.path.exists(upload_folder):
                 os.makedirs(upload_folder)
 
@@ -446,3 +467,38 @@ def download_cv_pdf(cv_id):
     else:
         flash("File không tồn tại trên hệ thống.", "danger")
         return redirect(url_for("candidate.cv_manager"))
+
+
+# =========================================================
+# TÍNH NĂNG MỚI TỪ NHÁNH CỦA ĐỒNG ĐỘI (Chatbot)
+# =========================================================
+
+
+@candidate_bp.route("/api/chat", methods=["POST"])
+@login_required
+def chat_with_advisor():
+    """
+    API Chatbot tư vấn nghề nghiệp
+    Payload: { "message": "Tôi muốn tìm việc lương cao" }
+    """
+    data = request.get_json()
+    user_message = data.get("message", "").strip()
+
+    if not user_message:
+        return jsonify({"error": "Vui lòng nhập nội dung tin nhắn"}), 400
+
+    try:
+        # Gọi service xử lý
+        reply = bot_service.chat(current_user.id, user_message)
+
+        return jsonify({"status": "success", "reply": reply})
+    except Exception as e:
+        print(f"Chatbot Error: {e}")
+        return jsonify({"error": "Có lỗi xảy ra phía server"}), 500
+
+
+@candidate_bp.route("/career-advisor", methods=["GET"])
+@login_required
+def career_advisor():
+    """Trang giao diện Chat toàn màn hình"""
+    return render_template("candidate/chat_full.html")
