@@ -1,0 +1,328 @@
+{% extends "layouts/dashboard_layout.html" %}
+
+{% block title %}Tạo CV Mới - CVFlow{% endblock %}
+
+{% block content %}
+    <div class="container-fluid p-0">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">CV Builder <span class="badge bg-warning text-dark fs-6 ms-2">Beta</span></h3>
+                <p class="text-muted small mb-0">Điền thông tin để tạo CV chuẩn ATS tự động.</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-secondary me-2" onclick="history.back()">Hủy bỏ</button>
+                <button class="btn btn-primary fw-bold px-4" onclick="submitCV()">
+                    <i class="bi bi-save me-2"></i> Hoàn tất & Lưu
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="list-group list-group-flush" id="builder-tabs" role="tablist">
+                        <a class="list-group-item list-group-item-action active fw-bold py-3" data-bs-toggle="list" href="#step-personal">
+                            <i class="bi bi-person-badge me-2"></i> Thông tin cá nhân
+                        </a>
+                        <a class="list-group-item list-group-item-action fw-bold py-3" data-bs-toggle="list" href="#step-education">
+                            <i class="bi bi-mortarboard me-2"></i> Học vấn
+                        </a>
+                        <a class="list-group-item list-group-item-action fw-bold py-3" data-bs-toggle="list" href="#step-experience">
+                            <i class="bi bi-briefcase me-2"></i> Kinh nghiệm
+                        </a>
+                        <a class="list-group-item list-group-item-action fw-bold py-3" data-bs-toggle="list" href="#step-skills">
+                            <i class="bi bi-cpu me-2"></i> Kỹ năng
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-9">
+                <div class="tab-content" id="nav-tabContent">
+
+                    <div class="tab-pane fade show active" id="step-personal">
+                        <div class="card border-0 shadow-sm p-4">
+                            <h5 class="fw-bold text-primary mb-4">Thông tin cơ bản</h5>
+                            <form id="form-personal">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Họ và tên</label>
+                                        <input type="text" class="form-control" name="full_name" value="{{ current_user.full_name }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Chức danh mong muốn (Title)</label>
+                                        <input type="text" class="form-control" name="job_title" placeholder="VD: Backend Developer">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-control" name="email" value="{{ current_user.email }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Số điện thoại</label>
+                                        <input type="text" class="form-control" name="phone" value="{{ current_user.phone or '' }}">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Giới thiệu bản thân (Summary)</label>
+                                        <textarea class="form-control" name="summary" rows="4" placeholder="Tóm tắt ngắn gọn về kinh nghiệm và mục tiêu nghề nghiệp..."></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">LinkedIn / Portfolio</label>
+                                        <input type="text" class="form-control" name="linkedin">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Địa chỉ</label>
+                                        <input type="text" class="form-control" name="address">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="step-education">
+                        <div class="card border-0 shadow-sm p-4">
+                            <div class="d-flex justify-content-between mb-4">
+                                <h5 class="fw-bold text-primary">Học vấn & Bằng cấp</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="addEducation()">
+                                    <i class="bi bi-plus-circle"></i> Thêm trường
+                                </button>
+                            </div>
+                            <div id="education-container">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="step-experience">
+                        <div class="card border-0 shadow-sm p-4">
+                            <div class="d-flex justify-content-between mb-4">
+                                <h5 class="fw-bold text-primary">Kinh nghiệm làm việc</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="addExperience()">
+                                    <i class="bi bi-plus-circle"></i> Thêm công ty
+                                </button>
+                            </div>
+                            <div id="experience-container">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="step-skills">
+                        <div class="card border-0 shadow-sm p-4">
+                            <h5 class="fw-bold text-primary mb-4">Kỹ năng chuyên môn</h5>
+                            <div class="alert alert-info small">
+                                <i class="bi bi-info-circle me-1"></i> Nhập các kỹ năng cách nhau bằng dấu phẩy.
+                            </div>
+                            <form id="form-skills">
+                                <div class="mb-3">
+                                    <label class="fw-bold form-label">Kỹ năng Cứng (Hard Skills)</label>
+                                    <input type="text" class="form-control" name="hard_skills" placeholder="VD: Python, SQL, Docker, AWS...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold form-label">Kỹ năng Mềm (Soft Skills)</label>
+                                    <input type="text" class="form-control" name="soft_skills" placeholder="VD: Giao tiếp, Làm việc nhóm, Quản lý thời gian...">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold form-label">Chứng chỉ / Ngoại ngữ</label>
+                                    <textarea class="form-control" name="certifications" rows="3" placeholder="IELTS 7.0, AWS Solution Architect..."></textarea>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <template id="tpl-education">
+        <div class="education-item border rounded p-3 mb-3 bg-light position-relative">
+            <button class="btn-close position-absolute top-0 end-0 m-2" onclick="this.parentElement.remove()"></button>
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <input type="text" class="form-control form-control-sm" placeholder="Tên trường / Trung tâm" name="school">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control form-control-sm" placeholder="Chuyên ngành / Bằng cấp" name="degree">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control form-control-sm" placeholder="Thời gian (VD: 2018 - 2022)" name="edu_time">
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-experience">
+        <div class="experience-item border rounded p-3 mb-3 bg-light position-relative">
+            <button class="btn-close position-absolute top-0 end-0 m-2" onclick="this.parentElement.remove()"></button>
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <input type="text" class="form-control fw-bold" placeholder="Vị trí (VD: Senior Developer)" name="position">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Tên công ty" name="company">
+                </div>
+                <div class="col-md-12">
+                    <input type="text" class="form-control form-control-sm mb-2" placeholder="Thời gian làm việc" name="exp_time">
+                </div>
+                <div class="col-md-12">
+                    <textarea class="form-control form-control-sm" rows="3" placeholder="Mô tả trách nhiệm chính và thành tựu..." name="description"></textarea>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // 1. 👇 KHAI BÁO BIẾN CẦU NỐI (QUAN TRỌNG NHẤT) 👇
+        // Nếu có biến 'cv' từ backend -> Lấy dữ liệu cũ. Nếu không -> null.
+        const existingData = {{ cv.structured_data | tojson | safe if cv else 'null' }};
+
+        // Xác định URL để gửi form: Nếu sửa thì gửi kèm ID, nếu mới thì gửi route gốc
+        const targetUrl = {{ url_for('candidate.cv_builder', cv_id=cv.id) | tojson if cv else url_for('candidate.cv_builder') | tojson }};
+
+        // 2. Các hàm hỗ trợ giao diện
+        function addEducation() {
+            const tpl = document.getElementById('tpl-education');
+            const container = document.getElementById('education-container');
+            container.appendChild(tpl.content.cloneNode(true));
+        }
+
+        function addExperience() {
+            const tpl = document.getElementById('tpl-experience');
+            const container = document.getElementById('experience-container');
+            container.appendChild(tpl.content.cloneNode(true));
+        }
+
+        // 3. 👇 LOGIC KHỞI TẠO KHI VÀO TRANG 👇
+        document.addEventListener('DOMContentLoaded', () => {
+            if (existingData) {
+                // Nếu có dữ liệu cũ (Chế độ Sửa) -> Load dữ liệu đó
+                console.log("✏️ Đang ở chế độ chỉnh sửa...");
+                loadExistingData(existingData);
+            } else {
+                // Nếu không có dữ liệu (Chế độ Tạo mới) -> Thêm dòng trắng để nhập
+                console.log("✨ Đang ở chế độ tạo mới...");
+                addEducation();
+                addExperience();
+            }
+        });
+
+        // 4. Hàm điền dữ liệu cũ vào Form
+        function loadExistingData(data) {
+            // --- Personal Info ---
+            const p = data.personal || {};
+            const fPersonal = document.getElementById('form-personal');
+            if(fPersonal) {
+                fPersonal.querySelector('[name="full_name"]').value = p.full_name || '';
+                fPersonal.querySelector('[name="job_title"]').value = p.job_title || '';
+                fPersonal.querySelector('[name="email"]').value = p.email || '';
+                fPersonal.querySelector('[name="phone"]').value = p.phone || '';
+                fPersonal.querySelector('[name="summary"]').value = p.summary || '';
+                fPersonal.querySelector('[name="linkedin"]').value = p.linkedin || '';
+                fPersonal.querySelector('[name="address"]').value = p.address || '';
+            }
+
+            // --- Skills ---
+            const s = data.skills || {};
+            const fSkills = document.getElementById('form-skills');
+            if(fSkills) {
+                fSkills.querySelector('[name="hard_skills"]').value = (s.hard_skills || []).join(', ');
+                fSkills.querySelector('[name="soft_skills"]').value = (s.soft_skills || []).join(', ');
+                fSkills.querySelector('[name="certifications"]').value = s.certifications || '';
+            }
+
+            // --- Education ---
+            const eContainer = document.getElementById('education-container');
+            eContainer.innerHTML = ''; // Xóa sạch trước khi thêm
+            (data.education || []).forEach(edu => {
+                const tpl = document.getElementById('tpl-education').content.cloneNode(true);
+                tpl.querySelector('[name="school"]').value = edu.school || '';
+                tpl.querySelector('[name="degree"]').value = edu.degree || '';
+                tpl.querySelector('[name="edu_time"]').value = edu.time || '';
+                eContainer.appendChild(tpl);
+            });
+            // Nếu data rỗng thì vẫn thêm 1 dòng trắng
+            if((data.education || []).length === 0) addEducation();
+
+            // --- Experience ---
+            const exContainer = document.getElementById('experience-container');
+            exContainer.innerHTML = ''; // Xóa sạch trước khi thêm
+            (data.experience || []).forEach(exp => {
+                const tpl = document.getElementById('tpl-experience').content.cloneNode(true);
+                tpl.querySelector('[name="position"]').value = exp.position || '';
+                tpl.querySelector('[name="company"]').value = exp.company || '';
+                tpl.querySelector('[name="exp_time"]').value = exp.time || '';
+                tpl.querySelector('[name="description"]').value = exp.description || '';
+                exContainer.appendChild(tpl);
+            });
+            if((data.experience || []).length === 0) addExperience();
+        }
+
+        // 5. Hàm Submit Form
+        function submitCV() {
+            // Thu thập dữ liệu (Giữ nguyên logic của bạn - Phần này bạn làm đúng rồi)
+            const personalData = Object.fromEntries(new FormData(document.getElementById('form-personal')));
+
+            const skillsData = Object.fromEntries(new FormData(document.getElementById('form-skills')));
+            skillsData.hard_skills = skillsData.hard_skills.split(',').map(s => s.trim()).filter(s => s);
+            skillsData.soft_skills = skillsData.soft_skills.split(',').map(s => s.trim()).filter(s => s);
+
+            const eduList = [];
+            document.querySelectorAll('.education-item').forEach(item => {
+                eduList.push({
+                    school: item.querySelector('[name="school"]').value,
+                    degree: item.querySelector('[name="degree"]').value,
+                    time: item.querySelector('[name="edu_time"]').value
+                });
+            });
+
+            const expList = [];
+            document.querySelectorAll('.experience-item').forEach(item => {
+                expList.push({
+                    position: item.querySelector('[name="position"]').value,
+                    company: item.querySelector('[name="company"]').value,
+                    time: item.querySelector('[name="exp_time"]').value,
+                    description: item.querySelector('[name="description"]').value
+                });
+            });
+
+            const finalData = {
+                personal: personalData,
+                education: eduList,
+                experience: expList,
+                skills: skillsData
+            };
+
+            // Gửi lên Server
+            const btn = document.querySelector('button[onclick="submitCV()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Đang lưu...';
+            btn.disabled = true;
+
+            // 👇 SỬA QUAN TRỌNG: Dùng targetUrl thay vì đường dẫn cứng 👇
+            fetch(targetUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify(finalData)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) {
+                        alert(data.message); // Hiển thị thông báo từ server (Tạo mới/Cập nhật)
+                        window.location.href = "{{ url_for('candidate.cv_manager') }}";
+                    } else {
+                        alert("❌ Lỗi: " + data.message);
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("❌ Lỗi kết nối!");
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        }
+    </script>
+
+{% endblock %}

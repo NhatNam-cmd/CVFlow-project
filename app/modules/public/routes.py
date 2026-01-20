@@ -43,7 +43,7 @@ def index():
         if main_cv and main_cv.vector_embedding:
             # Gọi hàm gợi ý AI (Lấy top 3 để hiện trang chủ)
             # Hàm này trả về list dict: [{'job': job_obj, 'match_score': 85}, ...]
-            ai_results = recommend_jobs_for_cv(main_cv.vector_embedding, top_n=3)
+            ai_results = recommend_jobs_for_cv(main_cv, top_n=3)
 
             # Xử lý dữ liệu để truyền sang template
             for item in ai_results:

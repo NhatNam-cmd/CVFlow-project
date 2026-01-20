@@ -28,9 +28,9 @@ class Job(db.Model):
 
     # Feature 1: Automation Config (Lưu JSON)
     skills_required = db.Column(db.JSON)
-    min_years_exp = db.Column(db.Integer, default=0)
+    min_years_experience = db.Column(db.Integer, default=0)
     mini_test_config = db.Column(db.JSON)
-
+    structured_config = db.Column(db.JSON, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

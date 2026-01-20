@@ -15,6 +15,7 @@ from app.services.ai_engine.gemini_client import get_text_embedding
 from app.services.scheduler.engine import SchedulerEngine
 from app.services.scheduler.ics_generator import ICSGenerator
 from app.models.scheduler import Availability
+from app.services.ai_engine.core import extract_job_criteria
 
 
 # Middleware kiểm tra quyền HR
@@ -97,51 +98,67 @@ def company_profile():
 
 
 @hr_bp.route("/post-job", methods=["GET", "POST"])
+@login_required
 def post_job():
     form = JobPostForm()
+
     if form.validate_on_submit():
-        # Xử lý skill tags
-        skills_list = [s.strip() for s in form.skills_required.data.split(",")]
+        try:
+            title = form.title.data
+            requirements = form.requirements.data
+            manual_skills_str = form.skills_required.data  # Skill HR nhập tay ở ô tag
 
-        # --- XỬ LÝ MINI-TEST (MỚI) ---
-        mini_test_json = None
-        # Chỉ lưu nếu người dùng có nhập câu hỏi
-        if form.test_question.data:
-            mini_test_json = {
-                "question": form.test_question.data,
-                "options": [
-                    {"id": "A", "text": form.option1.data},
-                    {"id": "B", "text": form.option2.data},
-                    {"id": "C", "text": form.option3.data},
-                    {"id": "D", "text": form.option4.data},
-                ],
-                "correct": form.correct_answer.data,
-            }
+            # 1. GỌI AI TRÍCH XUẤT (Background Extraction)
+            ai_data = extract_job_criteria(title, requirements)
 
-        job = Job(
-            title=form.title.data,
-            company_id=current_user.company_id,
-            recruiter_id=current_user.id,
-            salary_min=form.salary_min.data,
-            salary_max=form.salary_max.data,
-            location=form.location.data,
-            level=form.level.data,
-            description=form.description.data,
-            requirements=form.requirements.data,
-            benefits=form.benefits.data,
-            skills_required=skills_list,
-            # Lưu cấu hình test vào DB
-            mini_test_config=mini_test_json,
-            created_at=datetime.utcnow(),
-        )
-        full_text_for_embedding = (
-            f"{job.title} . {job.description} . {job.requirements}"
-        )
-        job.vector_embedding = get_text_embedding(full_text_for_embedding)
-        db.session.add(job)
-        db.session.commit()
-        flash("Đăng tin tuyển dụng thành công!", "success")
-        return redirect(url_for("hr.my_jobs"))
+            # 2. HỢP NHẤT DỮ LIỆU SKILL (Merge Manual + AI)
+            # Skill HR nhập tay là ưu tiên số 1, AI trích xuất là bổ sung
+            manual_skills_list = [
+                s.strip() for s in manual_skills_str.split(",") if s.strip()
+            ]
+            ai_hard_skills = ai_data.get("hard_skills", [])
+
+            # Gộp lại và loại bỏ trùng lặp
+            final_skills_list = list(set(manual_skills_list + ai_hard_skills))
+
+            # Cập nhật lại list skill vào cục JSON để lưu
+            ai_data["hard_skills"] = final_skills_list
+
+            # 3. TẠO OBJECT JOB
+            job = Job(
+                recruiter_id=current_user.id,
+                title=title,
+                location=form.location.data,
+                level=form.level.data,
+                description=form.description.data,
+                requirements=requirements,
+                company_id=current_user.company_id,
+                benefits=form.benefits.data,
+                # Input cứng
+                salary_min=form.salary_min.data,
+                salary_max=form.salary_max.data,
+                min_years_experience=form.min_years_experience.data,  # Cột mới
+                # Input mềm (Skill hiển thị UI)
+                skills_required=manual_skills_list,
+                # Cấu trúc AI (Lưu vào DB để sau này so khớp CV Builder)
+                structured_config=ai_data,
+                created_at=datetime.utcnow(),
+            )
+
+            # 4. TẠO VECTOR EMBEDDING (Logic cũ giữ nguyên để search semantic)
+            full_text = f"{title}. {requirements}. Skills: {manual_skills_str}"
+            job.vector_embedding = get_text_embedding(full_text)
+
+            db.session.add(job)
+            db.session.commit()
+
+            flash("Đăng tin tuyển dụng thành công!", "success")
+            return redirect(url_for("hr.dashboard"))
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error posting job: {e}")
+            flash(f"Lỗi khi đăng tin: {str(e)}", "danger")
 
     return render_template("hr/post_job.html", form=form)
 
@@ -447,15 +464,13 @@ def analyze_application_cv(app_id):
     """
     try:
         analyzer = CVAnalyzer()
-
         analyzer.analyze_application(app_id, force_refresh=True)
 
-        flash("Đã phân tích xong!", "success")
-    except Exception as e:
-        flash(f"Lỗi khi phân tích: {str(e)}", "danger")
-        print(f"Error HR Analyze: {e}")
+        return jsonify({"success": True, "message": "Đã phân tích CV thành công!"})
 
-    return redirect(request.referrer)
+    except Exception as e:
+        print(f"Analyze Error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 @hr_bp.route("/api/suggest-slots/<int:app_id>")

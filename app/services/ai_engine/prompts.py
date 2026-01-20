@@ -26,22 +26,22 @@ Lưu ý:
 """
 
 CV_REVIEW_PROMPT_TEMPLATE = """
-Bạn là một Chuyên gia Tư vấn Nghề nghiệp (Career Coach) chuyên nghiệp.
-Hãy phân tích nội dung CV dưới đây để đưa ra lời khuyên cải thiện.
+Bạn là Chuyên gia Tư vấn Nghề nghiệp (Career Coach).
+Hãy phân tích CV dưới đây (được trích xuất từ {source_type}) và đưa ra nhận xét.
 
 ---
 NỘI DUNG CV:
 {cv_text}
 
 ---
-YÊU CẦU OUTPUT:
-Hãy trả về kết quả dưới dạng JSON thuần túy (không markdown), bao gồm các trường sau:
-1. "summary": (Chuỗi) Nhận xét tổng quan ngắn gọn về chất lượng CV này (Tiếng Việt).
-2. "strengths": (Mảng chuỗi) 3 điểm mạnh nhất về nội dung hoặc cách trình bày.
-3. "weaknesses": (Mảng chuỗi) 3 điểm yếu cần khắc phục (VD: Lỗi chính tả, câu văn lủng củng, thiếu số liệu...).
-4. "improvements": (Mảng chuỗi) 3 hành động cụ thể để ứng viên sửa ngay giúp CV tốt hơn.
+YÊU CẦU OUTPUT JSON:
+Hãy trả về JSON thuần túy gồm 4 trường sau (Tiếng Việt):
+1. "summary": (String) Nhận xét tổng quan (ngắn gọn, súc tích).
+2. "strengths": (Array) 3 điểm mạnh nổi bật nhất của hồ sơ này.
+3. "weaknesses": (Array) 3 điểm yếu cần khắc phục.
+4. "improvements": (Array) 3 lời khuyên cụ thể để cải thiện.
 
 Lưu ý:
-- Giọng văn: Chân thành, mang tính xây dựng.
-- Ngôn ngữ: Tiếng Việt.
+- Nếu CV quá sơ sài, hãy thẳng thắn góp ý trong phần weaknesses.
+- Trả về JSON hợp lệ, không markdown.
 """
