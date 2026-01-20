@@ -18,9 +18,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
 
-        # Gọi hàm check_password vừa sửa trong Model
         if user and user.check_password(form.password.data):
-            # Check trạng thái HR
             if user.role == "HR":
                 company = db.session.get(Company, user.company_id)
                 if company.verification_status == "PENDING":
@@ -31,7 +29,6 @@ def login():
 
             login_user(user, remember=form.remember_me.data)
 
-            # Điều hướng thông minh
             next_page = request.args.get("next")
             if not next_page or not next_page.startswith("/"):
                 if user.role == "HR":

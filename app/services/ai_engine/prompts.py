@@ -1,4 +1,3 @@
-# Prompt này chỉ tập trung vào Phân tích định tính (Qualitative)
 MATCHING_PROMPT_TEMPLATE = """
 Bạn là một Chuyên gia Tuyển dụng (HR Manager) khắt khe.
 Nhiệm vụ của bạn là SO SÁNH nội dung CV và JD để đưa ra nhận xét chi tiết.

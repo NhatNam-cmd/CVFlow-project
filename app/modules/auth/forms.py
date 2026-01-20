@@ -4,7 +4,6 @@ from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationE
 from app.models.user import User, Company
 
 
-# 1. Login
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Mật khẩu", validators=[DataRequired()])
@@ -12,7 +11,6 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Đăng nhập")
 
 
-# 2. Đăng ký Candidate
 class CandidateRegisterForm(FlaskForm):
     full_name = StringField(
         "Họ và tên", validators=[DataRequired(), Length(min=2, max=100)]
@@ -30,7 +28,6 @@ class CandidateRegisterForm(FlaskForm):
             raise ValidationError("Email này đã được sử dụng.")
 
 
-# 3. Đăng ký HR
 class HRRegisterForm(FlaskForm):
     full_name = StringField("Họ tên người liên hệ", validators=[DataRequired()])
     email = StringField("Email công việc", validators=[DataRequired(), Email()])
@@ -52,7 +49,6 @@ class HRRegisterForm(FlaskForm):
         if user:
             raise ValidationError("Email này đã được sử dụng.")
 
-    # Chặn lỗi sập web do trùng MST
     def validate_tax_number(self, tax_number):
         company = Company.query.filter_by(tax_number=tax_number.data).first()
         if company:

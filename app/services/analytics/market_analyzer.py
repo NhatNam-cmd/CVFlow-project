@@ -7,7 +7,6 @@ from datetime import datetime
 
 
 class MarketAnalyzer:
-    # Danh sách các nhóm chuẩn
     STANDARD_CATEGORIES = [
         "Backend Developer",
         "Frontend Developer",
@@ -22,33 +21,26 @@ class MarketAnalyzer:
     ]
 
     def __init__(self):
-        # Lazy load: Không load vector ngay khi init
         self.category_vectors = {}
 
     def analyze_and_save(self):
         """
         Hàm chính: Phân tích thị trường và lưu vào bảng MarketData (Breakdown theo Level)
         """
-        # Load vector nếu chưa có
         if not self.category_vectors:
             self._preload_category_vectors()
 
         print("📊 Đang phân tích thị trường (Chi tiết Level)...")
 
-        # 1. Xóa dữ liệu cũ
         MarketData.query.delete()
 
-        # 2. Lấy dữ liệu jobs
         jobs = Job.query.filter_by(is_active=True).all()
-        #  total_market_jobs = len(jobs) if jobs else 1
 
-        # Cấu trúc: Key là tuple (JobTitle, JobLevel)
         data_buckets = {}
 
         for job in jobs:
             standard_title = self._semantic_classify(job)
 
-            # Chuẩn hóa Level
             level = job.level.upper() if job.level else "MIDDLE"
             if "SENIOR" in level:
                 level = "SENIOR"
@@ -66,18 +58,15 @@ class MarketAnalyzer:
             if key not in data_buckets:
                 data_buckets[key] = {"salaries": [], "skills": [], "job_count": 0}
 
-            # Gom dữ liệu lương
             salary = job.salary_max if job.salary_max else job.salary_min
             if salary:
                 data_buckets[key]["salaries"].append(salary)
 
-            # Gom dữ liệu kỹ năng
             if job.skills_required:
                 data_buckets[key]["skills"].extend(job.skills_required)
 
             data_buckets[key]["job_count"] += 1
 
-        # 3. Tính toán và Lưu DB
         for (title, level), data in data_buckets.items():
             if not data["salaries"]:
                 continue
@@ -85,7 +74,6 @@ class MarketAnalyzer:
             avg_salary = sum(data["salaries"]) / len(data["salaries"])
             top_skills = self._get_top_frequency(data["skills"], 5)
 
-            # Lưu số lượng job vào demand_score tạm để tính toán sau
             demand_score = data["job_count"]
 
             report = MarketData(
@@ -155,7 +143,6 @@ class MarketAnalyzer:
         )
 
         if position_filter != "All":
-            # Mapping từ khóa tìm kiếm
             keywords = {
                 "Python Developer": ["python", "django", "flask", "ai", "data"],
                 "Java Developer": ["java", "spring", "j2ee"],

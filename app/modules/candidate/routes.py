@@ -37,7 +37,6 @@ def check_candidate_role():
 
 @candidate_bp.route("/dashboard")
 def dashboard():
-    # 1. Các thống kê cũ (Giữ nguyên)
     applied_count = Application.query.filter_by(user_id=current_user.id).count()
     interested_count = Application.query.filter(
         Application.user_id == current_user.id, Application.status != "NEW"
@@ -60,14 +59,11 @@ def dashboard():
         .all()
     )
 
-    # 2. PHẦN GỢI Ý JOB (Sửa ở đây)
     suggested_jobs = []
 
-    # 👇 CHÚ Ý: Phải dùng .first()
     main_cv = CV_File.query.filter_by(user_id=current_user.id, is_main=True).first()
 
     if main_cv:
-        # Giờ main_cv là object, hàm này mới chạy được
         suggested_jobs = recommend_jobs_for_cv(main_cv, top_n=6)
 
     return render_template(
@@ -145,7 +141,6 @@ def cv_manager():
                     print(f"❌ Lỗi Parser PDF: {p_err}")
             else:
                 print("⚠️ File không phải PDF, bỏ qua bước trích xuất text.")
-            # --------------------------------------------------
 
             new_cv = CV_File(
                 user_id=current_user.id,
@@ -172,14 +167,11 @@ def cv_manager():
 
 @candidate_bp.route("/cv/set-main/<int:cv_id>")
 def set_main_cv(cv_id):
-    # Reset tất cả về False
     CV_File.query.filter_by(user_id=current_user.id).update({"is_main": False})
 
-    # 2. Lấy CV được chọn
     target_cv = CV_File.query.get_or_404(cv_id)
     target_cv.is_main = True
 
-    # 3. TẠO VECTOR NẾU CHƯA CÓ (Lazy Loading)
     if not target_cv.vector_embedding and target_cv.raw_text:
         print("⚡ Đang tạo Vector Embedding cho CV...")
         target_cv.vector_embedding = get_text_embedding(target_cv.raw_text)
@@ -276,7 +268,6 @@ def ai_review_cv(cv_id):
                 "improvements": [],
             }
 
-        # 5. TỔNG HỢP VÀ LƯU KẾT QUẢ
         final_result = {
             "score": ats_score,
             "checklist": ats_details,
@@ -390,7 +381,6 @@ def cv_builder(cv_id):
 def delete_cv(cv_id):
     cv = CV_File.query.get_or_404(cv_id)
 
-    # Check quyền
     if cv.user_id != current_user.id:
         flash("Bạn không có quyền xóa CV này.", "danger")
         return redirect(url_for("candidate.cv_manager"))

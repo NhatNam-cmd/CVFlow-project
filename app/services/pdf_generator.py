@@ -1,4 +1,3 @@
-# app/services/pdf_generator.py
 from fpdf import FPDF
 from unidecode import unidecode
 
@@ -14,7 +13,6 @@ class PDFGenerator:
         pdf.add_page()
         pdf.set_auto_page_break(auto=True, margin=15)
 
-        # Cấu hình Font mặc định (Arial)
         pdf.set_font("Arial", size=11)
 
         def txt(text):
@@ -23,7 +21,6 @@ class PDFGenerator:
                 return ""
             return unidecode(str(text))
 
-        # --- 1. HEADER (Căn giữa) ---
         p = data.get("personal", {})
         pdf.set_font("Arial", "B", 24)
         pdf.cell(0, 15, txt(p.get("full_name", "Your Name")), ln=True, align="C")
@@ -44,21 +41,18 @@ class PDFGenerator:
 
         pdf.ln(10)  # Khoảng cách
 
-        # Hàm vẽ tiêu đề mục
         def section_title(title):
             pdf.set_font("Arial", "B", 16)
             pdf.set_fill_color(240, 240, 240)  # Nền xám nhạt
             pdf.cell(0, 10, txt(title).upper(), ln=True, fill=True)
             pdf.ln(4)
 
-        # --- 2. SUMMARY ---
         if p.get("summary"):
             section_title("Summary")
             pdf.set_font("Arial", "", 11)
             pdf.multi_cell(0, 6, txt(p.get("summary")))
             pdf.ln(8)
 
-        # --- 3. SKILLS ---
         skills = data.get("skills", {})
         h_skills = skills.get("hard_skills", [])
         s_skills = skills.get("soft_skills", [])
@@ -82,28 +76,23 @@ class PDFGenerator:
                 pdf.ln(8)
             pdf.ln(4)
 
-        # --- 4. EXPERIENCE ---
         exp_list = data.get("experience", [])
         if exp_list:
             section_title("Experience")
             for item in exp_list:
-                # Dòng 1: Vị trí - Công ty
                 pdf.set_font("Arial", "B", 12)
                 title = f"{txt(item.get('position'))} at {txt(item.get('company'))}"
                 pdf.cell(0, 7, title, ln=True)
 
-                # Dòng 2: Thời gian (In nghiêng)
                 pdf.set_font("Arial", "I", 10)
                 pdf.set_text_color(80, 80, 80)
                 pdf.cell(0, 6, txt(item.get("time")), ln=True)
 
-                # Dòng 3: Mô tả
                 pdf.set_text_color(0, 0, 0)
                 pdf.set_font("Arial", "", 11)
                 pdf.multi_cell(0, 6, txt(item.get("description")))
                 pdf.ln(6)
 
-        # --- 5. EDUCATION ---
         edu_list = data.get("education", [])
         if edu_list:
             section_title("Education")
@@ -116,7 +105,6 @@ class PDFGenerator:
                 pdf.cell(0, 6, detail, ln=True)
                 pdf.ln(4)
 
-        # Lưu file
         pdf.output(output_path)
 
     def _clean_text(text):

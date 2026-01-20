@@ -1,0 +1,14 @@
+BEGIN:VCALENDAR
+METHOD:PUBLISH
+PRODID:-//CVFlow-FINAL//VN
+VERSION:2.0
+PRODID:ics.py - http://git.io/lLljaA
+BEGIN:VEVENT
+DESCRIPTION:Ứng viên Phan Le Nhat Nam\nLink: test
+DTEND:20260124T023000Z
+LOCATION:Online: test - Link: test
+DTSTART:20260124T013000Z
+SUMMARY:PV: Senior Python Backend Engineer (Django/FastAPI)
+UID:cvflow-9@cvflow.vn
+END:VEVENT
+END:VCALENDAR

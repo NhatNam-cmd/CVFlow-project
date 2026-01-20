@@ -1,9 +1,7 @@
-# file: test_ai.py
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Load API Key từ file .env
 load_dotenv()
 
 api_key = os.environ.get("GOOGLE_API_KEY")

@@ -1,5 +1,3 @@
-# app/services/cv_analyzer.py
-
 import json
 import re
 import os
@@ -12,7 +10,6 @@ from app.models import Application, Job, CV_File
 from app.services.ai_engine.gemini_client import GeminiClient
 from app.services.ai_engine.prompts import MATCHING_PROMPT_TEMPLATE
 
-# 👇 QUAN TRỌNG: Import hàm đọc PDF có sẵn của bạn
 from app.services.ai_engine.parser import extract_text_from_pdf
 
 
@@ -47,25 +44,20 @@ class CVAnalyzer:
         current_date = datetime.now()
 
         for exp in experience_list:
-            # Lấy chuỗi thời gian, ví dụ: "01/2020 - 05/2022" hoặc "Jun 2021 - Present"
             time_str = exp.get("time", "").lower()
             try:
-                # Tìm tất cả các năm (4 chữ số) trong chuỗi
                 years = re.findall(r"\d{4}", time_str)
 
                 start_year = int(years[0]) if years else current_date.year
                 end_year = current_date.year  # Mặc định là năm nay
 
-                # Xử lý ngày kết thúc
                 if any(x in time_str for x in ["hiện tại", "present", "now", "nay"]):
                     end_year = current_date.year
                 elif len(years) >= 2:
                     end_year = int(years[1])
 
-                # Tính khoảng cách
                 duration = end_year - start_year
 
-                # Logic bù trừ: Nếu làm cùng năm (2022-2022) tính là 0.5 năm
                 if duration == 0:
                     duration = 0.5
                 if duration < 0:
@@ -74,7 +66,6 @@ class CVAnalyzer:
                 total_months += duration * 12
 
             except Exception:
-                # Nếu format lạ quá không parse được, mặc định cộng 6 tháng an ủi
                 total_months += 6
 
         return round(total_months / 12, 1)  # Trả về số năm (VD: 2.5)
@@ -85,7 +76,6 @@ class CVAnalyzer:
         """
         print(f"🤖 [CVAnalyzer] Đang xử lý Application ID: {application_id}")
 
-        # 1. Lấy dữ liệu từ DB
         app = Application.query.get(application_id)
         if not app:
             print("❌ App not found")
@@ -102,28 +92,23 @@ class CVAnalyzer:
             print("❌ Dữ liệu Job hoặc CV bị thiếu.")
             return
 
-        # 2. Chuẩn bị Vector cho Job
         if not job.vector_embedding:
             print("⚡ Tạo Vector Embedding cho Job...")
             full_job_text = f"{job.title} . {job.requirements} . {job.skills_required}"
             job.vector_embedding = self.ai_client.get_embedding(full_job_text)
             db.session.commit()
 
-        # 3. Chuẩn bị Vector cho CV (Bao gồm logic Tự phục hồi)
         if not cv.vector_embedding:
             print("⚡ Tạo Vector Embedding cho CV...")
 
-            # 👇 LOGIC TỰ PHỤC HỒI: Nếu chưa có text -> Gọi parser đọc file PDF
             if not cv.raw_text:
                 print("⚠️ CV chưa có text. Đang thử trích xuất từ file PDF gốc...")
                 try:
-                    # Tạo đường dẫn file vật lý
                     file_path = os.path.join(
                         current_app.config["UPLOAD_FOLDER"], cv.file_url
                     )
 
                     if os.path.exists(file_path):
-                        # Gọi hàm parser của bạn
                         extracted_text = extract_text_from_pdf(file_path)
 
                         if extracted_text and len(extracted_text) > 10:
@@ -137,33 +122,25 @@ class CVAnalyzer:
                 except Exception as e:
                     print(f"❌ Lỗi khi đọc PDF: {e}")
 
-            # Sau khi cố gắng trích xuất, nếu có text thì tạo vector
             if cv.raw_text:
                 cv.vector_embedding = self.ai_client.get_embedding(cv.raw_text)
                 db.session.commit()
             else:
                 print("⚠️ Vẫn không có text -> Không thể tạo vector (Điểm sẽ là 0).")
 
-        # =========================================================
-        # 4. TÍNH TOÁN ĐIỂM SỐ
-        # =========================================================
-
         final_score = 0
         semantic_score = 0
         breakdown = {}
 
-        # Tính Semantic Score (AI Vector)
         if job.vector_embedding and cv.vector_embedding:
             similarity = self.calculate_cosine_similarity(
                 job.vector_embedding, cv.vector_embedding
             )
             semantic_score = round(similarity * 100, 1)
 
-        # --- PHÂN NHÁNH LOGIC: BUILDER vs UPLOAD ---
         if cv.cv_source == "BUILDER" and cv.structured_data:
             print("🔍 [CVAnalyzer] Đang chấm điểm theo cấu trúc (CV Builder)...")
 
-            # A. Chấm điểm Kỹ năng (40%)
             job_skills = set()
             if job.structured_config and "hard_skills" in job.structured_config:
                 job_skills = set(
@@ -186,7 +163,6 @@ class CVAnalyzer:
             else:
                 skill_score = 100
 
-                # B. Chấm điểm Kinh nghiệm (30%) - Dựa trên SỐ NĂM
             exp_score = 0
             req_exp_years = job.min_years_experience
             actual_exp_years = self._calculate_total_years(
@@ -199,10 +175,8 @@ class CVAnalyzer:
                 if actual_exp_years >= req_exp_years:
                     exp_score = 100
                 else:
-                    # Công thức tuyến tính
                     exp_score = (actual_exp_years / req_exp_years) * 100
 
-            # C. Tổng hợp điểm
             final_score = (
                 (skill_score * 0.4) + (exp_score * 0.3) + (semantic_score * 0.3)
             )
@@ -219,25 +193,20 @@ class CVAnalyzer:
             }
 
         else:
-            # --- CV UPLOAD ---
             print("📄 [CVAnalyzer] Đang chấm điểm theo ngữ nghĩa (CV Upload)...")
-            # Với CV Upload, điểm số chính là Semantic Score
             final_score = semantic_score
             breakdown = {
                 "note": "Chấm điểm dựa trên phân tích ngữ nghĩa vector (Semantic Search).",
                 "semantic_score": semantic_score,
             }
 
-        # 5. GỬI PROMPT NHẬN XÉT (QUALITATIVE REVIEW)
         prompt = self._build_scoring_prompt(job, cv)
         print("⏳ [CVAnalyzer] Đang gửi prompt nhận xét lên Gemini...")
 
-        # Gọi AI để lấy text nhận xét
         ai_response_text = self.ai_client.generate_text(prompt)
         parsed_result = self._parse_json_response(ai_response_text)
 
         if parsed_result:
-            # 6. LƯU KẾT QUẢ VÀO DB
             app.match_score = int(final_score)
 
             parsed_result["match_score"] = int(final_score)
@@ -256,7 +225,6 @@ class CVAnalyzer:
         - Yêu cầu: {job.requirements}
         - Kỹ năng cần có: {job.skills_required}
         """
-        # Lấy raw_text, nếu không có thì ghi chú
         cv_context = (
             cv.raw_text[:12000]
             if cv.raw_text

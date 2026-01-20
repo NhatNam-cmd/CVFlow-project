@@ -1,5 +1,3 @@
-# app/services/ai_engine/core.py
-
 import json
 import re
 import numpy as np
@@ -76,7 +74,6 @@ def review_cv_content(cv_text, source_type="Raw Text"):
 
             data = json.loads(clean_json)
 
-            # Fallback key mapping
             if "pros" in data and "strengths" not in data:
                 data["strengths"] = data.pop("pros")
             if "cons" in data and "weaknesses" not in data:
@@ -88,9 +85,6 @@ def review_cv_content(cv_text, source_type="Raw Text"):
             return {"error": "AI trả về dữ liệu lỗi."}
     else:
         return {"error": "Không kết nối được AI."}
-
-
-# --- CLASS CHÍNH: CV ANALYZER ---
 
 
 class CVAnalyzer:

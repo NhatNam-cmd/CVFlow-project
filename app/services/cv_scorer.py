@@ -8,7 +8,6 @@ class CVScorer:
     """
 
     def __init__(self):
-        # Các từ khóa để nhận diện các mục chính (Hỗ trợ cả Anh và Việt)
         self.SECTIONS = {
             "education": [
                 "education",
@@ -35,7 +34,6 @@ class CVScorer:
             "contact": ["contact", "liên hệ", "thông tin"],
         }
 
-        # Danh sách từ khóa Tech phổ biến (để check xem có phải CV IT không)
         self.TECH_KEYWORDS = [
             "python",
             "java",
@@ -67,7 +65,6 @@ class CVScorer:
         Hàm evaluate thông minh, tự chọn chiến thuật chấm.
         Input: Đối tượng CV_File (Model)
         """
-        # Kiểm tra nếu là CV Builder VÀ có dữ liệu JSON
         if cv_obj.cv_source == "BUILDER" and cv_obj.structured_data:
             return self._evaluate_structured(cv_obj.structured_data)
         else:
@@ -75,14 +72,12 @@ class CVScorer:
 
     def _evaluate_text(self, raw_text):
         if not raw_text:
-            # Sửa lỗi nhỏ: Trả về List để đồng bộ với format chung
             return 0, ["❌ Không đọc được nội dung text"]
 
         text_lower = raw_text.lower()
         score = 0
         details = []
 
-        # 1. KIỂM TRA THÔNG TIN LIÊN HỆ (20 điểm)
         has_email = re.search(r"[\w\.-]+@[\w\.-]+\.\w+", text_lower)
         has_phone = re.search(r"\d{9,12}", text_lower)
 
@@ -98,29 +93,24 @@ class CVScorer:
         else:
             details.append("❌ Thiếu Số điện thoại.")
 
-        # 2. KIỂM TRA CẤU TRÚC (40 điểm)
         section_score = 0
         missing_sections = []
 
-        # Kiểm tra Education
         if any(w in text_lower for w in self.SECTIONS["education"]):
             section_score += 10
         else:
             missing_sections.append("Học vấn")
 
-        # Kiểm tra Experience
         if any(w in text_lower for w in self.SECTIONS["experience"]):
             section_score += 10
         else:
             missing_sections.append("Kinh nghiệm làm việc")
 
-        # Kiểm tra Skills
         if any(w in text_lower for w in self.SECTIONS["skills"]):
             section_score += 10
         else:
             missing_sections.append("Kỹ năng")
 
-        # Kiểm tra Projects
         if any(w in text_lower for w in self.SECTIONS["projects"]):
             section_score += 10
         else:
@@ -132,7 +122,6 @@ class CVScorer:
         else:
             details.append(f"⚠️ Thiếu các mục quan trọng: {', '.join(missing_sections)}")
 
-        # 3. KIỂM TRA ĐỘ DÀI (20 điểm)
         word_count = len(text_lower.split())
         if 200 <= word_count <= 2000:
             score += 20
@@ -144,7 +133,6 @@ class CVScorer:
             score += 10
             details.append(f"⚠️ CV hơi dài ({word_count} từ). Nên tóm tắt lại.")
 
-        # 4. KIỂM TRA TỪ KHÓA CÔNG NGHỆ (20 điểm)
         found_keywords = [kw for kw in self.TECH_KEYWORDS if kw in text_lower]
         unique_keywords = len(set(found_keywords))
 
@@ -165,7 +153,6 @@ class CVScorer:
         score = 0
         details = []
 
-        # 1. Contact Info (20đ)
         p = data.get("personal", {})
         if p.get("email"):
             score += 10
@@ -179,7 +166,6 @@ class CVScorer:
         else:
             details.append("❌ Thiếu SĐT.")
 
-        # 2. Structure Sections (40đ)
         edu = data.get("education", [])
         exp = data.get("experience", [])
         skills = data.get("skills", {})
@@ -204,8 +190,6 @@ class CVScorer:
         else:
             details.append("⚠️ Chưa nhập Kỹ năng.")
 
-        # 3. Content Quality Check (40đ)
-        # Check độ dài Summary
         summary = p.get("summary", "")
         if len(summary.split()) > 20:
             score += 10
@@ -213,7 +197,6 @@ class CVScorer:
         else:
             details.append("⚠️ Phần giới thiệu hơi ngắn.")
 
-        # Check mô tả kinh nghiệm (Description length)
         good_exp = False
         if exp:
             good_exp = any(len(e.get("description", "").split()) > 10 for e in exp)
@@ -224,7 +207,6 @@ class CVScorer:
         else:
             details.append("⚠️ Mô tả kinh nghiệm quá sơ sài.")
 
-        # Check Tech Keywords trong Hard Skills
         all_skills_text = " ".join(h_skills).lower()
         found = [k for k in self.TECH_KEYWORDS if k in all_skills_text]
         if len(found) >= 3:

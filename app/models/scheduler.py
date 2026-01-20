@@ -7,7 +7,6 @@ class Availability(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
-    # 0=CN, 1=T2... 6=T7
     day_of_week = db.Column(db.Integer, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
@@ -30,10 +29,8 @@ class Interview(db.Model):
         db.String(20), default="SCHEDULED"
     )  # SCHEDULED, COMPLETED, CANCELLED
 
-    # File ICS sinh ra bởi Python
     ics_file_url = db.Column(db.String(500))
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Quan hệ
     application = db.relationship("Application", backref="interviews")

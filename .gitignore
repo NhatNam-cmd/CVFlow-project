@@ -35,3 +35,4 @@ app/static/avatars/*
 .env
 
 data/cvflow.db
+clean_comments.py

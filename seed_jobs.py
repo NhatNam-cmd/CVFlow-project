@@ -2,12 +2,10 @@ import time
 from app import create_app, db
 from app.models import User, Company, Job
 
-# Import đúng hàm embedding mới (Google GenAI)
 from app.services.ai_engine.gemini_client import get_text_embedding
 
 app = create_app()
 
-# Dữ liệu mẫu phong phú
 SAMPLE_JOBS = [
     {
         "title": "Senior Python Backend Developer",
@@ -66,7 +64,6 @@ def seed_data():
     with app.app_context():
         print("🚀 Bắt đầu khởi tạo dữ liệu mẫu...")
 
-        # 1. TẠO CÔNG TY (Nếu chưa có)
         company = Company.query.filter_by(name="Tech Corp Demo").first()
         if not company:
             company = Company(
@@ -82,7 +79,6 @@ def seed_data():
             db.session.commit()
             print("✅ Đã tạo Company: Tech Corp Demo")
 
-        # 2. TẠO HR USER (Nếu chưa có)
         hr_user = User.query.filter_by(email="hr_demo@cvflow.com").first()
         if not hr_user:
             hr_user = User(
@@ -96,25 +92,20 @@ def seed_data():
             db.session.commit()
             print("✅ Đã tạo HR User: hr_demo@cvflow.com")
         else:
-            # Đảm bảo HR này thuộc về công ty demo
             if not hr_user.company_id:
                 hr_user.company_id = company.id
                 db.session.commit()
 
-        # 3. TẠO JOBS VÀ VECTOR EMBEDDING
         print("\n⏳ Đang tạo Job và gọi Google AI (Embedding)...")
 
-        # Tạo 2 lượt để có nhiều dữ liệu (khoảng 12 jobs)
         for i in range(2):
             for template in SAMPLE_JOBS:
                 job_title = f"{template['title']} ({i+1})"
 
-                # Check trùng
                 if Job.query.filter_by(title=job_title).first():
                     print(f"   Skip: {job_title}")
                     continue
 
-                # Tạo Job Object
                 job = Job(
                     title=job_title,
                     description=template["desc"],
@@ -130,7 +121,6 @@ def seed_data():
                     skills_required=template["skills"],
                 )
 
-                # --- QUAN TRỌNG: TẠO VECTOR ---
                 full_text = f"{job.title}. {job.description}. {job.requirements}"
                 vector = get_text_embedding(full_text)
 
