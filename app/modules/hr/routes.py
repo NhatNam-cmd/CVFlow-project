@@ -6,15 +6,15 @@ from app.modules.hr.forms import CompanyProfileForm, JobPostForm
 from app.models.job import Job
 from app.models.user import Company
 from app.models.application import Application
-from app.models.scheduler import Interview
-from datetime import datetime
-from datetime import timedelta
+from app.models.scheduler import Interview, Availability
+from datetime import datetime, timedelta
 from app.services.ai_engine.cv_analyzer import CVAnalyzer
 from sqlalchemy import func
 from app.services.ai_engine.gemini_client import get_text_embedding
 from app.services.scheduler.engine import SchedulerEngine
 from app.services.scheduler.ics_generator import ICSGenerator
-from app.models.scheduler import Availability
+# Import service gửi email mới thêm
+from app.services.email_service import send_interview_invitation
 
 
 # Middleware kiểm tra quyền HR
@@ -47,8 +47,7 @@ def dashboard():
         .count()
     )
 
-    # 3. TIN ĐANG MỞ (SỬA LỖI CỦA BẠN TẠI ĐÂY)
-    # Thêm điều kiện company_id == company_id
+    # 3. TIN ĐANG MỞ
     active_jobs_count = Job.query.filter(
         Job.is_active == True, Job.company_id == company_id
     ).count()
@@ -392,11 +391,18 @@ def create_interview(app_id):
         application.status = "INTERVIEW"
         db.session.commit()
 
-    flash("✅ Đã lên lịch phỏng vấn thành công!", "success")
+    # 7. Gửi Email thông báo (Đoạn Code mới thêm)
+    try:
+        email_sent = send_interview_invitation(application, interview)
+        if email_sent:
+            flash("✅ Đã lên lịch và gửi email mời phỏng vấn thành công!", "success")
+        else:
+            flash("⚠️ Đã lên lịch nhưng lỗi khi gửi email.", "warning")
+    except Exception as e:
+        # Vẫn thông báo thành công việc lên lịch, nhưng báo lỗi mail
+        flash(f"⚠️ Đã lên lịch, nhưng lỗi hệ thống gửi mail: {str(e)}", "warning")
+
     return redirect(url_for("hr.candidate_view", id=app_id))
-
-
-# File: app/modules/hr/routes.py
 
 
 @hr_bp.route("/applications/<int:app_id>/reject", methods=["POST"])

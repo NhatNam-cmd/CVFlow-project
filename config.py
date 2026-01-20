@@ -9,6 +9,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
+    # 1. Security & Database
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-key-nhung-khong-nen-dung"
 
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
@@ -20,14 +21,23 @@ class Config:
         )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # 3. Uploads
+
+    # 2. Uploads
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "app", "static", "uploads")
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # Giới hạn file 16MB
     ALLOWED_EXTENSIONS = {"pdf", "docx"}
 
-    # 4. Redis & Celery (Cho Crawler & Background Task)
+    # 3. Redis & Celery (Cho Crawler & Background Task)
     CELERY_BROKER_URL = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
+
+    # 4. Email Configuration
+    MAIL_SERVER = os.environ.get("MAIL_SERVER") or "smtp.gmail.com"
+    MAIL_PORT = int(os.environ.get("MAIL_PORT") or 587)
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS") == "True"
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
 
 
 class DevelopmentConfig(Config):
