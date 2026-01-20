@@ -1,5 +1,3 @@
-# app/services/ai_engine/gemini_client.py
-
 import os
 import json
 import re
@@ -7,10 +5,8 @@ from google import genai
 from google.genai import types
 
 
-# --- PHẦN 1: CLASS MỚI (Dùng cho CVAnalyzer và code mới) ---
 class GeminiClient:
     def __init__(self):
-        # Ưu tiên lấy từ Config app (nếu có), không thì lấy biến môi trường
         api_key = os.environ.get("GOOGLE_API_KEY")
 
         if not api_key:
@@ -18,7 +14,6 @@ class GeminiClient:
             self.client = None
         else:
             try:
-                # Cấu hình Client dùng API v1beta (như code cũ của bạn)
                 self.client = genai.Client(
                     api_key=api_key,
                     http_options={"api_version": "v1beta"},
@@ -34,7 +29,6 @@ class GeminiClient:
         if not self.client:
             return None
 
-        # Logic thử nhiều model (Retry strategy)
         models_to_try = [
             "gemini-2.0-flash",
             "gemini-2.5-flash",
@@ -44,7 +38,6 @@ class GeminiClient:
         errors = []
         for model_name in models_to_try:
             try:
-                # print(f"🤖 [Class] Đang gọi model: {model_name}...")
                 response = self.client.models.generate_content(
                     model=model_name,
                     contents=prompt,
@@ -74,14 +67,10 @@ class GeminiClient:
             return None
 
 
-# --- PHẦN 2: CÁC HÀM CŨ (Wrapper để giữ tính năng cũ không chết) ---
-
-
 def clean_json_string(json_str):
     """Hàm làm sạch JSON (giữ lại từ code cũ)"""
     if not json_str:
         return ""
-    # Xóa markdown code block
     cleaned = re.sub(r"```json\s*|\s*```", "", json_str).strip()
     return cleaned
 

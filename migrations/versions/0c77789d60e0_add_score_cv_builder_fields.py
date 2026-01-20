@@ -1,0 +1,34 @@
+"""Add score cv builder fields
+
+Revision ID: 0c77789d60e0
+Revises: c79bec01af16
+Create Date: 2026-01-20 15:11:32.041994
+
+"""
+
+from alembic import op
+import sqlalchemy as sa
+
+
+revision = "0c77789d60e0"
+down_revision = "c79bec01af16"
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    with op.batch_alter_table("jobs", schema=None) as batch_op:
+        batch_op.add_column(
+            sa.Column("min_years_experience", sa.Integer(), nullable=True)
+        )
+        batch_op.add_column(sa.Column("structured_config", sa.JSON(), nullable=True))
+        batch_op.drop_column("min_years_exp")
+
+
+def downgrade():
+    with op.batch_alter_table("jobs", schema=None) as batch_op:
+        batch_op.add_column(
+            sa.Column("min_years_exp", sa.INTEGER(), autoincrement=False, nullable=True)
+        )
+        batch_op.drop_column("structured_config")
+        batch_op.drop_column("min_years_experience")

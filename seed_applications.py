@@ -3,11 +3,7 @@ from app import create_app, db
 from app.models import User, Job, CV_File, Application
 from datetime import datetime, timedelta
 
-# Cài thêm thư viện tạo tên giả cho đẹp: pip install names
-# Nếu lười cài thì dùng list tên cứng ở dưới cũng được
 
-
-# DANH SÁCH LÝ DO TỪ CHỐI (Có trọng số để biểu đồ đẹp)
 REJECTION_REASONS = [
     ("Thiếu kinh nghiệm thực tế (Project)", 40),  # 40% bị loại vì lý do này
     ("Tiếng Anh giao tiếp yếu", 25),
@@ -28,7 +24,6 @@ def seed_full_market_data():
     with app.app_context():
         print("🚀 Đang khởi tạo dữ liệu Ứng tuyển & Thị trường...")
 
-        # 1. Lấy danh sách Job đang Active
         jobs = Job.query.filter_by(is_active=True).all()
         if not jobs:
             print("❌ Chưa có Job nào. Hãy chạy seed_jobs.py trước!")
@@ -36,11 +31,8 @@ def seed_full_market_data():
 
         print(f"📂 Tìm thấy {len(jobs)} công việc đang mở.")
 
-        # 2. TẠO ỨNG VIÊN GIẢ (CANDIDATES)
-        # Tạo khoảng 30 ứng viên
         candidates = []
         for i in range(30):
-            # Tạo tên ngẫu nhiên
             try:
                 import names
 
@@ -62,13 +54,11 @@ def seed_full_market_data():
                 db.session.add(user)
                 db.session.commit()  # Commit để lấy ID
 
-                # Tạo luôn 1 cái CV ảo cho user này
                 cv = CV_File(
                     user_id=user.id,
                     file_url="dummy_cv.pdf",
                     file_name=f"CV_{full_name.replace(' ', '_')}.pdf",
                     is_main=True,
-                    # Fake nội dung text để search
                     raw_text="Kinh nghiệm làm việc: Python, Java, SQL. Dự án: E-commerce. Học vấn: ĐH Bách Khoa.",
                     ai_score=random.randint(40, 90),  # Điểm AI random
                 )
@@ -78,30 +68,24 @@ def seed_full_market_data():
 
             candidates.append(user)
 
-        # 3. TẠO LƯỢT ỨNG TUYỂN (APPLICATIONS)
         print("\n⚡ Đang rải hồ sơ và chấm rớt...")
 
         for job in jobs:
-            # Random số lượng người nộp vào job này (từ 5 đến 15 người)
             num_applicants = random.randint(3, 15)
 
-            # Chọn ngẫu nhiên danh sách ứng viên từ tập candidates đã tạo
             applicants = random.sample(
                 candidates, k=min(num_applicants, len(candidates))
             )
 
             for candidate in applicants:
-                # Kiểm tra xem đã nộp chưa
                 exist_app = Application.query.filter_by(
                     job_id=job.id, user_id=candidate.id
                 ).first()
                 if exist_app:
                     continue
 
-                # Lấy CV chính của candidate
                 cv = CV_File.query.filter_by(user_id=candidate.id).first()
 
-                # Quyết định trạng thái: 60% Bị loại, 20% Phỏng vấn, 20% Mới
                 rand_status = random.random()
                 status = "NEW"
                 rejected_reason = None

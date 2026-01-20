@@ -13,11 +13,18 @@ from sqlalchemy import func
 from app.services.ai_engine.gemini_client import get_text_embedding
 from app.services.scheduler.engine import SchedulerEngine
 from app.services.scheduler.ics_generator import ICSGenerator
-# [IMPORT MỚI] Import đầy đủ các hàm gửi mail
-from app.services.email_service import send_interview_invitation, send_rejection_email, send_offer_email
+
+# --- IMPORT TỪ NHÁNH CỦA BẠN (AI Core) ---
+from app.services.ai_engine.core import extract_job_criteria
+
+# --- IMPORT TỪ NHÁNH ĐỒNG ĐỘI (Email Service) ---
+from app.services.email_service import (
+    send_interview_invitation,
+    send_rejection_email,
+    send_offer_email,
+)
 
 
-# Middleware kiểm tra quyền HR
 @hr_bp.before_request
 def check_hr_role():
     if not current_user.is_authenticated or current_user.role != "HR":
@@ -28,7 +35,6 @@ def check_hr_role():
 @hr_bp.route("/dashboard")
 @login_required
 def dashboard():
-    # Kiểm tra nếu HR chưa có công ty (tránh lỗi)
     if not current_user.company_id:
         return render_template("hr/dashboard.html", error="Chưa liên kết công ty")
 
@@ -47,12 +53,10 @@ def dashboard():
         .count()
     )
 
-    # 3. TIN ĐANG MỞ
     active_jobs_count = Job.query.filter(
         Job.is_active == True, Job.company_id == company_id
     ).count()
 
-    # 4. ĐIỂM AI TRUNG BÌNH (Chỉ tính hồ sơ nộp vào công ty này)
     avg_query = (
         db.session.query(func.avg(Application.match_score))
         .join(Job)
@@ -62,7 +66,6 @@ def dashboard():
 
     avg_ai_score = int(avg_query) if avg_query else 0
 
-    # 5. DANH SÁCH ỨNG VIÊN MỚI NHẤT (Của công ty này)
     recent_applications = (
         Application.query.join(Job)
         .filter(Job.company_id == company_id)
@@ -84,10 +87,10 @@ def dashboard():
 @hr_bp.route("/company", methods=["GET", "POST"])
 def company_profile():
     company = db.session.get(Company, current_user.company_id)
-    form = CompanyProfileForm(obj=company)  # Auto fill dữ liệu cũ
+    form = CompanyProfileForm(obj=company)
 
     if form.validate_on_submit():
-        form.populate_obj(company)  # Update ngược lại object
+        form.populate_obj(company)
         db.session.commit()
         flash("Cập nhật hồ sơ công ty thành công!", "success")
         return redirect(url_for("hr.company_profile"))
@@ -96,49 +99,73 @@ def company_profile():
 
 
 @hr_bp.route("/post-job", methods=["GET", "POST"])
+@login_required
 def post_job():
     form = JobPostForm()
+
     if form.validate_on_submit():
-        # Xử lý skill tags
-        skills_list = [s.strip() for s in form.skills_required.data.split(",")]
+        try:
+            title = form.title.data
+            requirements = form.requirements.data
 
-        # --- XỬ LÝ MINI-TEST ---
-        mini_test_json = None
-        if form.test_question.data:
-            mini_test_json = {
-                "question": form.test_question.data,
-                "options": [
-                    {"id": "A", "text": form.option1.data},
-                    {"id": "B", "text": form.option2.data},
-                    {"id": "C", "text": form.option3.data},
-                    {"id": "D", "text": form.option4.data},
-                ],
-                "correct": form.correct_answer.data,
-            }
+            # 1. Xử lý Skill (Kết hợp nhập tay + AI trích xuất)
+            manual_skills_str = form.skills_required.data
+            ai_data = extract_job_criteria(title, requirements)
 
-        job = Job(
-            title=form.title.data,
-            company_id=current_user.company_id,
-            recruiter_id=current_user.id,
-            salary_min=form.salary_min.data,
-            salary_max=form.salary_max.data,
-            location=form.location.data,
-            level=form.level.data,
-            description=form.description.data,
-            requirements=form.requirements.data,
-            benefits=form.benefits.data,
-            skills_required=skills_list,
-            mini_test_config=mini_test_json,
-            created_at=datetime.utcnow(),
-        )
-        full_text_for_embedding = (
-            f"{job.title} . {job.description} . {job.requirements}"
-        )
-        job.vector_embedding = get_text_embedding(full_text_for_embedding)
-        db.session.add(job)
-        db.session.commit()
-        flash("Đăng tin tuyển dụng thành công!", "success")
-        return redirect(url_for("hr.my_jobs"))
+            manual_skills_list = [
+                s.strip() for s in manual_skills_str.split(",") if s.strip()
+            ]
+            ai_hard_skills = ai_data.get("hard_skills", [])
+            final_skills_list = list(set(manual_skills_list + ai_hard_skills))
+            ai_data["hard_skills"] = final_skills_list
+
+            # 2. Xử lý Mini-Test (Từ code đồng đội)
+            mini_test_json = None
+            if form.test_question.data:
+                mini_test_json = {
+                    "question": form.test_question.data,
+                    "options": [
+                        {"id": "A", "text": form.option1.data},
+                        {"id": "B", "text": form.option2.data},
+                        {"id": "C", "text": form.option3.data},
+                        {"id": "D", "text": form.option4.data},
+                    ],
+                    "correct": form.correct_answer.data,
+                }
+
+            # 3. Tạo Job
+            job = Job(
+                recruiter_id=current_user.id,
+                title=title,
+                location=form.location.data,
+                level=form.level.data,
+                description=form.description.data,
+                requirements=requirements,
+                company_id=current_user.company_id,
+                benefits=form.benefits.data,
+                salary_min=form.salary_min.data,
+                salary_max=form.salary_max.data,
+                min_years_experience=form.min_years_experience.data,
+                skills_required=final_skills_list,
+                structured_config=ai_data,
+                mini_test_config=mini_test_json,  # Thêm trường này
+                created_at=datetime.utcnow(),
+            )
+
+            # 4. Tạo Vector Embedding
+            full_text = f"{title}. {requirements}. Skills: {manual_skills_str}"
+            job.vector_embedding = get_text_embedding(full_text)
+
+            db.session.add(job)
+            db.session.commit()
+
+            flash("Đăng tin tuyển dụng thành công!", "success")
+            return redirect(url_for("hr.dashboard"))
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error posting job: {e}")
+            flash(f"Lỗi khi đăng tin: {str(e)}", "danger")
 
     return render_template("hr/post_job.html", form=form)
 
@@ -168,6 +195,7 @@ def candidate_list():
         current_job_name = "Tất cả vị trí"
 
     applications = query.all()
+
     all_jobs = Job.query.filter_by(company_id=current_user.company_id).all()
 
     kanban_data = {
@@ -209,11 +237,11 @@ def schedule_calendar():
 
     events = []
     for i in interviews:
-        color = "#ffc107"  # Warning (Yellow)
+        color = "#ffc107"
         if i.status == "COMPLETED":
-            color = "#198754"  # Success (Green)
+            color = "#198754"
         elif i.status == "CANCELLED":
-            color = "#dc3545"  # Danger (Red)
+            color = "#dc3545"
 
         events.append(
             {
@@ -237,6 +265,7 @@ def profile():
         if "full_name" in request.form:
             current_user.full_name = request.form.get("full_name")
             current_user.phone = request.form.get("phone")
+
             db.session.commit()
             flash("Cập nhật thông tin thành công!", "success")
 
@@ -248,6 +277,7 @@ def profile():
                     if is_active:
                         start_str = request.form.get(f"day_{i}_start")
                         end_str = request.form.get(f"day_{i}_end")
+
                         if start_str and end_str:
                             new_avail = Availability(
                                 user_id=current_user.id,
@@ -256,6 +286,7 @@ def profile():
                                 end_time=datetime.strptime(end_str, "%H:%M").time(),
                             )
                             db.session.add(new_avail)
+
                 db.session.commit()
                 flash("Đã lưu cấu hình lịch làm việc!", "success")
             except Exception as e:
@@ -267,15 +298,12 @@ def profile():
         a.day_of_week: {"start": a.start_time, "end": a.end_time}
         for a in availabilities
     }
+
     return render_template("hr/profile.html", avail_map=avail_map)
 
 
 @hr_bp.route("/candidate/status/<int:id>/<string:new_status>")
 def update_status(id, new_status):
-    """
-    API đổi trạng thái ứng viên (Chuyển cột Kanban)
-    Tích hợp: Gửi mail khi chuyển sang OFFER
-    """
     application = db.session.get(Application, id)
 
     if not application or application.job.company_id != current_user.company_id:
@@ -287,23 +315,21 @@ def update_status(id, new_status):
         flash("Trạng thái không hợp lệ.", "warning")
         return redirect(request.referrer)
 
-    # Lưu trạng thái cũ để so sánh
     previous_status = application.status
 
-    # Cập nhật
     application.status = new_status
     db.session.commit()
 
     flash(f"Đã chuyển trạng thái ứng viên sang: {new_status}", "success")
 
-    # --- [MỚI] Gửi mail Offer khi chuyển sang trạng thái OFFER ---
+    # --- [EMAIL] Gửi mail Offer ---
     if new_status == "OFFER" and previous_status != "OFFER":
         try:
             send_offer_email(application)
             flash("✅ Đã gửi email chúc mừng trúng tuyển tới ứng viên!", "success")
         except Exception as e:
             flash(f"⚠️ Lỗi gửi mail offer: {str(e)}", "warning")
-    # -------------------------------------------------------------
+    # ------------------------------
 
     return redirect(request.referrer)
 
@@ -311,9 +337,6 @@ def update_status(id, new_status):
 @hr_bp.route("/interview/create/<int:app_id>", methods=["POST"])
 @login_required
 def create_interview(app_id):
-    """
-    Tích hợp: Gửi mail mời phỏng vấn + File ICS
-    """
     application = db.session.get(Application, app_id)
     if not application or application.job.company_id != current_user.company_id:
         abort(403)
@@ -376,7 +399,7 @@ def create_interview(app_id):
         application.status = "INTERVIEW"
         db.session.commit()
 
-    # --- [MỚI] Gửi Email Mời Phỏng Vấn ---
+    # --- [EMAIL] Gửi Email Mời Phỏng Vấn ---
     try:
         email_sent = send_interview_invitation(application, interview)
         if email_sent:
@@ -385,7 +408,7 @@ def create_interview(app_id):
             flash("⚠️ Đã lên lịch nhưng lỗi khi gửi email.", "warning")
     except Exception as e:
         flash(f"⚠️ Đã lên lịch, nhưng lỗi hệ thống gửi mail: {str(e)}", "warning")
-    # -------------------------------------
+    # ---------------------------------------
 
     return redirect(url_for("hr.candidate_view", id=app_id))
 
@@ -393,14 +416,14 @@ def create_interview(app_id):
 @hr_bp.route("/applications/<int:app_id>/reject", methods=["POST"])
 @login_required
 def reject_application(app_id):
-    """
-    Tích hợp: Gửi mail cảm ơn (Từ chối)
-    """
     application = Application.query.get_or_404(app_id)
     data = request.get_json()
 
     if not data or "reason" not in data:
-        return jsonify({"success": False, "message": "Vui lòng chọn lý do từ chối!"}), 400
+        return (
+            jsonify({"success": False, "message": "Vui lòng chọn lý do từ chối!"}),
+            400,
+        )
 
     reason = data["reason"]
 
@@ -409,7 +432,7 @@ def reject_application(app_id):
         application.rejected_reason = reason
         db.session.commit()
 
-        # --- [MỚI] Gửi Email Từ Chối ---
+        # --- [EMAIL] Gửi Email Từ Chối ---
         msg_suffix = ""
         try:
             send_rejection_email(application)
@@ -417,28 +440,37 @@ def reject_application(app_id):
         except Exception as e:
             print(f"Mail Error: {e}")
             msg_suffix = " nhưng lỗi gửi mail."
-        # -------------------------------
+        # ---------------------------------
 
         return jsonify({"success": True, "message": f"Đã từ chối ứng viên{msg_suffix}"})
 
     except Exception as e:
         db.session.rollback()
         print(f"ERROR [Reject App]: {str(e)}")
-        return jsonify({"success": False, "message": "Lỗi hệ thống, vui lòng thử lại sau."}), 500
+        return (
+            jsonify(
+                {"success": False, "message": "Lỗi hệ thống, vui lòng thử lại sau."}
+            ),
+            500,
+        )
 
 
 @hr_bp.route("/analyze-cv/<int:app_id>", methods=["POST"])
 @login_required
 def analyze_application_cv(app_id):
+    """
+    Route xử lý khi HR bấm nút 'Phân tích lại'.
+    Giữ nguyên trả về JSON để Ajax hoạt động mượt.
+    """
     try:
         analyzer = CVAnalyzer()
         analyzer.analyze_application(app_id, force_refresh=True)
-        flash("Đã phân tích xong!", "success")
-    except Exception as e:
-        flash(f"Lỗi khi phân tích: {str(e)}", "danger")
-        print(f"Error HR Analyze: {e}")
 
-    return redirect(request.referrer)
+        return jsonify({"success": True, "message": "Đã phân tích CV thành công!"})
+
+    except Exception as e:
+        print(f"Analyze Error: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 @hr_bp.route("/api/suggest-slots/<int:app_id>")
@@ -510,7 +542,5 @@ def update_interview(interview_id):
         print(f"Lỗi tạo ICS update: {e}")
 
     db.session.commit()
-    # Ở đây nếu muốn gửi lại mail update thì có thể gọi send_interview_invitation lại,
-    # nhưng hiện tại logic chỉ dừng ở việc flash thông báo.
     flash("Đã cập nhật lịch phỏng vấn!", "success")
     return redirect(url_for("hr.candidate_view", id=app_id))

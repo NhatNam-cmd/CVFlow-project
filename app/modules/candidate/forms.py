@@ -12,7 +12,6 @@ from wtforms import (
 from wtforms.validators import Length, Optional, Regexp
 
 
-# --- CUSTOM WIDGET: Để tạo danh sách Checkbox ---
 class MultiCheckboxField(SelectMultipleField):
     """
     Field tùy chỉnh để hiển thị SelectMultipleField dưới dạng danh sách các checkbox
@@ -23,7 +22,6 @@ class MultiCheckboxField(SelectMultipleField):
     option_widget = widgets.CheckboxInput()
 
 
-# --- FORM CẬP NHẬT HỒ SƠ ---
 class CandidateProfileForm(FlaskForm):
     phone = StringField(
         "Số điện thoại",
@@ -42,9 +40,6 @@ class CandidateProfileForm(FlaskForm):
         ],
     )
 
-    # --- CÁC TRƯỜNG MỚI CHO TÍNH NĂNG SCHEDULE ---
-
-    # 1. Chọn ngày rảnh (Multi Checkbox)
     available_days = MultiCheckboxField(
         "Ngày rảnh trong tuần",
         choices=[
@@ -59,7 +54,6 @@ class CandidateProfileForm(FlaskForm):
         validators=[Optional()],
     )
 
-    # 2. Khung giờ rảnh
     start_time = TimeField(
         "Từ giờ",
         validators=[Optional()],
@@ -71,7 +65,6 @@ class CandidateProfileForm(FlaskForm):
     submit = SubmitField("Lưu Hồ Sơ")
 
 
-# --- FORM UPLOAD CV (Giữ nguyên) ---
 class CVUploadForm(FlaskForm):
     cv_file = FileField(
         "Chọn CV (PDF/DOCX)",

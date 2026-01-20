@@ -9,7 +9,9 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 class Config:
-    # 1. Security & Database
+    # =========================================================
+    # 1. SECURITY & DATABASE
+    # =========================================================
     SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-key-nhung-khong-nen-dung"
 
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
@@ -22,16 +24,22 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # 2. Uploads
+    # =========================================================
+    # 2. UPLOADS & FILES
+    # =========================================================
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "app", "static", "uploads")
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # Giới hạn file 16MB
     ALLOWED_EXTENSIONS = {"pdf", "docx"}
 
-    # 3. Redis & Celery (Cho Crawler & Background Task)
+    # =========================================================
+    # 3. REDIS & CELERY (Cho Background Tasks)
+    # =========================================================
     CELERY_BROKER_URL = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
 
-    # 4. Email Configuration
+    # =========================================================
+    # 4. EMAIL CONFIGURATION (Từ Code Đồng đội)
+    # =========================================================
     MAIL_SERVER = os.environ.get("MAIL_SERVER") or "smtp.gmail.com"
     MAIL_PORT = int(os.environ.get("MAIL_PORT") or 587)
     MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS") == "True"
@@ -62,7 +70,7 @@ class ProductionConfig(Config):
     def __init__(self):
         super().__init__()
 
-        # 1. Bắt buộc phải có DATABASE_URI
+        # 1. Bắt buộc phải có DATABASE_URI (Thường dùng cho Heroku/Render)
         self.SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URI")
         if not self.SQLALCHEMY_DATABASE_URI:
             raise ValueError(

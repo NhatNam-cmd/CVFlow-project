@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, IntegerField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, URL
+from wtforms.validators import NumberRange
 
 
 class CompanyProfileForm(FlaskForm):
@@ -24,6 +25,11 @@ class CompanyProfileForm(FlaskForm):
 class JobPostForm(FlaskForm):
     title = StringField(
         "Chức danh (Job Title)", validators=[DataRequired(), Length(max=200)]
+    )
+    min_years_experience = IntegerField(
+        "Kinh nghiệm (Năm)",
+        validators=[NumberRange(min=0, message="Phải là số dương")],
+        default=0,
     )
     level = SelectField(
         "Cấp bậc",
@@ -52,16 +58,13 @@ class JobPostForm(FlaskForm):
         "Đáp án đúng", choices=[("A", "A"), ("B", "B"), ("C", "C"), ("D", "D")]
     )
 
-    # Lương
     salary_min = IntegerField("Lương từ (VNĐ)", validators=[Optional()])
     salary_max = IntegerField("Đến (VNĐ)", validators=[Optional()])
 
-    # Nội dung
     description = TextAreaField("Mô tả công việc", validators=[DataRequired()])
     requirements = TextAreaField("Yêu cầu ứng viên", validators=[DataRequired()])
     benefits = TextAreaField("Quyền lợi")
 
-    # AI Config (Nhập text rồi backend sẽ parse thành JSON list)
     skills_required = StringField(
         "Kỹ năng bắt buộc (cách nhau bằng dấu phẩy)", validators=[DataRequired()]
     )

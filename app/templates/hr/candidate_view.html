@@ -23,6 +23,7 @@
                 </div>
             {% endif %}
         {% endwith %}
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <a href="{{ url_for('hr.candidate_list') }}" class="text-decoration-none text-muted fw-bold">
                 <i class="bi bi-arrow-left me-1"></i> Quay lại Kanban
@@ -40,7 +41,6 @@
                         <i class="bi bi-calendar-check me-2"></i> Mời Phỏng vấn
                     </a>
                 {% elif application.status == 'INTERVIEW' %}
-
                     <div class="d-flex align-items-center">
                         {% if active_interview and active_interview.ics_file_url %}
                             <a href="{{ url_for('static', filename='invites/' + active_interview.ics_file_url) }}"
@@ -59,7 +59,6 @@
                             {% endif %}
                         </button>
                     </div>
-
                 {% elif application.status == 'OFFER' %}
                     <button class="btn btn-success disabled"><i class="bi bi-trophy-fill me-2"></i> Đã tuyển dụng</button>
                 {% elif application.status == 'REJECTED' %}
@@ -75,54 +74,165 @@
                 <div class="card shadow-sm border-0 h-100 overflow-hidden">
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
-                            <span class="small font-monospace mb-0">{{ application.cv.file_name }}</span>
+                            {% if application.cv.cv_source == 'BUILDER' %}
+                                <i class="bi bi-file-earmark-richtext text-success me-2 fs-5"></i>
+                            {% else %}
+                                <i class="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
+                            {% endif %}
+                            <span class="small font-monospace mb-0 text-truncate" style="max-width: 300px;">
+                                {{ application.cv.file_name }}
+                            </span>
                         </div>
+
                         <a href="{{ url_for('static', filename='uploads/' + application.cv.file_url) }}" download class="btn btn-sm btn-outline-light py-0">
                             <i class="bi bi-download me-1"></i> Tải xuống
                         </a>
                     </div>
 
-                    <div class="card-body p-0 bg-secondary bg-opacity-25" style="min-height: 750px;">
-                        <iframe src="{{ url_for('static', filename='uploads/' + application.cv.file_url) }}"
-                                width="100%" height="100%" style="min-height: 750px; border: none;">
-                        </iframe>
+                    <div class="card-body p-0 bg-secondary bg-opacity-25 position-relative" style="min-height: 750px;">
+                        {% if application.cv.file_url %}
+                            <iframe src="{{ url_for('static', filename='uploads/' + application.cv.file_url) }}"
+                                    width="100%" height="100%" style="min-height: 750px; border: none;">
+                            </iframe>
+                        {% else %}
+                            <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                <i class="bi bi-file-earmark-x display-1 text-muted opacity-50"></i>
+                                <h5 class="mt-3 text-muted">Không tìm thấy file PDF</h5>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-5">
 
-                <div class="card shadow-sm border-0 mb-4 border-start border-4 {{ 'border-success' if (application.match_score or 0) >= 70 else 'border-warning' }}">
-                    <div class="card-body">
+                <div class="card border-0 shadow-sm mb-4 border-start border-4 {{ 'border-success' if (application.match_score or 0) >= 70 else ('border-warning' if (application.match_score or 0) >= 50 else 'border-danger') }}">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                        <h6 class="fw-bold mb-0 text-uppercase text-secondary small">
+                            <i class="bi bi-bullseye me-2"></i>Kết quả So Khớp
+                        </h6>
+
+                        {% if application.cv.cv_source == 'BUILDER' %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success px-2">
+                <i class="bi bi-layout-text-window-reverse me-1"></i>CV Builder
+            </span>
+                        {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-2">
+                <i class="bi bi-file-earmark-pdf me-1"></i>File Upload
+            </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-body pt-4 pb-4">
                         {% if (application.match_score or 0) > 0 and application.ai_analysis %}
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="text-uppercase text-muted small fw-bold">AI Match Score</h6>
-                                {% if (application.match_score or 0) >= 80 %}
-                                    <span class="badge bg-success bg-opacity-10 text-success border border-success">Rất phù hợp</span>
-                                {% elif (application.match_score or 0) >= 50 %}
-                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">Tiềm năng</span>
-                                {% else %}
-                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Cân nhắc</span>
-                                {% endif %}
-                            </div>
-                            <div class="d-flex align-items-center gap-3">
-                                <h1 class="fw-bold {{ 'text-success' if (application.match_score or 0) >= 70 else 'text-dark' }} mb-0 display-4">
-                                    {{ application.match_score or 0 }}%
-                                </h1>
-                                <div class="vr mx-2"></div>
-                                <div>
-                                    <button onclick="triggerAIAnalysis()" id="btn-re-analyze" class="btn btn-sm btn-link text-decoration-none p-0 text-muted">
-                                        <i class="bi bi-arrow-clockwise"></i> Phân tích lại
-                                    </button>
+
+                            <div class="row align-items-center">
+                                <div class="col-md-4 text-center border-end">
+                                    <div class="position-relative d-inline-block">
+                                        <h1 class="display-3 fw-bold mb-0 {{ 'text-success' if (application.match_score or 0) >= 70 else ('text-warning' if (application.match_score or 0) >= 50 else 'text-danger') }}">
+                                            {{ application.match_score or 0 }}%
+                                        </h1>
+                                        <p class="text-muted small mb-0">Độ phù hợp tổng thể</p>
+                                    </div>
+                                    <div class="mt-3">
+                                        <button onclick="triggerAIAnalysis()" id="btn-re-analyze" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            <i class="bi bi-arrow-clockwise me-1"></i> Phân tích lại
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-8 ps-md-4">
+                                    {% set breakdown = application.ai_analysis.get('breakdown', {}) %}
+                                    {% set semantic_score = application.ai_analysis.get('semantic_score', application.match_score) %}
+
+                                    {% if application.cv.cv_source == 'BUILDER' %}
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between small mb-1">
+                                                <span class="fw-bold text-dark"><i class="bi bi-code-slash me-2"></i>Kỹ năng chuyên môn (40%)</span>
+                                                <span class="fw-bold">{{ breakdown.get('skill_score', 0) }}/100</span>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ breakdown.get('skill_score', 0) }}%"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between small mb-1">
+                                                <span class="fw-bold text-dark"><i class="bi bi-briefcase me-2"></i>Kinh nghiệm làm việc (30%)</span>
+                                                <span class="fw-bold">{{ breakdown.get('exp_score', 0) }}/100</span>
+                                            </div>
+
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ breakdown.get('exp_score', 0) }}%"></div>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between mt-1">
+        <span class="text-muted fst-italic" style="font-size: 0.7rem">
+            Đã tính toán từ thời gian làm việc trong CV
+        </span>
+
+                                                {% set actual = breakdown.get('details', {}).get('actual_exp_years', 0) %}
+                                                {% set req = breakdown.get('details', {}).get('req_exp_years', 0) %}
+
+                                                {% if actual >= req %}
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success" style="font-size: 0.65rem">
+                <i class="bi bi-check-circle me-1"></i>Đạt yêu cầu ({{ actual }} / {{ req }} Năm)
+            </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger" style="font-size: 0.65rem">
+                <i class="bi bi-exclamation-circle me-1"></i>Thiếu năm kinh nghiệm ({{ actual }} / {{ req }} Năm)
+            </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="mb-0">
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="fw-bold text-dark"><i class="bi bi-cpu me-2"></i>Độ khớp ngữ nghĩa AI ({{ '30%' if application.cv.cv_source == 'BUILDER' else '100%' }})</span>
+                                            <span class="fw-bold">{{ semantic_score }}/100</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ semantic_score }}%"></div>
+                                        </div>
+                                        <div class="form-text small fst-italic mt-1" style="font-size: 0.7rem">
+                                            *AI so sánh vector nội dung mô tả công việc và CV.
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            {% if application.cv.cv_source == 'BUILDER' %}
+                                <hr class="my-3 opacity-10">
+                                <div class="mb-0">
+                                    <span class="small d-block mb-2 fw-bold text-muted">Chi tiết từ khóa:</span>
+                                    {% set job_skills = application.job.structured_config.get('hard_skills', []) %}
+                                    {% set cv_skills = application.cv.structured_data.get('skills', {}).get('hard_skills', []) if application.cv.structured_data else [] %}
+
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for skill in job_skills %}
+                                            {% set skill_lower = skill.lower() %}
+                                            {% set found = false %}
+                                            {% for s in cv_skills %}
+                                                {% if s.lower() == skill_lower %}{% set found = true %}{% endif %}
+                                            {% endfor %}
+
+                                            {% if found or skill in cv_skills %}
+                                                <span class="badge bg-success bg-opacity-75"><i class="bi bi-check"></i> {{ skill }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary opacity-25 text-decoration-line-through">{{ skill }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
                         {% else %}
-                            <div class="text-center py-4">
-                                <i class="bi bi-stars text-primary display-4 mb-3"></i>
-                                <h5 class="fw-bold">Chưa có đánh giá AI</h5>
-                                <p class="text-muted small mb-3">Sử dụng AI để so khớp CV này với JD hiện tại.</p>
-                                <button id="btn-analyze" onclick="triggerAIAnalysis()" class="btn btn-primary fw-bold w-100">
+                            <div class="py-3 text-center">
+                                <i class="bi bi-stars text-primary display-4 mb-3 d-block opacity-50"></i>
+                                <h6 class="fw-bold text-dark">Chưa có đánh giá AI</h6>
+                                <p class="text-muted small mb-3">Hệ thống cần phân tích để tính toán điểm chi tiết.</p>
+                                <button id="btn-analyze" onclick="triggerAIAnalysis()" class="btn btn-primary fw-bold w-50 shadow-sm">
                                     <i class="bi bi-cpu me-2"></i> Phân tích ngay
                                 </button>
                             </div>
@@ -133,35 +243,49 @@
                 {% if (application.match_score or 0) > 0 and application.ai_analysis %}
                     <div class="card shadow-sm border-0 mb-4">
                         <div class="card-header bg-white fw-bold text-primary py-3">
-                            <i class="bi bi-chat-square-quote me-2"></i> Tóm tắt bởi AI
+                            <i class="bi bi-chat-square-quote-fill me-2"></i> Tóm tắt bởi AI
                         </div>
-                        <div class="card-body bg-light">
-                            <p class="card-text small text-dark mb-3 text-justify">
-                                {{ application.ai_analysis.get('summary', 'Không có dữ liệu tóm tắt.') }}
+                        <div class="card-body bg-light rounded-bottom">
+                            <p class="card-text small text-dark mb-0 fst-italic text-justify border-start border-4 border-primary ps-3">
+                                "{{ application.ai_analysis.get('summary', 'Không có dữ liệu tóm tắt.') }}"
                             </p>
                         </div>
                     </div>
 
                     <div class="card shadow-sm border-0 mb-4">
-                        <div class="card-header bg-white fw-bold py-3">
+                        <div class="card-header bg-white fw-bold py-3 border-bottom">
                             <i class="bi bi-list-check me-2"></i> Đánh giá chi tiết
                         </div>
-                        <div class="card-body">
-                            <h6 class="small fw-bold text-success mb-2"><i class="bi bi-plus-circle me-1"></i> Điểm mạnh / Phù hợp</h6>
-                            <ul class="list-unstyled small mb-3">
-                                {% for item in application.ai_analysis.get('pros', []) %}
-                                    <li class="mb-1"><i class="bi bi-check2 text-success me-2"></i>{{ item }}</li>
-                                {% endfor %}
-                            </ul>
+                        <div class="card-body p-0">
+                            <div class="p-3">
+                                <h6 class="small fw-bold text-success mb-2"><i class="bi bi-plus-circle-fill me-1"></i> Điểm mạnh / Phù hợp</h6>
+                                <ul class="list-unstyled small mb-0">
+                                    {% for item in application.ai_analysis.get('pros', []) %}
+                                        <li class="mb-2 d-flex align-items-start">
+                                            <i class="bi bi-check-lg text-success me-2 fw-bold"></i>
+                                            <span>{{ item }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="text-muted fst-italic">Không tìm thấy điểm mạnh nổi bật.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
 
-                            <hr class="opacity-25">
+                            <hr class="m-0 opacity-10">
 
-                            <h6 class="small fw-bold text-danger mb-2"><i class="bi bi-dash-circle me-1"></i> Hạn chế / Cần hỏi thêm</h6>
-                            <ul class="list-unstyled small mb-0">
-                                {% for item in application.ai_analysis.get('cons', []) %}
-                                    <li class="mb-1"><i class="bi bi-exclamation-circle text-danger me-2"></i>{{ item }}</li>
-                                {% endfor %}
-                            </ul>
+                            <div class="p-3 bg-light rounded-bottom">
+                                <h6 class="small fw-bold text-danger mb-2"><i class="bi bi-dash-circle-fill me-1"></i> Hạn chế / Cần hỏi thêm</h6>
+                                <ul class="list-unstyled small mb-0">
+                                    {% for item in application.ai_analysis.get('cons', []) %}
+                                        <li class="mb-2 d-flex align-items-start">
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-2 small"></i>
+                                            <span>{{ item }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="text-muted fst-italic">Không tìm thấy điểm yếu đáng kể.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 {% endif %}
@@ -173,23 +297,23 @@
                     <div class="card-body">
                         <ul class="list-unstyled small mb-0">
                             <li class="mb-3 d-flex align-items-center">
-                                <div class="bg-light p-2 rounded-circle me-3"><i class="bi bi-person text-primary"></i></div>
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3 text-primary"><i class="bi bi-person-fill"></i></div>
                                 <div>
-                                    <div class="text-muted" style="font-size: 0.75rem;">Họ và tên</div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Họ và tên</div>
                                     <div class="fw-bold">{{ application.candidate.full_name }}</div>
                                 </div>
                             </li>
                             <li class="mb-3 d-flex align-items-center">
-                                <div class="bg-light p-2 rounded-circle me-3"><i class="bi bi-envelope text-primary"></i></div>
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3 text-primary"><i class="bi bi-envelope-fill"></i></div>
                                 <div>
-                                    <div class="text-muted" style="font-size: 0.75rem;">Email</div>
-                                    <div class="fw-bold">{{ application.candidate.email }}</div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Email</div>
+                                    <div class="fw-bold text-break">{{ application.candidate.email }}</div>
                                 </div>
                             </li>
                             <li class="d-flex align-items-center">
-                                <div class="bg-light p-2 rounded-circle me-3"><i class="bi bi-phone text-primary"></i></div>
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3 text-primary"><i class="bi bi-telephone-fill"></i></div>
                                 <div>
-                                    <div class="text-muted" style="font-size: 0.75rem;">Số điện thoại</div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Số điện thoại</div>
                                     <div class="fw-bold">{{ application.candidate.phone or 'Chưa cập nhật' }}</div>
                                 </div>
                             </li>
@@ -204,7 +328,6 @@
     <div class="modal fade" id="scheduleModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-
                 <div class="modal-header {{ 'bg-primary text-white' if active_interview else 'bg-warning' }}">
                     <h5 class="modal-title fw-bold {{ 'text-white' if active_interview else 'text-dark' }}">
                         {% if active_interview %}
@@ -234,7 +357,6 @@
                                 {% if active_interview %}
                                     {% set current_dur = ((active_interview.end_time - active_interview.start_time).seconds / 60) | int %}
                                 {% endif %}
-
                                 <option value="30" {{ 'selected' if current_dur == 30 }}>30 phút</option>
                                 <option value="45" {{ 'selected' if current_dur == 45 }}>45 phút</option>
                                 <option value="60" {{ 'selected' if current_dur == 60 }}>60 phút</option>
@@ -289,10 +411,11 @@
             </div>
         </div>
     </div>
-    mời pho
+
+    {% include 'hr/_reject_modal.html' %}
 
     <script>
-        // Khi modal mở lên thì gọi hàm loadSuggestions
+        // 1. Script gợi ý lịch phỏng vấn (Giữ nguyên từ code cũ)
         document.getElementById('scheduleModal').addEventListener('shown.bs.modal', function () {
             loadSuggestions();
         });
@@ -309,61 +432,50 @@
                 .then(data => {
                     container.innerHTML = '';
 
-                    // 👇 TRƯỜNG HỢP 1: Ứng viên chưa cài lịch
                     if (data.error === 'CANDIDATE_NO_SETTINGS') {
                         container.innerHTML = `
-                        <div class="alert alert-warning border-0 d-flex align-items-center w-100 mb-0">
-                            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
-                            <div>
-                                <strong>Ứng viên chưa cài đặt lịch rảnh!</strong><br>
-                                <span class="small">Hệ thống không thể gợi ý tự động. Vui lòng liên hệ ứng viên để thỏa thuận và nhập thủ công bên dưới.</span>
-                            </div>
+                        <div class="alert alert-warning border-0 d-flex align-items-center w-100 mb-0 py-2">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                            <div class="small lh-sm"><strong>Ứng viên chưa cài lịch rảnh.</strong><br>Vui lòng nhập thủ công.</div>
                         </div>`;
                         return;
                     }
 
-                    // 👇 TRƯỜNG HỢP 2: HR chưa cài lịch
                     if (data.error === 'HR_NO_SETTINGS') {
                         container.innerHTML = `
-                        <div class="alert alert-danger border-0 w-100 mb-0">
-                            <strong>Bạn chưa cấu hình lịch làm việc!</strong><br>
-                            Vui lòng vào <a href="{{ url_for('hr.profile') }}" target="_blank">Hồ sơ cá nhân</a> để cài đặt lịch rảnh trước.
+                        <div class="alert alert-danger border-0 w-100 mb-0 py-2 small">
+                            <strong>Bạn chưa cấu hình lịch làm việc!</strong> Vào Profile để cài đặt ngay.
                         </div>`;
                         return;
                     }
 
-                    // 👇 TRƯỜNG HỢP 3: Cả 2 đều có lịch nhưng KHÔNG KHỚP (List rỗng)
                     if (Array.isArray(data) && data.length === 0) {
                         container.innerHTML = `
-                        <div class="alert alert-secondary border-0 w-100 mb-0">
-                            <i class="bi bi-calendar-x me-2"></i>
-                            Không tìm thấy khung giờ chung trong 7 ngày tới. Hãy thử đổi thời lượng hoặc nhập thủ công.
+                        <div class="alert alert-secondary border-0 w-100 mb-0 py-2 small">
+                            <i class="bi bi-calendar-x me-1"></i> Không tìm thấy lịch khớp trong 7 ngày tới.
                         </div>`;
                         return;
                     }
 
-                    // 👇 TRƯỜNG HỢP 4: Có kết quả (Thành công)
                     data.forEach(slot => {
                         const btn = document.createElement('button');
                         btn.type = 'button';
-                        btn.className = 'btn btn-outline-success'; // CSS Class
-                        btn.style.minWidth = "140px"; // Style cho đẹp
+                        btn.className = 'btn btn-outline-success btn-sm';
+                        btn.style.minWidth = "120px";
                         btn.innerHTML = `
                         <div class="fw-bold">${slot.weekday}</div>
-                        <div class="small">${slot.date}</div>
-                        <div class="fw-bold fs-5 mt-1">${slot.start} - ${slot.end}</div>
+                        <div class="" style="font-size: 0.75rem">${slot.date}</div>
+                        <div class="fw-bold mt-1">${slot.start} - ${slot.end}</div>
                     `;
 
                         btn.onclick = function() {
                             manualInput.value = slot.value;
-                            // Xóa active cũ
                             Array.from(container.children).forEach(c => {
                                 if(c.tagName === 'BUTTON') {
                                     c.classList.remove('btn-success', 'text-white');
                                     c.classList.add('btn-outline-success');
                                 }
                             });
-                            // Active nút hiện tại
                             this.classList.remove('btn-outline-success');
                             this.classList.add('btn-success', 'text-white');
                         };
@@ -375,22 +487,17 @@
                     container.innerHTML = '<span class="text-danger small">Lỗi kết nối server.</span>';
                 });
         }
-    </script>
-    {% include 'hr/_reject_modal.html' %}
 
-    <script>
+        // 2. Script gọi AI phân tích lại
         function triggerAIAnalysis() {
             const btn = document.getElementById('btn-analyze') || document.getElementById('btn-re-analyze');
             const originalText = btn.innerHTML;
 
-            // 1. Hiệu ứng Loading
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang phân tích...';
 
-            // 2. Lấy CSRF Token
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-            // 3. Gọi API
             fetch("{{ url_for('hr.analyze_application_cv', app_id=application.id) }}", {
                 method: "POST",
                 headers: {
@@ -401,7 +508,6 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // Reload trang để hiển thị kết quả mới
                         window.location.reload();
                     } else {
                         alert("❌ Lỗi: " + data.message);

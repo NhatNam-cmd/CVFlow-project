@@ -14,7 +14,6 @@ class User(UserMixin, db.Model):
     phone = db.Column(db.String(20))
     bio = db.Column(db.Text)
     avatar_url = db.Column(db.String(255))
-    # Quan hệ
     company_id = db.Column(db.Integer, db.ForeignKey("companies.id"), nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -22,17 +21,14 @@ class User(UserMixin, db.Model):
     start_time = db.Column(db.Time, nullable=True)
     end_time = db.Column(db.Time, nullable=True)
 
-    # 1. Getter password (không cho đọc)
     @property
     def password(self):
         raise AttributeError("password is not a readable attribute")
 
-    # 2. Setter password (tự động mã hóa khi gán user.password = '...')
     @password.setter
     def password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
 
-    # 3. Hàm kiểm tra mật khẩu (Sửa lỗi AttributeError check_password)
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
 
@@ -51,13 +47,11 @@ class Company(db.Model):
     description = db.Column(db.Text)
     industry = db.Column(db.String(100))
 
-    # Thông tin pháp lý
     tax_number = db.Column(db.String(20), unique=True)
     verification_status = db.Column(
         db.String(20), default="PENDING"
     )  # PENDING, VERIFIED, REJECTED
 
-    # Quan hệ
     employees = db.relationship("User", backref="company", lazy=True)
     jobs = db.relationship("Job", backref="company", lazy=True)
 

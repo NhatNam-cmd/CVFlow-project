@@ -18,7 +18,6 @@ class SchedulerEngine:
         """
         end_time = start_time + timedelta(minutes=duration_minutes)
 
-        # Query cơ bản
         query_hr = Interview.query.filter(
             Interview.recruiter_id == recruiter_id,
             Interview.status != "CANCELLED",
@@ -26,7 +25,6 @@ class SchedulerEngine:
             Interview.end_time > start_time,
         )
 
-        # 👇 LOGIC MỚI: Nếu đang sửa, loại trừ ID hiện tại ra
         if exclude_interview_id:
             query_hr = query_hr.filter(Interview.id != exclude_interview_id)
 
@@ -39,7 +37,6 @@ class SchedulerEngine:
                 f"({hr_conflict.start_time.strftime('%H:%M')})",
             )
 
-        # Tương tự cho Candidate
         query_cand = Interview.query.join(Application).filter(
             Application.user_id == candidate_id,
             Interview.status != "CANCELLED",
@@ -70,17 +67,11 @@ class SchedulerEngine:
         if not candidate or not candidate.available_days:
             return True  # Nếu không cài đặt gì thì coi như rảnh
 
-        # Check Thứ (Mon, Tue...)
-        # Python weekday(): 0=Mon, 6=Sun
         day_map = {0: "Mon", 1: "Tue", 2: "Wed", 3: "Thu", 4: "Fri", 5: "Sat", 6: "Sun"}
         current_day_str = day_map[start_time.weekday()]
 
         if current_day_str not in candidate.available_days:
-            # Logic xử lý: Trả về False để cảnh báo
             pass
-
-            # Check Giờ (Start/End)
-        # Logic so sánh giờ...
 
         return True
 
@@ -94,7 +85,6 @@ class SchedulerEngine:
         hr_map = SchedulerEngine._get_user_availability_map(recruiter_id)
         cand_map = SchedulerEngine._get_user_availability_map(candidate_id)
 
-        # DEBUG: In ra để kiểm tra xem hệ thống đọc được gì
         print(f"🗓 [DEBUG] HR Map: {hr_map.keys()}")
         print(f"🗓 [DEBUG] Cand Map: {cand_map.keys()}")
         if not hr_map:
@@ -106,16 +96,12 @@ class SchedulerEngine:
             current_date = today + timedelta(days=i)
             weekday = current_date.weekday()  # Python trả về: 0=Mon, 6=Sun
 
-            # Nếu user không cấu hình ngày này, trả về None (thay vì mặc định 8-17h)
-            # Điều này giúp loại bỏ việc gợi ý lung tung
             hr_slot = hr_map.get(weekday)
             cand_slot = cand_map.get(weekday)
 
-            # Nếu 1 trong 2 người KHÔNG cấu hình ngày này -> Bỏ qua ngay
             if not hr_slot or not cand_slot:
                 continue
 
-            # Logic tìm giao điểm (Intersection)
             start_max = max(hr_slot["start"], cand_slot["start"])
             end_min = min(hr_slot["end"], cand_slot["end"])
 
@@ -152,19 +138,15 @@ class SchedulerEngine:
         """
         Lấy lịch rảnh và chuẩn hóa về: 0=Mon ... 6=Sun
         """
-        # 1. Ưu tiên lấy từ bảng Availability (HR)
         avail_list = Availability.query.filter_by(user_id=user_id).all()
         if avail_list:
-            # Vì DB và Python giờ đã đồng bộ (0=Mon), ta lấy trực tiếp
             return {
                 a.day_of_week: {"start": a.start_time, "end": a.end_time}
                 for a in avail_list
             }
 
-        # 2. Lấy từ bảng User (Candidate) - Dạng string "Mon,Tue"
         user = User.query.get(user_id)
         if user and user.available_days:
-            # Map chữ sang số chuẩn Python
             day_str_map = {
                 "Mon": 0,
                 "Tue": 1,
@@ -180,12 +162,10 @@ class SchedulerEngine:
 
             for day_code in user.available_days.split(","):
                 day_code = day_code.strip()
-                # Chỉ xử lý nếu mã ngày đúng chuẩn
                 if day_code in day_str_map:
                     result_map[day_str_map[day_code]] = {"start": u_start, "end": u_end}
             return result_map
 
-        # 3. Nếu không có cấu hình gì -> Trả về rỗng (Chặt chẽ hơn, không fallback bừa bãi)
         return {}
 
     @staticmethod

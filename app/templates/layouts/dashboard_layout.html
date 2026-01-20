@@ -106,8 +106,9 @@
             {# ================================ #}
 
             <li class="nav-item">
-                <a href="{{ url_for('candidate.cv_manager') }}" class="nav-link {% if request.endpoint == 'candidate.cv_manager' %}active{% endif %}">
+                <a href="{{ url_for('candidate.cv_manager') }}" class="nav-link {% if request.endpoint == 'candidate.cv_manager' or request.endpoint == 'candidate.cv_builder' %}active{% endif %}">
                     <i class="bi bi-file-earmark-person"></i> Quản lý CV & AI
+                    <span class="badge bg-warning text-dark rounded-pill ms-auto" style="font-size: 0.7em">Tính năng Mới</span>
                 </a>
             </li>
             <li class="nav-item">
