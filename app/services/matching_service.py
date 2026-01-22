@@ -1,101 +1,139 @@
+# app/services/matching_service.py
+import numpy as np
+import pickle
+from sqlalchemy import cast, or_, func
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY, TEXT
+
 from app.models.job import Job
 from app.models.user import User
-from sqlalchemy import or_
+from app.models.application import CV_File
+from app.services.ai_engine.gemini_client import GeminiClient
 
 
 class JobMatcher:
-    """
-    Class này chịu trách nhiệm tính toán độ phù hợp giữa Ứng viên và Công việc
-    bằng thuật toán Python thuần túy, không dùng AI.
-    """
+    def __init__(self):
+        self.ai_client = GeminiClient()
 
     def _normalize_skills(self, skills_input):
-        """
-        Helper function: Chuẩn hóa danh sách kỹ năng về chữ thường để so sánh.
-        Input có thể là list hoặc string phân cách bằng dấu phẩy.
-        """
+        """Chuẩn hóa kỹ năng về dạng set chữ thường"""
         if not skills_input:
             return set()
 
+        normalized = set()
         if isinstance(skills_input, str):
-            # Tách chuỗi "Python, SQL, Flask" -> {"python", "sql", "flask"}
-            return set(s.strip().lower() for s in skills_input.split(','))
+            normalized = set(s.strip().lower() for s in skills_input.split(',') if s.strip())
+        elif isinstance(skills_input, (list, set, tuple)):
+            for s in skills_input:
+                if isinstance(s, str) and s.strip():
+                    normalized.add(s.strip().lower())
+        return normalized
 
-        if isinstance(skills_input, list):
-            return set(s.strip().lower() for s in skills_input)
+    def _get_user_skills_strategy(self, user):
+        """Lấy skills ưu tiên từ CV > Bio"""
+        extracted_skills = set()
 
-        return set()
+        # 1. Tìm CV chính
+        main_cv = CV_File.query.filter_by(user_id=user.id, is_main=True).first()
+        if main_cv and main_cv.structured_data:
+            data = main_cv.structured_data
+            raw_skills = data.get("skills", {})
+            if isinstance(raw_skills, dict):
+                extracted_skills.update(raw_skills.get("hard_skills", []))
+                extracted_skills.update(raw_skills.get("soft_skills", []))
+                extracted_skills.update(raw_skills.get("tools", []))
+            elif isinstance(raw_skills, list):
+                extracted_skills.update(raw_skills)
 
-    def calculate_match_score(self, user_skills: set, job_skills: set) -> dict:
-        """
-        Tính điểm phù hợp (0-100%)
-        Logic: (Số kỹ năng trùng / Tổng kỹ năng công việc yêu cầu) * 100
-        """
-        if not job_skills:
-            return {"score": 0, "matched": [], "missing": []}
+        # 2. Fallback Bio
+        final_skills = self._normalize_skills(extracted_skills)
+        if not final_skills and user.bio:
+            final_skills = self._normalize_skills(user.bio)
 
-        # Python Set Operations: Giao (Intersection) và Hiệu (Difference)
-        matched = user_skills.intersection(job_skills)
-        missing = job_skills.difference(user_skills)
+        print(f"🔍 [Matcher] User Skills (Normalized): {final_skills}")  # DEBUG
+        return final_skills
 
-        score = (len(matched) / len(job_skills)) * 100
+    def _cosine_similarity(self, vec_a, vec_b):
+        if vec_a is None or vec_b is None:
+            return 0.0
+        a = np.array(vec_a)
+        b = np.array(vec_b)
+        if a.shape != b.shape:
+            return 0.0
+        dot = np.dot(a, b)
+        norm_a = np.linalg.norm(a)
+        norm_b = np.linalg.norm(b)
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)
 
-        return {
-            "score": round(score, 1),
-            "matched": list(matched),
-            "missing": list(missing)
-        }
-
-    def get_user_skills(self, user: User):
-        """
-        Lấy kỹ năng của user.
-        Lưu ý: Vì model User hiện tại chưa có cột 'skills',
-        ta sẽ tạm thời trích xuất từ cột 'bio' hoặc trả về list mặc định để test.
-        """
-        # TODO: Sau này bạn nên thêm bảng CandidateSkill hoặc cột skills (JSON) vào User
+    def get_user_profile_vector(self, user):
+        main_cv = CV_File.query.filter_by(user_id=user.id, is_main=True).first()
+        if main_cv and main_cv.vector_embedding:
+            return main_cv.vector_embedding
         if user.bio:
-            # Giả định user viết skill trong bio cách nhau dấu phẩy
-            return self._normalize_skills(user.bio)
-        return set()
+            return self.ai_client.get_embedding(user.bio)
+        return None
 
-    def find_top_matches(self, user_id: int, limit=3):
-        """
-        Hàm chính: Tìm job phù hợp nhất cho user
-        """
+    def find_top_matches(self, user_id: int, limit=5, user_query_text=None):
         user = User.query.get(user_id)
         if not user:
             return []
 
-        user_skills = self.get_user_skills(user)
+        user_skills = self._get_user_skills_strategy(user)
 
-        # 1. Lấy tất cả job đang active từ DB
-        # Tối ưu: Chỉ lấy job chưa hết hạn (bạn có thể thêm filter ngày tháng)
-        all_jobs = Job.query.filter_by(is_active=True).all()
+        # Query Vector
+        if user_query_text:
+            query_vector = self.ai_client.get_embedding(user_query_text)
+        else:
+            query_vector = self.get_user_profile_vector(user)
+
+        # --- SỬA ĐỔI QUAN TRỌNG: NỚI LỎNG SQL FILTER ---
+        # Thay vì dùng toán tử ?| (dễ sai Case), ta lấy Top 100 job active
+        # và để Python xử lý việc so khớp chính xác.
+        candidates = Job.query.filter_by(is_active=True).order_by(Job.created_at.desc()).limit(100).all()
+
+        print(f"🔍 [Matcher] Found {len(candidates)} candidates from DB to scan.")  # DEBUG
 
         scored_jobs = []
 
-        # 2. Loop & Scoring (Xử lý logic)
-        for job in all_jobs:
-            # Job.skills_required là cột JSON
+        for job in candidates:
+            # 1. Keyword Score (40%)
             job_skills = self._normalize_skills(job.skills_required)
+            matched = user_skills.intersection(job_skills)
 
-            result = self.calculate_match_score(user_skills, job_skills)
+            keyword_score = 0
+            if len(job_skills) > 0:
+                keyword_score = (len(matched) / len(job_skills)) * 100
 
-            # Chỉ lấy công việc có điểm phù hợp > 0 (hoặc ngưỡng bạn muốn)
-            if result['score'] >= 0:
+            # 2. Semantic Score (60%)
+            semantic_score = 0
+            if query_vector is not None and job.vector_embedding is not None:
+                sim = self._cosine_similarity(query_vector, job.vector_embedding)
+                semantic_score = sim * 100
+
+            # 3. Final Score
+            if semantic_score > 0:
+                final_score = (keyword_score * 0.4) + (semantic_score * 0.6)
+            else:
+                final_score = keyword_score  # Nếu không có vector, dùng 100% điểm keyword
+
+            # DEBUG LOGGING
+            if final_score > 0:
+                print(
+                    f"   -> Job: {job.title} | Key: {keyword_score:.1f} | Sem: {semantic_score:.1f} | Final: {final_score:.1f}")
+
+            # --- SỬA ĐỔI: HẠ NGƯỠNG LỌC XUỐNG 10 (DEBUG) ---
+            if final_score > 10:
                 scored_jobs.append({
-                    "job_id": job.id,
                     "title": job.title,
-                    "company": job.company.name if job.company else "Ẩn danh",
+                    "company": job.company.name if job.company else "N/A",
+                    "score": round(final_score, 1),
                     "salary_min": job.salary_min,
                     "salary_max": job.salary_max,
-                    "score": result['score'],
-                    "matched_skills": result['matched'],
-                    "missing_skills": result['missing']
+                    "matched_skills": list(matched),
+                    "missing_skills": list(job_skills.difference(user_skills)),
+                    "reason": "Phù hợp ngữ nghĩa & chuyên môn" if semantic_score > 0 else "Phù hợp từ khóa kỹ năng"
                 })
 
-        # 3. Sorting (Sắp xếp bằng Lambda function)
-        # Sắp xếp giảm dần theo score
         scored_jobs.sort(key=lambda x: x['score'], reverse=True)
-
         return scored_jobs[:limit]
