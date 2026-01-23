@@ -119,6 +119,250 @@ seed_data = [
             }
         ],
     },
+{
+        "company": {
+            "name": "DevSoft Global Solutions",
+            "industry": "Information Technology",
+            "address": "Tòa nhà FPT, Phố Duy Tân, Cầu Giấy, Hà Nội",
+            "website": "https://devsoft.example.com",
+            "description": "Công ty Outsourcing phần mềm top 10 Việt Nam, đối tác của Nhật Bản và Mỹ.",
+            "tax_number": "0102223334",
+            "logo_url": "company_default.png",
+        },
+        "hr": {
+            "email": "tuyendung@devsoft.com",
+            "full_name": "Nguyễn Thị Mai (HR DevSoft)",
+            "password": "123",
+            "phone": "0988111222",
+        },
+        "jobs": [
+            {
+                "title": "Senior Java Developer (Spring Boot)",
+                "salary_min": 35000000,
+                "salary_max": 55000000,
+                "location": "Hà Nội",
+                "level": "Senior",
+                "description": "Tham gia phát triển dự án Fintech cho khách hàng Nhật Bản. Thiết kế kiến trúc Microservices.",
+                "requirements": "5 năm kinh nghiệm Java. Tiếng Nhật N3 là lợi thế (có phụ cấp).",
+                "benefits": "Thưởng dự án, Review lương 2 lần/năm, Gói bảo hiểm F-Care.",
+                "min_years_experience": 5,
+                "skills_required": ["Java", "Spring Boot", "Microservices", "Oracle"],
+            },
+            {
+                "title": "Fresher Automation Tester",
+                "salary_min": 8000000,
+                "salary_max": 12000000,
+                "location": "Hà Nội",
+                "level": "Fresher",
+                "description": "Viết script test tự động dùng Selenium/Appium. Phối hợp với team Dev để fix bug.",
+                "requirements": "Biết lập trình cơ bản (Java/Python). Tư duy logic tốt.",
+                "benefits": "Được đào tạo bài bản, lộ trình thăng tiến rõ ràng.",
+                "min_years_experience": 0,
+                "skills_required": ["Selenium", "Java", "Testing", "Automation"],
+            }
+        ],
+    },
+
+    # 2. NGÂN HÀNG (BANKING & FINTECH)
+    {
+        "company": {
+            "name": "VinaBank Commercial",
+            "industry": "Finance & Banking",
+            "address": "Quận 1, TP. Hồ Chí Minh",
+            "website": "https://vinabank.example.vn",
+            "description": "Ngân hàng TMCP hàng đầu với môi trường làm việc chuyên nghiệp và chuyển đổi số mạnh mẽ.",
+            "tax_number": "0309998887",
+            "logo_url": "company_default.png",
+        },
+        "hr": {
+            "email": "hr.talent@vinabank.vn",
+            "full_name": "Lê Tuấn Anh (Talent Acquisition)",
+            "password": "123",
+            "phone": "0902223334",
+        },
+        "jobs": [
+            {
+                "title": "Chuyên viên Quan hệ Khách hàng Doanh nghiệp (RM)",
+                "salary_min": 15000000,
+                "salary_max": 30000000,
+                "location": "Hồ Chí Minh",
+                "level": "Mid-Level",
+                "description": "Tìm kiếm, thẩm định và duy trì mối quan hệ với khách hàng doanh nghiệp lớn.",
+                "requirements": "Tốt nghiệp ĐH Kinh tế/Tài chính. Kỹ năng giao tiếp và đàm phán xuất sắc.",
+                "benefits": "Thưởng kinh doanh (Incentive) không giới hạn.",
+                "min_years_experience": 2,
+                "skills_required": ["Sales", "Corporate Banking", "Risk Assessment", "Communication"],
+            },
+            {
+                "title": "Data Analyst (Khối Quản trị Rủi ro)",
+                "salary_min": 25000000,
+                "salary_max": 40000000,
+                "location": "Hồ Chí Minh",
+                "level": "Senior",
+                "description": "Phân tích dữ liệu tín dụng, xây dựng mô hình scorecard đánh giá rủi ro.",
+                "requirements": "Thành thạo SQL, Python. Ưu tiên ứng viên có chứng chỉ FRM/CFA.",
+                "benefits": "Vay lãi suất ưu đãi cho CBNV.",
+                "min_years_experience": 3,
+                "skills_required": ["SQL", "Python", "Risk Management", "Data Analysis"],
+            }
+        ],
+    },
+
+    # 3. THƯƠNG MẠI ĐIỆN TỬ (E-COMMERCE)
+    {
+        "company": {
+            "name": "ShopNow Vietnam",
+            "industry": "E-commerce",
+            "address": "Quận Tân Bình, TP. Hồ Chí Minh",
+            "website": "https://shopnow.example.vn",
+            "description": "Sàn thương mại điện tử chuyên về thời trang và mỹ phẩm phát triển nhanh nhất VN.",
+            "tax_number": "0311223344",
+            "logo_url": "company_default.png",
+        },
+        "hr": {
+            "email": "recruitment@shopnow.vn",
+            "full_name": "Phạm Hương (HR Manager)",
+            "password": "123",
+            "phone": "0988777666",
+        },
+        "jobs": [
+            {
+                "title": "Digital Marketing Manager",
+                "salary_min": 40000000,
+                "salary_max": 60000000,
+                "location": "Hồ Chí Minh",
+                "level": "Manager",
+                "description": "Hoạch định chiến lược marketing tổng thể. Quản lý ngân sách 5 tỷ/tháng.",
+                "requirements": "Có kinh nghiệm chạy Performance Marketing trên các sàn TMĐT.",
+                "benefits": "ESOP (Cổ phiếu thưởng) cho nhân sự cấp cao.",
+                "min_years_experience": 5,
+                "skills_required": ["Digital Marketing", "SEO/SEM", "Leadership", "Performance Marketing"],
+            },
+            {
+                "title": "ReactJS Frontend Developer",
+                "salary_min": 20000000,
+                "salary_max": 35000000,
+                "location": "Hồ Chí Minh",
+                "level": "Mid-Level",
+                "description": "Tối ưu hóa trải nghiệm người dùng (UX/UI) trên website và mobile web.",
+                "requirements": "Thành thạo ReactJS, Redux, NextJS. Có mắt thẩm mỹ tốt.",
+                "benefits": "Môi trường trẻ, Happy Hour thứ 6 hàng tuần.",
+                "min_years_experience": 2,
+                "skills_required": ["ReactJS", "JavaScript", "HTML5/CSS3", "UI/UX"],
+            }
+        ],
+    },
+
+    # 4. GIÁO DỤC (EDUCATION)
+    {
+        "company": {
+            "name": "EduStar English System",
+            "industry": "Education & Training",
+            "address": "Quận Đống Đa, Hà Nội",
+            "website": "https://edustar.example.org",
+            "description": "Hệ thống Anh ngữ chuẩn quốc tế với 20 chi nhánh trên toàn quốc.",
+            "tax_number": "0105558889",
+            "logo_url": "company_default.png",
+        },
+        "hr": {
+            "email": "hr@edustar.org",
+            "full_name": "Ms. Sarah (Academic HR)",
+            "password": "123",
+            "phone": "0944555666",
+        },
+        "jobs": [
+            {
+                "title": "Giáo viên Tiếng Anh (IELTS)",
+                "salary_min": 20000000,
+                "salary_max": 40000000,
+                "location": "Hà Nội",
+                "level": "Mid-Level",
+                "description": "Giảng dạy các lớp IELTS target 6.5+. Chấm bài và feedback cho học viên.",
+                "requirements": "IELTS 8.0+. Có chứng chỉ giảng dạy TESOL/CELTA.",
+                "benefits": "Thưởng thành tích học viên, du lịch hè.",
+                "min_years_experience": 2,
+                "skills_required": ["Teaching", "English", "IELTS", "Communication"],
+            },
+            {
+                "title": "Nhân viên Tư vấn Tuyển sinh",
+                "salary_min": 8000000,
+                "salary_max": 15000000,
+                "location": "Hà Nội",
+                "level": "Junior",
+                "description": "Tư vấn khóa học phù hợp cho phụ huynh và học sinh.",
+                "requirements": "Không yêu cầu kinh nghiệm, giọng nói chuẩn, kiên nhẫn.",
+                "benefits": "Hoa hồng cao (lên đến 20tr/tháng).",
+                "min_years_experience": 0,
+                "skills_required": ["Sales", "Consulting", "Customer Service"],
+            }
+        ],
+    },
+
+    # 5. BẤT ĐỘNG SẢN (REAL ESTATE)
+    {
+        "company": {
+            "name": "GreenLand Property Group",
+            "industry": "Real Estate",
+            "address": "TP. Thủ Đức, TP. Hồ Chí Minh",
+            "website": "https://greenland.example.com",
+            "description": "Chủ đầu tư các dự án căn hộ cao cấp và nghỉ dưỡng ven biển.",
+            "tax_number": "0312345678",
+            "logo_url": "company_default.png",
+        },
+        "hr": {
+            "email": "tuyendung@greenland.com",
+            "full_name": "Trần Văn Hùng (HR Director)",
+            "password": "123",
+            "phone": "0909123456",
+        },
+        "jobs": [
+            {
+                "title": "Trưởng phòng Kinh doanh BĐS",
+                "salary_min": 25000000,
+                "salary_max": 50000000,
+                "location": "Hồ Chí Minh",
+                "level": "Manager",
+                "description": "Xây dựng và quản lý đội nhóm sales 15-20 người. Chịu trách nhiệm doanh số.",
+                "requirements": "3 năm kinh nghiệm quản lý sàn BĐS. Có sẵn đội nhóm là lợi thế.",
+                "benefits": "Thưởng nóng từng căn + Hoa hồng quản lý.",
+                "min_years_experience": 3,
+                "skills_required": ["Real Estate", "Sales Management", "Leadership", "Training"],
+            }
+        ],
+    },
+
+    # 6. LOGISTICS
+    {
+        "company": {
+            "name": "Mekong Logistics",
+            "industry": "Logistics & Supply Chain",
+            "address": "Quận Ninh Kiều, Cần Thơ",
+            "website": "https://mekonglog.example.com",
+            "description": "Nhà cung cấp giải pháp kho bãi và vận chuyển số 1 miền Tây.",
+            "tax_number": "1801122334",
+            "logo_url": "company_default.png",
+        },
+        "hr": {
+            "email": "hr@mekonglog.com",
+            "full_name": "Nguyễn Văn Hậu",
+            "password": "123",
+            "phone": "0939123123",
+        },
+        "jobs": [
+            {
+                "title": "Nhân viên Điều phối Vận tải",
+                "salary_min": 10000000,
+                "salary_max": 14000000,
+                "location": "Cần Thơ",
+                "level": "Junior",
+                "description": "Sắp xếp lịch trình xe tải, theo dõi lộ trình hàng hóa trên hệ thống GPS.",
+                "requirements": "Tốt nghiệp CĐ/ĐH. Sử dụng tốt Excel. Chịu được áp lực thời gian.",
+                "benefits": "Phụ cấp ăn trưa, điện thoại.",
+                "min_years_experience": 1,
+                "skills_required": ["Logistics", "Coordination", "Excel", "Problem Solving"],
+            }
+        ],
+    }
 ]
 
 
