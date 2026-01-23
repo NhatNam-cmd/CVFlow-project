@@ -1,4 +1,3 @@
-# app/services/email_service.py
 from flask_mail import Message
 from flask import current_app, render_template_string
 from app.extensions import mail
@@ -14,7 +13,6 @@ def send_interview_invitation(application, interview):
 
     subject = f"[CVFlow] Thư mời phỏng vấn - {job.title} - {candidate.full_name}"
 
-    # Nội dung email (Có thể chuyển sang file template HTML riêng nếu muốn đẹp hơn)
     body_html = f"""
     <h3>Xin chào {candidate.full_name},</h3>
     <p>Chúc mừng bạn! Hồ sơ ứng tuyển vị trí <strong>{job.title}</strong> của bạn đã gây ấn tượng với chúng tôi.</p>
@@ -31,21 +29,20 @@ def send_interview_invitation(application, interview):
     msg = Message(
         subject=subject,
         recipients=[candidate.email],  # Lấy email từ bảng User
-        html=body_html
+        html=body_html,
     )
 
-    # Đính kèm file ICS (Lịch)
     if interview.ics_file_url:
         try:
-            # interview.ics_file_url đang lưu dạng 'invites/filename.ics' hoặc đường dẫn tương đối
-            # Cần lấy đường dẫn tuyệt đối từ thư mục static
-            file_path = os.path.join(current_app.root_path, 'static', interview.ics_file_url)
+            file_path = os.path.join(
+                current_app.root_path, "static", interview.ics_file_url
+            )
 
-            with open(file_path, 'rb') as fp:
+            with open(file_path, "rb") as fp:
                 msg.attach(
                     filename="lich_phong_van.ics",
                     content_type="text/calendar",
-                    data=fp.read()
+                    data=fp.read(),
                 )
         except Exception as e:
             print(f"Lỗi đính kèm file ICS: {str(e)}")
@@ -83,11 +80,7 @@ def send_rejection_email(application):
     Bộ phận Tuyển dụng {job.company.name}</p>
     """
 
-    msg = Message(
-        subject=subject,
-        recipients=[candidate.email],
-        html=body_html
-    )
+    msg = Message(subject=subject, recipients=[candidate.email], html=body_html)
 
     try:
         mail.send(msg)
@@ -124,11 +117,7 @@ def send_offer_email(application):
     Bộ phận Tuyển dụng {job.company.name}</p>
     """
 
-    msg = Message(
-        subject=subject,
-        recipients=[candidate.email],
-        html=body_html
-    )
+    msg = Message(subject=subject, recipients=[candidate.email], html=body_html)
 
     try:
         mail.send(msg)

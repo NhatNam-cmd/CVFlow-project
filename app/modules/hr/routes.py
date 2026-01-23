@@ -14,10 +14,8 @@ from app.services.ai_engine.gemini_client import get_text_embedding
 from app.services.scheduler.engine import SchedulerEngine
 from app.services.scheduler.ics_generator import ICSGenerator
 
-# --- IMPORT TỪ NHÁNH CỦA BẠN (AI Core) ---
 from app.services.ai_engine.core import extract_job_criteria
 
-# --- IMPORT TỪ NHÁNH ĐỒNG ĐỘI (Email Service) ---
 from app.services.email_service import (
     send_interview_invitation,
     send_rejection_email,
@@ -108,7 +106,6 @@ def post_job():
             title = form.title.data
             requirements = form.requirements.data
 
-            # 1. Xử lý Skill (Kết hợp nhập tay + AI trích xuất)
             manual_skills_str = form.skills_required.data
             ai_data = extract_job_criteria(title, requirements)
 
@@ -119,7 +116,6 @@ def post_job():
             final_skills_list = list(set(manual_skills_list + ai_hard_skills))
             ai_data["hard_skills"] = final_skills_list
 
-            # 2. Xử lý Mini-Test (Từ code đồng đội)
             mini_test_json = None
             if form.test_question.data:
                 mini_test_json = {
@@ -133,7 +129,6 @@ def post_job():
                     "correct": form.correct_answer.data,
                 }
 
-            # 3. Tạo Job
             job = Job(
                 recruiter_id=current_user.id,
                 title=title,
@@ -152,7 +147,6 @@ def post_job():
                 created_at=datetime.utcnow(),
             )
 
-            # 4. Tạo Vector Embedding
             full_text = f"{title}. {requirements}. Skills: {manual_skills_str}"
             job.vector_embedding = get_text_embedding(full_text)
 
@@ -322,14 +316,12 @@ def update_status(id, new_status):
 
     flash(f"Đã chuyển trạng thái ứng viên sang: {new_status}", "success")
 
-    # --- [EMAIL] Gửi mail Offer ---
     if new_status == "OFFER" and previous_status != "OFFER":
         try:
             send_offer_email(application)
             flash("✅ Đã gửi email chúc mừng trúng tuyển tới ứng viên!", "success")
         except Exception as e:
             flash(f"⚠️ Lỗi gửi mail offer: {str(e)}", "warning")
-    # ------------------------------
 
     return redirect(request.referrer)
 
@@ -399,7 +391,6 @@ def create_interview(app_id):
         application.status = "INTERVIEW"
         db.session.commit()
 
-    # --- [EMAIL] Gửi Email Mời Phỏng Vấn ---
     try:
         email_sent = send_interview_invitation(application, interview)
         if email_sent:
@@ -408,7 +399,6 @@ def create_interview(app_id):
             flash("⚠️ Đã lên lịch nhưng lỗi khi gửi email.", "warning")
     except Exception as e:
         flash(f"⚠️ Đã lên lịch, nhưng lỗi hệ thống gửi mail: {str(e)}", "warning")
-    # ---------------------------------------
 
     return redirect(url_for("hr.candidate_view", id=app_id))
 
@@ -432,7 +422,6 @@ def reject_application(app_id):
         application.rejected_reason = reason
         db.session.commit()
 
-        # --- [EMAIL] Gửi Email Từ Chối ---
         msg_suffix = ""
         try:
             send_rejection_email(application)
@@ -440,7 +429,6 @@ def reject_application(app_id):
         except Exception as e:
             print(f"Mail Error: {e}")
             msg_suffix = " nhưng lỗi gửi mail."
-        # ---------------------------------
 
         return jsonify({"success": True, "message": f"Đã từ chối ứng viên{msg_suffix}"})
 

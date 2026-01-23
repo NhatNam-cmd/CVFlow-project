@@ -20,30 +20,18 @@ from app.modules.candidate.forms import CandidateProfileForm, CVUploadForm
 from app.models.application import CV_File, Application
 from app.models.scheduler import Interview
 
-# --- SERVICES ---
 from app.services.ai_engine.core import review_cv_content
 from app.services.ai_engine.parser import extract_text_from_pdf
 from app.services.ai_engine.gemini_client import get_text_embedding
 from app.services.cv_scorer import CVScorer
 
-# Import từ Code của BẠN (Feature)
 from app.services.pdf_generator import PDFGenerator
 from app.services.ai_engine.recommender import recommend_jobs_for_cv
 
-# Import từ Code ĐỒNG ĐỘI (Dev)
 from app.services.ai_engine.chatbot import CareerChatbot
 
 
-# =========================================================
-# GLOBAL OBJECTS
-# =========================================================
-# Khởi tạo Chatbot Service (Từ code đồng đội)
 bot_service = CareerChatbot()
-
-
-# =========================================================
-# ROUTES
-# =========================================================
 
 
 @candidate_bp.before_request
@@ -55,7 +43,6 @@ def check_candidate_role():
 
 @candidate_bp.route("/dashboard")
 def dashboard():
-    # Sử dụng logic của BẠN (đầy đủ hơn vì có gợi ý việc làm)
     applied_count = Application.query.filter_by(user_id=current_user.id).count()
     interested_count = Application.query.filter(
         Application.user_id == current_user.id, Application.status != "NEW"
@@ -218,7 +205,6 @@ def interview_list():
 @candidate_bp.route("/cv-manager/review/<int:cv_id>", methods=["POST"])
 @login_required
 def ai_review_cv(cv_id):
-    # Sử dụng logic của BẠN (vì xử lý được cả CV Builder và Upload PDF)
     cv = CV_File.query.get_or_404(cv_id)
     if cv.user_id != current_user.id:
         return (
@@ -307,11 +293,6 @@ def ai_review_cv(cv_id):
         print(f"❌ System Error [Review CV]: {e}")
         db.session.rollback()
         return jsonify({"success": False, "message": f"Lỗi hệ thống: {str(e)}"}), 500
-
-
-# =========================================================
-# TÍNH NĂNG MỚI TỪ NHÁNH CỦA BẠN (CV Builder & PDF)
-# =========================================================
 
 
 @candidate_bp.route("/cv/builder", defaults={"cv_id": None}, methods=["GET", "POST"])
@@ -469,11 +450,6 @@ def download_cv_pdf(cv_id):
         return redirect(url_for("candidate.cv_manager"))
 
 
-# =========================================================
-# TÍNH NĂNG MỚI TỪ NHÁNH CỦA ĐỒNG ĐỘI (Chatbot)
-# =========================================================
-
-
 @candidate_bp.route("/api/chat", methods=["POST"])
 @login_required
 def chat_with_advisor():
@@ -488,7 +464,6 @@ def chat_with_advisor():
         return jsonify({"error": "Vui lòng nhập nội dung tin nhắn"}), 400
 
     try:
-        # Gọi service xử lý
         reply = bot_service.chat(current_user.id, user_message)
 
         return jsonify({"status": "success", "reply": reply})

@@ -1,6 +1,3 @@
-# ==============================================================================
-# 1. PROMPT SO KHỚP CV VÀ JD (Dùng chung cho HR chấm điểm & Gợi ý Job)
-# ==============================================================================
 MATCHING_PROMPT_TEMPLATE = """
 Bạn là một Chuyên gia Tuyển dụng (HR Manager) khắt khe.
 Nhiệm vụ của bạn là SO SÁNH nội dung CV và JD để đưa ra nhận xét chi tiết.
@@ -27,9 +24,6 @@ Lưu ý:
 - Phân tích dựa trên sự thật (fact-based).
 """
 
-# ==============================================================================
-# 2. PROMPT REVIEW CV (Dùng Code của BẠN để hỗ trợ source_type)
-# ==============================================================================
 CV_REVIEW_PROMPT_TEMPLATE = """
 Bạn là Chuyên gia Tư vấn Nghề nghiệp (Career Coach).
 Hãy phân tích CV dưới đây (được trích xuất từ {source_type}) và đưa ra nhận xét.
@@ -51,9 +45,6 @@ Lưu ý:
 - Trả về JSON hợp lệ, không markdown.
 """
 
-# ==============================================================================
-# 3. PROMPT CHATBOT TƯ VẤN (Mới từ Code Đồng đội)
-# ==============================================================================
 CHATBOT_ADVISOR_PROMPT = """
 Bạn là Trợ lý Ảo của hệ thống tuyển dụng CVFlow.
 Bạn đang nói chuyện với ứng viên tên là: {user_name}

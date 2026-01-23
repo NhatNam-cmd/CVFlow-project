@@ -7,14 +7,12 @@ from app.models.user import User, Company
 from app.models.job import Job
 
 
-# Hàm tạo slug đơn giản
 def create_slug(text):
     text = text.lower()
-    text = re.sub(r'[^a-z0-9]+', '-', text)
-    return text.strip('-')
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    return text.strip("-")
 
 
-# --- DỮ LIỆU MẪU ---
 seed_data = [
     {
         "company": {
@@ -24,13 +22,13 @@ seed_data = [
             "website": "https://techx.example.com",
             "description": "Công ty công nghệ hàng đầu chuyên về AI và Big Data.",
             "tax_number": "0101234567",
-            "logo_url": "company_default.png"
+            "logo_url": "company_default.png",
         },
         "hr": {
             "email": "hr.techx@test.com",
             "full_name": "HR Manager TechX",
             "password": "123",
-            "phone": "0901000111"
+            "phone": "0901000111",
         },
         "jobs": [
             {
@@ -43,7 +41,7 @@ seed_data = [
                 "requirements": "3+ năm kinh nghiệm Python. Có kiến thức về Database Design.",
                 "benefits": "MacBook Pro M2, Bảo hiểm Premium.",
                 "min_years_experience": 3,
-                "skills_required": ["Python", "Django", "Docker"]  # Map vào cột JSON
+                "skills_required": ["Python", "Django", "Docker"],  # Map vào cột JSON
             },
             {
                 "title": "AI Research Intern",
@@ -55,9 +53,9 @@ seed_data = [
                 "requirements": "Sinh viên năm cuối hoặc mới tốt nghiệp.",
                 "benefits": "Cơ hội trở thành nhân viên chính thức.",
                 "min_years_experience": 0,
-                "skills_required": ["Python", "PyTorch", "NLP"]
-            }
-        ]
+                "skills_required": ["Python", "PyTorch", "NLP"],
+            },
+        ],
     },
     {
         "company": {
@@ -67,13 +65,13 @@ seed_data = [
             "website": "https://agencyz.example.com",
             "description": "Agency sáng tạo với các chiến dịch đạt giải thưởng quốc tế.",
             "tax_number": "0309876543",
-            "logo_url": "company_default.png"
+            "logo_url": "company_default.png",
         },
         "hr": {
             "email": "hr.agencyz@test.com",
             "full_name": "Talent Acquisition Z",
             "password": "123",
-            "phone": "0902000222"
+            "phone": "0902000222",
         },
         "jobs": [
             {
@@ -86,9 +84,9 @@ seed_data = [
                 "requirements": "Kinh nghiệm 1-2 năm tại Agency.",
                 "benefits": "Thưởng theo dự án.",
                 "min_years_experience": 1,
-                "skills_required": ["Facebook Ads", "Google Ads", "Content"]
+                "skills_required": ["Facebook Ads", "Google Ads", "Content"],
             }
-        ]
+        ],
     },
     {
         "company": {
@@ -98,13 +96,13 @@ seed_data = [
             "website": "https://globalretail.example.com",
             "description": "Tập đoàn bán lẻ đa quốc gia.",
             "tax_number": "0405556667",
-            "logo_url": "company_default.png"
+            "logo_url": "company_default.png",
         },
         "hr": {
             "email": "hr.retail@test.com",
             "full_name": "Recruitment Team",
             "password": "123",
-            "phone": "0903000333"
+            "phone": "0903000333",
         },
         "jobs": [
             {
@@ -117,10 +115,10 @@ seed_data = [
                 "requirements": "Kỹ năng lãnh đạo, chịu áp lực doanh số tốt.",
                 "benefits": "Hoa hồng hấp dẫn, xe đưa đón.",
                 "min_years_experience": 5,
-                "skills_required": ["Sales", "Leadership", "CRM"]
+                "skills_required": ["Sales", "Leadership", "CRM"],
             }
-        ]
-    }
+        ],
+    },
 ]
 
 
@@ -130,23 +128,22 @@ def run_seed_jobs():
         print("🏢 Bắt đầu tạo Công ty, HR và Việc làm...")
 
         for item in seed_data:
-            c_data = item['company']
-            hr_data = item['hr']
-            jobs_list = item['jobs']
+            c_data = item["company"]
+            hr_data = item["hr"]
+            jobs_list = item["jobs"]
 
-            # 1. TẠO CÔNG TY
-            company = Company.query.filter_by(tax_number=c_data['tax_number']).first()
+            company = Company.query.filter_by(tax_number=c_data["tax_number"]).first()
             if not company:
                 company = Company(
-                    name=c_data['name'],
-                    slug=create_slug(c_data['name']),
-                    industry=c_data['industry'],
-                    address=c_data['address'],
-                    website=c_data['website'],
-                    description=c_data['description'],
-                    tax_number=c_data['tax_number'],
-                    logo_url=c_data['logo_url'],
-                    verification_status="VERIFIED"
+                    name=c_data["name"],
+                    slug=create_slug(c_data["name"]),
+                    industry=c_data["industry"],
+                    address=c_data["address"],
+                    website=c_data["website"],
+                    description=c_data["description"],
+                    tax_number=c_data["tax_number"],
+                    logo_url=c_data["logo_url"],
+                    verification_status="VERIFIED",
                 )
                 db.session.add(company)
                 db.session.commit()
@@ -154,50 +151,45 @@ def run_seed_jobs():
             else:
                 print(f"ℹ️ Công ty {company.name} đã tồn tại.")
 
-            # 2. TẠO TÀI KHOẢN HR
-            hr_user = User.query.filter_by(email=hr_data['email']).first()
+            hr_user = User.query.filter_by(email=hr_data["email"]).first()
             if not hr_user:
                 hr_user = User(
-                    full_name=hr_data['full_name'],
-                    email=hr_data['email'],
+                    full_name=hr_data["full_name"],
+                    email=hr_data["email"],
                     role="HR",
                     company_id=company.id,
-                    phone=hr_data['phone']
+                    phone=hr_data["phone"],
                 )
-                hr_user.password = hr_data['password']
+                hr_user.password = hr_data["password"]
                 db.session.add(hr_user)
                 db.session.commit()
                 print(f"   👤 Đã tạo HR Admin: {hr_data['email']}")
             else:
-                # Nếu HR đã tồn tại, ta lấy ID để gán cho recruiter_id (nếu cần)
                 pass
 
-            # 3. TẠO VIỆC LÀM (JOBS)
             for job_info in jobs_list:
-                job_slug = create_slug(job_info['title'])
-                existing_job = Job.query.filter_by(company_id=company.id, slug=job_slug).first()
+                job_slug = create_slug(job_info["title"])
+                existing_job = Job.query.filter_by(
+                    company_id=company.id, slug=job_slug
+                ).first()
 
                 if not existing_job:
-                    # SỬA ĐỔI: Khớp fields với model Job thực tế
                     new_job = Job(
-                        title=job_info['title'],
+                        title=job_info["title"],
                         slug=job_slug,
                         company_id=company.id,
-                        # recruiter_id=hr_user.id, # Có thể gán nếu cần
-                        salary_min=job_info['salary_min'],
-                        salary_max=job_info['salary_max'],
-                        location=job_info['location'],
-                        level=job_info.get('level', 'Junior'),
-                        description=job_info['description'],
-                        requirements=job_info['requirements'],
-                        benefits=job_info.get('benefits', ''),
-                        min_years_experience=job_info.get('min_years_experience', 0),
-                        skills_required=job_info.get('skills_required', []),
-
-                        # Các trường mặc định hoặc map lại
+                        salary_min=job_info["salary_min"],
+                        salary_max=job_info["salary_max"],
+                        location=job_info["location"],
+                        level=job_info.get("level", "Junior"),
+                        description=job_info["description"],
+                        requirements=job_info["requirements"],
+                        benefits=job_info.get("benefits", ""),
+                        min_years_experience=job_info.get("min_years_experience", 0),
+                        skills_required=job_info.get("skills_required", []),
                         source="INTERNAL",
                         is_active=True,  # Thay vì status='PUBLISHED'
-                        created_at=datetime.utcnow()
+                        created_at=datetime.utcnow(),
                     )
                     db.session.add(new_job)
                     print(f"      💼 Đã đăng tuyển: {job_info['title']}")
