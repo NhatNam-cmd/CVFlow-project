@@ -1,0 +1,12 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:ics.py - http://git.io/lLljaA
+BEGIN:VEVENT
+DESCRIPTION:\n        Cuộc phỏng vấn với Tech Corp.\n        Vị trí: System admin\n        Link họp (nếu có): N/A\n
+DURATION:PT1H
+LOCATION:Online: test
+DTSTART:20260109T083000Z
+SUMMARY:Phỏng vấn: System admin
+UID:20bcc05d-ec70-46f6-b428-a90e28571f5c@20bc.org
+END:VEVENT
+END:VCALENDAR

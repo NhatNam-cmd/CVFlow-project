@@ -3,9 +3,6 @@ from flask import Flask, render_template, request, redirect, url_for
 app = Flask(__name__, template_folder="app/templates", static_folder="app/static")
 app.secret_key = "preview_secret_key"
 
-# =========================================================================
-# 1. MOCK DATA (DỮ LIỆU GIẢ LẬP)
-# =========================================================================
 
 MOCK_COMPANIES = [
     {
@@ -105,10 +102,6 @@ MOCK_JOBS = [
     },
 ]
 
-# =========================================================================
-# 2. CẤU HÌNH USER (CHỌN ROLE ĐỂ TEST)
-# =========================================================================
-
 
 class MockUser:
     def __init__(self, role="GUEST", name="Khách vãng lai"):
@@ -119,13 +112,7 @@ class MockUser:
         self.company_id = 1 if role == "HR" else None
 
 
-# 👇 BỎ COMMENT DÒNG DƯỚI ĐÂY ĐỂ ĐỔI VAI TRÒ 👇
 current_user = MockUser(role="CANDIDATE", name="Nguyễn Văn A")
-# current_user = MockUser(role='HR', name='HR Manager')
-# current_user = MockUser(role="ADMIN", name="System Admin")
-# current_user = MockUser(role='GUEST', name='Khách vãng lai')
-
-# =========================================================================
 
 
 @app.context_processor
@@ -140,15 +127,8 @@ def login_required_mock():
     return False
 
 
-# =========================================================================
-# 3. ROUTES
-# =========================================================================
-
-
-# --- PUBLIC ROUTES ---
 @app.route("/", endpoint="public.index")
 def index():
-    # Truyền Mock Data vào trang chủ
     return render_template(
         "public/index.html", jobs=MOCK_JOBS, recommended_jobs=MOCK_JOBS[:3]
     )
@@ -156,30 +136,22 @@ def index():
 
 @app.route("/job/search", endpoint="public.job_search")
 def job_search():
-    # Truyền Mock Data vào trang tìm kiếm
     return render_template("public/job_search.html", jobs=MOCK_JOBS)
 
 
 @app.route("/job/<int:id>", endpoint="public.job_detail")
 def job_detail(id):
-    # Tìm Job theo ID (Giả lập)
     job = next((j for j in MOCK_JOBS if j["id"] == id), MOCK_JOBS[0])
     return render_template("public/job_detail.html", job=job)
 
 
 @app.route("/apply", methods=["POST"], endpoint="public.apply")
 def apply():
-    # Giả lập xử lý nộp đơn thành công
-    # Lấy job_id từ form (nếu cần) hoặc mặc định
     return render_template("public/apply_success.html")
-
-
-# 👆 KẾT THÚC ĐOẠN THÊM 👆
 
 
 @app.route("/companies", endpoint="public.company_list")
 def company_list():
-    # Truyền Mock Data vào danh sách công ty
     return render_template("public/company_list.html", companies=MOCK_COMPANIES)
 
 
@@ -210,7 +182,6 @@ def market_report():
     return render_template("public/market_report.html")
 
 
-# --- AUTH ROUTES ---
 @app.route("/login", endpoint="auth.login")
 def auth_login():
     return render_template("auth/login.html")
@@ -231,7 +202,6 @@ def auth_logout():
     return redirect(url_for("public.index"))
 
 
-# --- PROTECTED ROUTES (CANDIDATE) ---
 @app.route("/candidate/dashboard", endpoint="candidate.dashboard")
 def candidate_dashboard():
     if login_required_mock():
@@ -267,7 +237,6 @@ def candidate_interviews():
     return render_template("candidate/interview_list.html")
 
 
-# --- PROTECTED ROUTES (HR) ---
 @app.route("/hr/dashboard", endpoint="hr.dashboard")
 def hr_dashboard():
     if login_required_mock():
@@ -324,7 +293,6 @@ def hr_profile():
     return render_template("hr/profile.html")
 
 
-# --- PROTECTED ROUTES (ADMIN) ---
 @app.route("/admin/dashboard", endpoint="module.admin.dashboard")
 def admin_dashboard():
     if login_required_mock():

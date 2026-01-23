@@ -33,3 +33,12 @@ app/static/avatars/*
 
 # --- 7. Biến môi trường (QUAN TRỌNG) ---
 .env
+
+data/cvflow.db
+clean_comments.py
+gom_code.py
+seed_companies_jobs.py
+seed_full_candidates.py
+seed_applications.py
+seed_jobs.py
+seed_embeddings.py

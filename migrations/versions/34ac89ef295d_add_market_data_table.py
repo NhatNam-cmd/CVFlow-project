@@ -1,0 +1,45 @@
+"""Add market_data table
+
+Revision ID: 34ac89ef295d
+Revises: a1cdd9c9f865
+Create Date: 2025-12-24 14:35:11.658177
+
+"""
+
+from alembic import op
+import sqlalchemy as sa
+
+
+revision = "34ac89ef295d"
+down_revision = "a1cdd9c9f865"
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    op.create_table(
+        "market_data",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("job_title_normalized", sa.String(length=200), nullable=False),
+        sa.Column("level", sa.String(length=50), nullable=True),
+        sa.Column("avg_salary_min", sa.Float(), nullable=True),
+        sa.Column("avg_salary_max", sa.Float(), nullable=True),
+        sa.Column("currency", sa.String(length=10), nullable=True),
+        sa.Column("demand_score", sa.Integer(), nullable=True),
+        sa.Column("top_skills", sa.JSON(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    with op.batch_alter_table("market_data", schema=None) as batch_op:
+        batch_op.create_index(
+            batch_op.f("ix_market_data_job_title_normalized"),
+            ["job_title_normalized"],
+            unique=False,
+        )
+
+
+def downgrade():
+    with op.batch_alter_table("market_data", schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f("ix_market_data_job_title_normalized"))
+
+    op.drop_table("market_data")

@@ -4,15 +4,16 @@
 
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h3 mb-0">Đăng Tin Tuyển Dụng Mới</h2>
+        <h2 class="h3 mb-0 fw-bold text-dark border-start border-4 border-primary ps-3">Đăng Tin Tuyển Dụng Mới</h2>
         <a href="{{ url_for('hr.my_jobs') }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-x-lg"></i> Hủy bỏ
         </a>
     </div>
 
     {% if form.errors %}
-        <div class="alert alert-danger">
-            <ul class="mb-0">
+        <div class="alert alert-danger shadow-sm">
+            <h6 class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Vui lòng kiểm tra lại thông tin:</h6>
+            <ul class="mb-0 small">
                 {% for field, errors in form.errors.items() %}
                     {% for error in errors %}
                         <li><strong>{{ field }}:</strong> {{ error }}</li>
@@ -28,43 +29,61 @@
         <div class="row">
             <div class="col-lg-8">
                 <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-white fw-bold py-3">
-                        <span class="badge bg-primary me-2">1</span> Thông Tin Công Việc
+                    <div class="card-header bg-white fw-bold py-3 text-primary">
+                        <i class="bi bi-file-earmark-text me-2"></i>1. Thông Tin Công Việc
                     </div>
                     <div class="card-body p-4">
-                        <div class="mb-3">
+                        <div class="mb-4">
                             {{ form.title.label(class="form-label fw-bold") }} <span class="text-danger">*</span>
                             {{ form.title(class="form-control form-control-lg", placeholder="VD: Senior Python Backend Developer") }}
                         </div>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">Mức lương (VNĐ)</label>
-                                <div class="input-group">
-                                    {{ form.salary_min(class="form-control", placeholder="Min (VD: 15000000)") }}
-                                    <span class="input-group-text">-</span>
-                                    {{ form.salary_max(class="form-control", placeholder="Max (VD: 30000000)") }}
-                                </div>
-                                <div class="form-text small">Để trống nếu là "Thỏa thuận".</div>
-                            </div>
+                        <div class="row g-3 mb-4">
                             <div class="col-md-3">
-                                {{ form.location.label(class="form-label fw-bold") }}
-                                {{ form.location(class="form-select") }}
+                                {{ form.salary_min.label(class="form-label fw-bold") }}
+                                <div class="input-group">
+                                    {{ form.salary_min(class="form-control", placeholder="Min") }}
+                                    <span class="input-group-text small">VND</span>
+                                </div>
                             </div>
+
+                            <div class="col-md-3">
+                                {{ form.salary_max.label(class="form-label fw-bold") }}
+                                <div class="input-group">
+                                    {{ form.salary_max(class="form-control", placeholder="Max") }}
+                                    <span class="input-group-text small">VND</span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                {{ form.min_years_experience.label(class="form-label fw-bold text-success") }}
+                                <div class="input-group">
+                                    {{ form.min_years_experience(class="form-control border-success", placeholder="0") }}
+                                    <span class="input-group-text bg-success text-white">Năm</span>
+                                </div>
+                                <div class="form-text" style="font-size: 0.7rem">Nhập 0 nếu không yêu cầu</div>
+                            </div>
+
                             <div class="col-md-3">
                                 {{ form.level.label(class="form-label fw-bold") }}
                                 {{ form.level(class="form-select") }}
                             </div>
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
+                            {{ form.location.label(class="form-label fw-bold") }}
+                            {{ form.location(class="form-select") }}
+                        </div>
+
+                        <div class="mb-4">
                             {{ form.description.label(class="form-label fw-bold") }} <span class="text-danger">*</span>
                             {{ form.description(class="form-control", rows=5, placeholder="Mô tả trách nhiệm công việc...") }}
                         </div>
 
-                        <div class="mb-3">
+                        <div class="mb-4">
                             {{ form.requirements.label(class="form-label fw-bold") }} <span class="text-danger">*</span>
-                            {{ form.requirements(class="form-control", rows=5, placeholder="Yêu cầu kỹ năng, kinh nghiệm...") }}
+                            <div class="form-text mb-1 small text-muted"> <i class="bi bi-magic me-1"></i>AI sẽ đọc phần này để trích xuất tiêu chí chấm điểm tự động.</div>
+                            {{ form.requirements(class="form-control", rows=5, placeholder="Yêu cầu kỹ năng, kinh nghiệm, bằng cấp...") }}
                         </div>
 
                         <div class="mb-3">
@@ -77,77 +96,94 @@
 
             <div class="col-lg-4">
                 <div class="card shadow border-0 mb-4 border-top border-4 border-warning">
-                    <div class="card shadow-sm border-0 mb-4">
-                        <div class="card-header bg-white fw-bold py-3">
-                            <span class="badge bg-info text-dark me-2">2</span> Bài Test Nhanh
-                        </div>
-                        <div class="card-body p-3 bg-light">
-                            <div class="alert alert-info small border-0 p-2 mb-3">
-                                <i class="bi bi-info-circle-fill me-1"></i>
-                                Ứng viên sẽ phải trả lời câu hỏi này khi nộp đơn để lọc spam.
-                            </div>
-
-                            <div class="mb-3">
-                                {{ form.test_question.label(class="form-label fw-bold small") }}
-                                {{ form.test_question(class="form-control form-control-sm", placeholder="VD: 1 + 1 = ?") }}
-                            </div>
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">A</span>
-                                        {{ form.option1(class="form-control", placeholder="Đáp án A") }}
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">B</span>
-                                        {{ form.option2(class="form-control", placeholder="Đáp án B") }}
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">C</span>
-                                        {{ form.option3(class="form-control", placeholder="Đáp án C") }}
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">D</span>
-                                        {{ form.option4(class="form-control", placeholder="Đáp án D") }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mb-0">
-                                {{ form.correct_answer.label(class="form-label fw-bold small") }}
-                                {{ form.correct_answer(class="form-select form-select-sm") }}
-                            </div>
-                        </div>
-                    </div>
                     <div class="card-header bg-white fw-bold py-3">
-                        <i class="bi bi-robot text-warning me-2"></i> Cấu hình AI Filter
+                        <i class="bi bi-robot text-warning me-2"></i>Cấu hình AI Filter
                     </div>
                     <div class="card-body bg-light">
-                        <p class="small text-muted mb-3">
-                            Hệ thống sẽ dùng thông tin này để chấm điểm CV tự động.
-                        </p>
+                        <div class="alert alert-warning small border-0 p-2 mb-3">
+                            <i class="bi bi-info-circle-fill me-1"></i>
+                            Các kỹ năng này sẽ được dùng để chấm điểm độ khớp CV (Matching Score).
+                        </div>
 
                         <div class="mb-3">
                             {{ form.skills_required.label(class="form-label fw-bold small text-uppercase text-secondary") }} <span class="text-danger">*</span>
-                            {{ form.skills_required(class="form-control", placeholder="VD: Python, SQL, Docker") }}
-                            <div class="form-text small">Nhập các từ khóa cách nhau bằng dấu phẩy.</div>
-                        </div>
+                            {{ form.skills_required(class="form-control", placeholder="VD: Python, SQL, Docker", id="skillsInput") }}
+                            <div class="form-text small">Nhập từ khóa, cách nhau bằng dấu phẩy.</div>
 
-                        <hr>
-
-                        <div class="d-grid gap-2">
-                            {{ form.submit(class="btn btn-warning btn-lg fw-bold text-dark") }}
-                            <a href="{{ url_for('hr.my_jobs') }}" class="btn btn-light text-secondary">Lưu nháp</a>
+                            <div class="mt-2" id="skillsPreview"></div>
                         </div>
                     </div>
+                </div>
+
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold py-3 text-info">
+                        <i class="bi bi-question-circle me-2"></i>2. Bài Test Nhanh
+                    </div>
+                    <div class="card-body p-3 bg-light">
+                        <div class="mb-3">
+                            {{ form.test_question.label(class="form-label fw-bold small") }}
+                            {{ form.test_question(class="form-control form-control-sm", placeholder="VD: 1 + 1 = ?") }}
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">A</span>
+                                    {{ form.option1(class="form-control", placeholder="Đáp án A") }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">B</span>
+                                    {{ form.option2(class="form-control", placeholder="Đáp án B") }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">C</span>
+                                    {{ form.option3(class="form-control", placeholder="Đáp án C") }}
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">D</span>
+                                    {{ form.option4(class="form-control", placeholder="Đáp án D") }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            {{ form.correct_answer.label(class="form-label fw-bold small") }}
+                            {{ form.correct_answer(class="form-select form-select-sm") }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 sticky-top" style="top: 20px; z-index: 100;">
+                    {{ form.submit(class="btn btn-warning btn-lg fw-bold text-dark shadow-sm") }}
+                    <a href="{{ url_for('hr.my_jobs') }}" class="btn btn-light text-secondary border">Lưu nháp</a>
                 </div>
             </div>
         </div>
     </form>
+
+    <script>
+        const skillsInput = document.getElementById('skillsInput');
+        const skillsPreview = document.getElementById('skillsPreview');
+
+        function updatePreview() {
+            const text = skillsInput.value;
+            if (!text) {
+                skillsPreview.innerHTML = '';
+                return;
+            }
+            const tags = text.split(',').map(t => t.trim()).filter(t => t);
+            skillsPreview.innerHTML = tags.map(tag =>
+                `<span class="badge bg-white text-dark border me-1 mb-1">${tag}</span>`
+            ).join('');
+        }
+
+        skillsInput.addEventListener('input', updatePreview);
+        updatePreview();
+    </script>
 {% endblock %}

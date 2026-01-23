@@ -1,0 +1,14 @@
+BEGIN:VCALENDAR
+METHOD:PUBLISH
+PRODID:-//CVFlow-FINAL//VN
+VERSION:2.0
+PRODID:ics.py - http://git.io/lLljaA
+BEGIN:VEVENT
+DESCRIPTION:Ứng viên Liêu Minh Khoa\nLink: jbjbfbfjfasfas
+DTEND:20260122T052300Z
+LOCATION:Online: jbjbfbfjfasfas - Link: jbjbfbfjfasfas
+DTSTART:20260122T042300Z
+SUMMARY:PV: Java dev
+UID:cvflow-2@cvflow.vn
+END:VEVENT
+END:VCALENDAR

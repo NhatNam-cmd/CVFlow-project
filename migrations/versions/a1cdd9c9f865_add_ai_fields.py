@@ -1,0 +1,30 @@
+"""Add AI fields
+
+Revision ID: a1cdd9c9f865
+Revises: ff43d39ed7ed
+Create Date: 2025-12-23 21:24:20.748382
+
+"""
+
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+revision = "a1cdd9c9f865"
+down_revision = "ff43d39ed7ed"
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    with op.batch_alter_table("applications", schema=None) as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "ai_analysis", postgresql.JSON(astext_type=sa.Text()), nullable=True
+            )
+        )
+
+
+def downgrade():
+    with op.batch_alter_table("applications", schema=None) as batch_op:
+        batch_op.drop_column("ai_analysis")

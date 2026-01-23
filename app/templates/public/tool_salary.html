@@ -17,12 +17,14 @@
                         <div class="card-header bg-white border-0 pt-4 pb-0 px-4 px-md-5">
                             <ul class="nav nav-tabs card-header-tabs justify-content-center border-0" id="modeTabs">
                                 <li class="nav-item">
-                                    <a class="nav-link active fw-bold border-0 border-bottom border-3 border-primary text-primary bg-transparent py-3 px-4" href="#">
+                                    <a class="nav-link fw-bold border-0 bg-transparent py-3 px-4 active"
+                                       href="#" onclick="setMode('GROSS_TO_NET', this)" id="tabGrossToNet">
                                         GROSS &rarr; NET
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link fw-bold border-0 text-muted bg-transparent py-3 px-4" href="#">
+                                    <a class="nav-link fw-bold border-0 bg-transparent py-3 px-4 text-muted"
+                                       href="#" onclick="setMode('NET_TO_GROSS', this)" id="tabNetToGross">
                                         NET &rarr; GROSS
                                     </a>
                                 </li>
@@ -32,23 +34,31 @@
                         <div class="card-body p-4 p-md-5 bg-white">
                             <form method="POST">
                                 {{ form.hidden_tag() }}
+                                <input type="hidden" id="calc_mode" name="calc_mode" value="{{ form.calc_mode.data }}">
+
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-8">
-                                        <label class="form-label fw-bold text-uppercase small text-muted">Thu nhập tháng</label>
+                                        <label class="form-label fw-bold text-uppercase small text-muted" id="incomeLabel">
+                                            {% if form.calc_mode.data == 'NET_TO_GROSS' %}
+                                                Lương thực nhận (NET)
+                                            {% else %}
+                                                Thu nhập tháng (GROSS)
+                                            {% endif %}
+                                        </label>
                                         <div class="input-group input-group-lg">
-                                            <input type="number" class="form-control fw-bold" placeholder="VD: 20000000" value="{{ result.gross if result else '' }}">
+                                            <input type="number" name="gross_salary" class="form-control fw-bold"
+                                                   placeholder="VD: 20000000"
+                                                   value="{{ form.gross_salary.data if form.gross_salary.data else '' }}" required>
                                             <select class="form-select bg-light" style="max-width: 100px;">
                                                 <option value="VND">VNĐ</option>
-                                                <option value="USD">USD</option>
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold text-uppercase small text-muted">Đóng bảo hiểm trên</label>
-                                        <select class="form-select form-select-lg">
+                                        <select class="form-select form-select-lg" name="insurance_type">
                                             <option value="full">Lương chính thức</option>
-                                            <option value="other">Mức khác...</option>
-                                        </select>
+                                            </select>
                                     </div>
                                 </div>
 
@@ -59,25 +69,16 @@
                                                 <i class="bi bi-gear-fill me-2"></i> Tùy chỉnh (Giảm trừ gia cảnh & Vùng)
                                             </button>
                                         </h2>
-                                        <div id="settingsCollapse" class="accordion-collapse collapse" data-bs-parent="#advancedSettings">
+                                        <div id="settingsCollapse" class="accordion-collapse collapse {% if form.dependents.data or (form.region.data and form.region.data != '1') %}show{% endif %}" data-bs-parent="#advancedSettings">
                                             <div class="accordion-body pt-0">
                                                 <div class="row g-3">
                                                     <div class="col-md-6">
                                                         <label class="form-label small">Số người phụ thuộc</label>
-                                                        <div class="input-group">
-                                                            <button class="btn btn-outline-secondary" type="button"><i class="bi bi-dash"></i></button>
-                                                            <input type="number" class="form-control text-center" value="0">
-                                                            <button class="btn btn-outline-secondary" type="button"><i class="bi bi-plus"></i></button>
-                                                        </div>
+                                                        {{ form.dependents(class="form-control text-center", type="number", min="0") }}
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label small">Vùng (Lương tối thiểu)</label>
-                                                        <select class="form-select">
-                                                            <option value="1" selected>Vùng I (4.960.000đ)</option>
-                                                            <option value="2">Vùng II (4.410.000đ)</option>
-                                                            <option value="3">Vùng III (3.860.000đ)</option>
-                                                            <option value="4">Vùng IV (3.250.000đ)</option>
-                                                        </select>
+                                                        {{ form.region(class="form-select") }}
                                                     </div>
                                                 </div>
                                             </div>
@@ -131,7 +132,7 @@
                                         </tr>
                                         <tr>
                                             <td class="ps-4 text-muted"><i class="bi bi-dash-lg"></i> Giảm trừ gia cảnh</td>
-                                            <td class="text-end pe-4 text-success">- 11,000,000</td>
+                                            <td class="text-end pe-4 text-success">- {{ "{:,.0f}".format(11000000 + result.dependents_deduction) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="ps-4 text-muted"><i class="bi bi-dash-lg"></i> Thuế TNCN</td>
@@ -152,4 +153,40 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function setMode(mode, element) {
+            // 1. Cập nhật giá trị vào hidden field
+            document.getElementById('calc_mode').value = mode;
+
+            // 2. Cập nhật UI Tabs (Active/Inactive style)
+            // Reset hết các tab
+            document.querySelectorAll('#modeTabs .nav-link').forEach(el => {
+                el.classList.remove('active', 'border-bottom', 'border-3', 'border-primary', 'text-primary');
+                el.classList.add('text-muted');
+            });
+
+            // Active tab hiện tại
+            element.classList.remove('text-muted');
+            element.classList.add('active', 'border-bottom', 'border-3', 'border-primary', 'text-primary');
+
+            // 3. Cập nhật Label Input
+            const label = document.getElementById('incomeLabel');
+            if (mode === 'NET_TO_GROSS') {
+                label.innerText = "Lương thực nhận (NET)";
+            } else {
+                label.innerText = "Thu nhập tháng (GROSS)";
+            }
+        }
+
+        // Init: Kiểm tra xem server có trả về mode cũ không để active tab đúng
+        document.addEventListener("DOMContentLoaded", function() {
+            const currentMode = document.getElementById('calc_mode').value;
+            if (currentMode === 'NET_TO_GROSS') {
+                setMode('NET_TO_GROSS', document.getElementById('tabNetToGross'));
+            } else {
+                setMode('GROSS_TO_NET', document.getElementById('tabGrossToNet'));
+            }
+        });
+    </script>
 {% endblock %}

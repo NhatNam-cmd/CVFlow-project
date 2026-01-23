@@ -1,0 +1,138 @@
+"""Add availability fields to User
+
+Revision ID: ff43d39ed7ed
+Revises: 6d2075fda259
+Create Date: 2025-12-17 21:02:20.157299
+
+"""
+
+from alembic import op
+import sqlalchemy as sa
+
+
+revision = "ff43d39ed7ed"
+down_revision = "6d2075fda259"
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    with op.batch_alter_table("companies", schema=None) as batch_op:
+        batch_op.alter_column(
+            "logo_url",
+            existing_type=sa.VARCHAR(length=500),
+            type_=sa.String(length=255),
+            existing_nullable=True,
+        )
+        batch_op.alter_column(
+            "website",
+            existing_type=sa.VARCHAR(length=200),
+            type_=sa.String(length=255),
+            existing_nullable=True,
+        )
+        batch_op.alter_column(
+            "address",
+            existing_type=sa.TEXT(),
+            type_=sa.String(length=255),
+            existing_nullable=True,
+        )
+        batch_op.alter_column(
+            "tax_number",
+            existing_type=sa.VARCHAR(length=50),
+            type_=sa.String(length=20),
+            existing_nullable=True,
+        )
+
+    with op.batch_alter_table("users", schema=None) as batch_op:
+        batch_op.add_column(
+            sa.Column("available_days", sa.String(length=50), nullable=True)
+        )
+        batch_op.add_column(sa.Column("start_time", sa.Time(), nullable=True))
+        batch_op.add_column(sa.Column("end_time", sa.Time(), nullable=True))
+        batch_op.alter_column(
+            "email",
+            existing_type=sa.VARCHAR(length=150),
+            type_=sa.String(length=120),
+            existing_nullable=False,
+        )
+        batch_op.alter_column(
+            "password_hash",
+            existing_type=sa.VARCHAR(length=256),
+            type_=sa.String(length=128),
+            nullable=True,
+        )
+        batch_op.alter_column(
+            "full_name",
+            existing_type=sa.VARCHAR(length=150),
+            type_=sa.String(length=100),
+            existing_nullable=False,
+        )
+        batch_op.alter_column(
+            "avatar_url",
+            existing_type=sa.VARCHAR(length=500),
+            type_=sa.String(length=255),
+            existing_nullable=True,
+        )
+        batch_op.drop_column("is_open_to_work")
+
+
+def downgrade():
+    with op.batch_alter_table("users", schema=None) as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "is_open_to_work", sa.BOOLEAN(), autoincrement=False, nullable=True
+            )
+        )
+        batch_op.alter_column(
+            "avatar_url",
+            existing_type=sa.String(length=255),
+            type_=sa.VARCHAR(length=500),
+            existing_nullable=True,
+        )
+        batch_op.alter_column(
+            "full_name",
+            existing_type=sa.String(length=100),
+            type_=sa.VARCHAR(length=150),
+            existing_nullable=False,
+        )
+        batch_op.alter_column(
+            "password_hash",
+            existing_type=sa.String(length=128),
+            type_=sa.VARCHAR(length=256),
+            nullable=False,
+        )
+        batch_op.alter_column(
+            "email",
+            existing_type=sa.String(length=120),
+            type_=sa.VARCHAR(length=150),
+            existing_nullable=False,
+        )
+        batch_op.drop_column("end_time")
+        batch_op.drop_column("start_time")
+        batch_op.drop_column("available_days")
+
+    with op.batch_alter_table("companies", schema=None) as batch_op:
+        batch_op.alter_column(
+            "tax_number",
+            existing_type=sa.String(length=20),
+            type_=sa.VARCHAR(length=50),
+            existing_nullable=True,
+        )
+        batch_op.alter_column(
+            "address",
+            existing_type=sa.String(length=255),
+            type_=sa.TEXT(),
+            existing_nullable=True,
+        )
+        batch_op.alter_column(
+            "website",
+            existing_type=sa.String(length=255),
+            type_=sa.VARCHAR(length=200),
+            existing_nullable=True,
+        )
+        batch_op.alter_column(
+            "logo_url",
+            existing_type=sa.String(length=255),
+            type_=sa.VARCHAR(length=500),
+            existing_nullable=True,
+        )

@@ -1,0 +1,140 @@
+<div id="cvflow-chat-widget" class="position-fixed bottom-0 end-0 m-4" style="z-index: 1050;">
+    <button onclick="toggleChat()" class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; transition: transform 0.2s;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-chat-dots-fill" viewBox="0 0 16 16">
+            <path d="M16 8c0 3.866-3.582 7-8 7a9.06 9.06 0 0 1-2.347-.306c-.584.296-1.925.864-4.181 1.234-.2.032-.352-.176-.273-.362.354-.836.674-1.95.77-2.966C.744 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7zM5 8a1 1 0 1 0-2 0 1 1 0 0 0 2 0zm4 0a1 1 0 1 0-2 0 1 1 0 0 0 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+        </svg>
+    </button>
+
+    <div id="chat-box" class="card shadow-lg position-absolute d-none" style="bottom: 80px; right: 0; width: 350px; height: 500px; border-radius: 15px; overflow: hidden;">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-robot me-2"></i>Trợ lý CVFlow</h6>
+            <button onclick="toggleChat()" class="btn btn-sm text-white" style="opacity: 0.8;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div id="chat-messages" class="card-body bg-light overflow-auto p-3" style="display: flex; flex-direction: column; gap: 10px;">
+            <div class="d-flex justify-content-start">
+                <div class="bg-white text-dark p-3 shadow-sm" style="border-radius: 0 15px 15px 15px; max-width: 85%; font-size: 0.9rem;">
+                    Chào bạn! Tôi có thể giúp bạn tìm kiếm công việc phù hợp với kỹ năng của bạn.
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer bg-white p-2 border-top">
+            <div class="input-group">
+                <input type="text" id="user-input"
+                       class="form-control border-0 bg-light rounded-pill px-3"
+                       placeholder="Hỏi về công việc..."
+                       onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()" class="btn btn-primary rounded-circle ms-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi bi-send-fill" style="font-size: 0.9rem;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleChat() {
+        const box = document.getElementById('chat-box');
+        box.classList.toggle('d-none');
+        if (!box.classList.contains('d-none')) {
+            document.getElementById('user-input').focus();
+        }
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        // 1. Hiển thị tin nhắn User
+        appendMessage(msg, 'user');
+        input.value = '';
+
+        // 2. Hiển thị loading
+        const loadingId = appendLoading();
+
+        try {
+            // --- SỬA LỖI TẠI ĐÂY: Lấy CSRF Token từ thẻ meta ---
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            // 3. Gọi API (Kèm CSRF Token trong Header)
+            const response = await fetch('/candidate/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken // <--- BẮT BUỘC PHẢI CÓ DÒNG NÀY
+                },
+                body: JSON.stringify({ message: msg })
+            });
+
+            // Kiểm tra nếu server trả về lỗi (ví dụ 400, 500)
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // 4. Xóa loading và hiện câu trả lời
+            removeMessage(loadingId);
+            appendMessage(data.reply || "Lỗi phản hồi", 'bot');
+
+        } catch (error) {
+            console.error("Chat Error:", error); // Log lỗi ra console để debug
+            removeMessage(loadingId);
+            appendMessage("Xin lỗi, tôi đang gặp sự cố kết nối.", 'bot');
+        }
+    }
+
+    function appendMessage(text, sender) {
+        const container = document.getElementById('chat-messages');
+        const wrapper = document.createElement('div');
+        wrapper.className = `d-flex ${sender === 'user' ? 'justify-content-end' : 'justify-content-start'}`;
+
+        const content = document.createElement('div');
+        if (sender === 'user') {
+            content.className = "bg-primary text-white p-3 shadow-sm";
+            content.style.borderRadius = "15px 15px 0 15px";
+        } else {
+            content.className = "bg-white text-dark p-3 shadow-sm border";
+            content.style.borderRadius = "0 15px 15px 15px";
+        }
+        content.style.maxWidth = "85%";
+        content.style.fontSize = "0.9rem";
+
+        content.innerHTML = text.replace(/\n/g, '<br>');
+
+        wrapper.appendChild(content);
+        container.appendChild(wrapper);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function appendLoading() {
+        const id = 'loading-' + Date.now();
+        const container = document.getElementById('chat-messages');
+        const wrapper = document.createElement('div');
+        wrapper.id = id;
+        wrapper.className = "d-flex justify-content-start";
+        wrapper.innerHTML = `
+            <div class="bg-white p-3 rounded-3 shadow-sm border d-flex align-items-center gap-2" style="border-radius: 0 15px 15px 15px;">
+                <div class="spinner-grow spinner-grow-sm text-secondary" role="status"></div>
+                <div class="spinner-grow spinner-grow-sm text-secondary" role="status" style="animation-delay: 0.2s"></div>
+                <div class="spinner-grow spinner-grow-sm text-secondary" role="status" style="animation-delay: 0.4s"></div>
+            </div>
+        `;
+        container.appendChild(wrapper);
+        container.scrollTop = container.scrollHeight;
+        return id;
+    }
+
+    function removeMessage(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+</script>

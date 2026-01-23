@@ -46,7 +46,13 @@
                                         {{ app.candidate.full_name }}
                                     </h6>
                                     {% if app.match_score %}
-                                        <span class="badge bg-success">{{ app.match_score }}%</span>
+                                        {% if app.match_score >= 80 %}
+                                            <span class="badge bg-success">{{ app.match_score }}%</span>
+                                        {% elif app.match_score >= 50 %}
+                                            <span class="badge bg-warning text-dark">{{ app.match_score }}%</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ app.match_score }}%</span>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                                 <p class="small text-muted mb-2 text-truncate">{{ app.job.title }}</p>
@@ -55,10 +61,14 @@
                                     <a href="{{ url_for('hr.candidate_view', id=app.id) }}" class="text-decoration-none small fw-bold">Xem</a>
 
                                     <div class="btn-group btn-group-sm">
-                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='REJECTED') }}"
-                                           class="btn btn-light text-danger" title="Từ chối"><i class="bi bi-x-lg"></i></a>
+                                        <button class="btn btn-danger" onclick="openRejectModal({{ app.id }})">
+                                            Từ chối
+                                        </button>
+
                                         <a href="{{ url_for('hr.update_status', id=app.id, new_status='INTERVIEW') }}"
-                                           class="btn btn-light text-primary" title="Chuyển sang Phỏng vấn"><i class="bi bi-arrow-right"></i></a>
+                                           class="btn btn-light text-primary" title="Chuyển sang Phỏng vấn">
+                                            <i class="bi bi-arrow-right"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -93,12 +103,11 @@
                                             <i class="bi bi-arrow-left"></i>
                                         </a>
 
-                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='REJECTED') }}"
-                                           class="btn btn-light text-danger"
-                                           title="Từ chối"
-                                           onclick="return confirm('Bạn chắc chắn muốn từ chối?')">
+                                        <button class="btn btn-light text-danger"
+                                                title="Từ chối sau phỏng vấn"
+                                                onclick="openRejectModal({{ app.id }})">
                                             <i class="bi bi-x-lg"></i>
-                                        </a>
+                                        </button>
 
                                         <a href="{{ url_for('hr.update_status', id=app.id, new_status='OFFER') }}"
                                            class="btn btn-light text-success"
@@ -137,12 +146,11 @@
                                             <i class="bi bi-arrow-left"></i>
                                         </a>
 
-                                        <a href="{{ url_for('hr.update_status', id=app.id, new_status='REJECTED') }}"
-                                           class="btn btn-light text-danger"
-                                           title="Hủy Offer"
-                                           onclick="return confirm('Hủy Offer này?')">
+                                        <button class="btn btn-light text-danger"
+                                                title="Hủy Offer"
+                                                onclick="openRejectModal({{ app.id }})">
                                             <i class="bi bi-x-lg"></i>
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -165,6 +173,10 @@
                                 <h6 class="fw-bold mb-1 text-truncate text-decoration-line-through">{{ app.candidate.full_name }}</h6>
                                 <span class="badge bg-secondary mb-2">Rejected</span>
 
+                                {% if app.rejection_reason %}
+                                    <br><small class="text-danger fst-italic">Lý do: {{ app.rejection_reason }}</small>
+                                {% endif %}
+
                                 <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-2">
                                     <a href="{{ url_for('hr.candidate_view', id=app.id) }}" class="text-decoration-none small fw-bold">Xem</a>
 
@@ -182,4 +194,6 @@
         </div>
 
     </div>
+
+    {% include 'hr/_reject_modal.html' %}
 {% endblock %}

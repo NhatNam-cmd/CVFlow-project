@@ -4,6 +4,26 @@
 
 {% block content %}
     <div class="container-fluid p-0">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                                {% if category == 'danger' %}
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {% else %}
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                {% endif %}
+                                <strong>{{ message }}</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <div class="d-flex justify-content-between align-items-center mb-4">
             <a href="{{ url_for('hr.candidate_list') }}" class="text-decoration-none text-muted fw-bold">
                 <i class="bi bi-arrow-left me-1"></i> Quay lại Kanban
@@ -11,29 +31,38 @@
 
             <div class="d-flex gap-2">
                 {% if application.status != 'REJECTED' %}
-                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='REJECTED') }}"
-                       class="btn btn-outline-danger fw-bold"
-                       onclick="return confirm('Bạn có chắc muốn từ chối ứng viên này?')">
+                    <button type="button" class="btn btn-outline-danger fw-bold" onclick="openRejectModal({{ application.id }})">
                         <i class="bi bi-x-circle me-1"></i> Từ chối
-                    </a>
+                    </button>
                 {% endif %}
 
                 {% if application.status == 'NEW' %}
-                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='INTERVIEW') }}"
-                       class="btn btn-primary fw-bold shadow-sm px-4">
+                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='INTERVIEW') }}" class="btn btn-primary fw-bold shadow-sm px-4">
                         <i class="bi bi-calendar-check me-2"></i> Mời Phỏng vấn
                     </a>
                 {% elif application.status == 'INTERVIEW' %}
-                    <button type="button" class="btn btn-warning fw-bold shadow-sm px-3 me-2" data-bs-toggle="modal" data-bs-target="#scheduleModal">
-                        <i class="bi bi-clock-history me-2"></i> Lên lịch gặp mặt
-                    </button>
+                    <div class="d-flex align-items-center">
+                        {% if active_interview and active_interview.ics_file_url %}
+                            <a href="{{ url_for('static', filename='invites/' + active_interview.ics_file_url) }}"
+                               class="btn btn-outline-secondary fw-bold shadow-sm me-2"
+                               download>
+                                <i class="bi bi-calendar-event"></i> Tải file lịch (.ics)
+                            </a>
+                        {% endif %}
+
+                        <button type="button" class="btn {{ 'btn-primary' if active_interview else 'btn-warning' }} fw-bold shadow-sm px-3"
+                                data-bs-toggle="modal" data-bs-target="#scheduleModal">
+                            {% if active_interview %}
+                                <i class="bi bi-pencil-square me-2"></i> Quản lý lịch hẹn
+                            {% else %}
+                                <i class="bi bi-clock-history me-2"></i> Lên lịch gặp mặt
+                            {% endif %}
+                        </button>
+                    </div>
                 {% elif application.status == 'OFFER' %}
-                    <button class="btn btn-success disabled">
-                        <i class="bi bi-trophy-fill me-2"></i> Đã tuyển dụng
-                    </button>
+                    <button class="btn btn-success disabled"><i class="bi bi-trophy-fill me-2"></i> Đã tuyển dụng</button>
                 {% elif application.status == 'REJECTED' %}
-                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='NEW') }}"
-                       class="btn btn-outline-secondary">
+                    <a href="{{ url_for('hr.update_status', id=application.id, new_status='NEW') }}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-counterclockwise me-1"></i> Khôi phục hồ sơ
                     </a>
                 {% endif %}
@@ -45,189 +74,453 @@
                 <div class="card shadow-sm border-0 h-100 overflow-hidden">
                     <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-2">
                         <div class="d-flex align-items-center">
-                            <i class="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
-                            <span class="small font-monospace mb-0">Nguyen_Van_A_CV.pdf</span>
+                            {% if application.cv.cv_source == 'BUILDER' %}
+                                <i class="bi bi-file-earmark-richtext text-success me-2 fs-5"></i>
+                            {% else %}
+                                <i class="bi bi-file-earmark-pdf text-danger me-2 fs-5"></i>
+                            {% endif %}
+                            <span class="small font-monospace mb-0 text-truncate" style="max-width: 300px;">
+                                {{ application.cv.file_name }}
+                            </span>
                         </div>
-                        <a href="#" class="btn btn-sm btn-outline-light py-0" style="font-size: 0.8rem;">
+
+                        <a href="{{ url_for('static', filename='uploads/' + application.cv.file_url) }}" download class="btn btn-sm btn-outline-light py-0">
                             <i class="bi bi-download me-1"></i> Tải xuống
                         </a>
                     </div>
 
-                    <div class="card-body p-0 bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center position-relative" style="min-height: 700px;">
-                        <div class="text-center text-muted opacity-75">
-                            <i class="bi bi-file-earmark-text display-1"></i>
-                            <p class="mt-3 fw-bold">Khu vực hiển thị File PDF</p>
-                            <small>Trình duyệt sẽ render file CV tại đây</small>
-                        </div>
+                    <div class="card-body p-0 bg-secondary bg-opacity-25 position-relative" style="min-height: 750px;">
+                        {% if application.cv.file_url %}
+                            <iframe src="{{ url_for('static', filename='uploads/' + application.cv.file_url) }}"
+                                    width="100%" height="100%" style="min-height: 750px; border: none;">
+                            </iframe>
+                        {% else %}
+                            <div class="position-absolute top-50 start-50 translate-middle text-center">
+                                <i class="bi bi-file-earmark-x display-1 text-muted opacity-50"></i>
+                                <h5 class="mt-3 text-muted">Không tìm thấy file PDF</h5>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-5">
 
-                <div class="card shadow-sm border-0 mb-4 border-start border-4 border-success">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="text-uppercase text-muted small fw-bold">AI Match Score</h6>
-                            <span class="badge bg-success bg-opacity-10 text-success border border-success">Rất phù hợp</span>
+                <div class="card border-0 shadow-sm mb-4 border-start border-4 {{ 'border-success' if (application.match_score or 0) >= 70 else ('border-warning' if (application.match_score or 0) >= 50 else 'border-danger') }}">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                        <h6 class="fw-bold mb-0 text-uppercase text-secondary small">
+                            <i class="bi bi-bullseye me-2"></i>Kết quả So Khớp
+                        </h6>
+
+                        {% if application.cv.cv_source == 'BUILDER' %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success px-2">
+                <i class="bi bi-layout-text-window-reverse me-1"></i>CV Builder
+            </span>
+                        {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary px-2">
+                <i class="bi bi-file-earmark-pdf me-1"></i>File Upload
+            </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-body pt-4 pb-4">
+                        {% if (application.match_score or 0) > 0 and application.ai_analysis %}
+
+                            <div class="row align-items-center">
+                                <div class="col-md-4 text-center border-end">
+                                    <div class="position-relative d-inline-block">
+                                        <h1 class="display-3 fw-bold mb-0 {{ 'text-success' if (application.match_score or 0) >= 70 else ('text-warning' if (application.match_score or 0) >= 50 else 'text-danger') }}">
+                                            {{ application.match_score or 0 }}%
+                                        </h1>
+                                        <p class="text-muted small mb-0">Độ phù hợp tổng thể</p>
+                                    </div>
+                                    <div class="mt-3">
+                                        <button onclick="triggerAIAnalysis()" id="btn-re-analyze" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            <i class="bi bi-arrow-clockwise me-1"></i> Phân tích lại
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-8 ps-md-4">
+                                    {% set breakdown = application.ai_analysis.get('breakdown', {}) %}
+                                    {% set semantic_score = application.ai_analysis.get('semantic_score', application.match_score) %}
+
+                                    {% if application.cv.cv_source == 'BUILDER' %}
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between small mb-1">
+                                                <span class="fw-bold text-dark"><i class="bi bi-code-slash me-2"></i>Kỹ năng chuyên môn (40%)</span>
+                                                <span class="fw-bold">{{ breakdown.get('skill_score', 0) }}/100</span>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-info" role="progressbar" style="width: {{ breakdown.get('skill_score', 0) }}%"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between small mb-1">
+                                                <span class="fw-bold text-dark"><i class="bi bi-briefcase me-2"></i>Kinh nghiệm làm việc (30%)</span>
+                                                <span class="fw-bold">{{ breakdown.get('exp_score', 0) }}/100</span>
+                                            </div>
+
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ breakdown.get('exp_score', 0) }}%"></div>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between mt-1">
+        <span class="text-muted fst-italic" style="font-size: 0.7rem">
+            Đã tính toán từ thời gian làm việc trong CV
+        </span>
+
+                                                {% set actual = breakdown.get('details', {}).get('actual_exp_years', 0) %}
+                                                {% set req = breakdown.get('details', {}).get('req_exp_years', 0) %}
+
+                                                {% if actual >= req %}
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success" style="font-size: 0.65rem">
+                <i class="bi bi-check-circle me-1"></i>Đạt yêu cầu ({{ actual }} / {{ req }} Năm)
+            </span>
+                                                {% else %}
+                                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger" style="font-size: 0.65rem">
+                <i class="bi bi-exclamation-circle me-1"></i>Thiếu năm kinh nghiệm ({{ actual }} / {{ req }} Năm)
+            </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="mb-0">
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="fw-bold text-dark"><i class="bi bi-cpu me-2"></i>Độ khớp ngữ nghĩa AI ({{ '30%' if application.cv.cv_source == 'BUILDER' else '100%' }})</span>
+                                            <span class="fw-bold">{{ semantic_score }}/100</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ semantic_score }}%"></div>
+                                        </div>
+                                        <div class="form-text small fst-italic mt-1" style="font-size: 0.7rem">
+                                            *AI so sánh vector nội dung mô tả công việc và CV.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if application.cv.cv_source == 'BUILDER' %}
+                                <hr class="my-3 opacity-10">
+                                <div class="mb-0">
+                                    <span class="small d-block mb-2 fw-bold text-muted">Chi tiết từ khóa:</span>
+                                    {% set job_skills = application.job.structured_config.get('hard_skills', []) %}
+                                    {% set cv_skills = application.cv.structured_data.get('skills', {}).get('hard_skills', []) if application.cv.structured_data else [] %}
+
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for skill in job_skills %}
+                                            {% set skill_lower = skill.lower() %}
+                                            {% set found = false %}
+                                            {% for s in cv_skills %}
+                                                {% if s.lower() == skill_lower %}{% set found = true %}{% endif %}
+                                            {% endfor %}
+
+                                            {% if found or skill in cv_skills %}
+                                                <span class="badge bg-success bg-opacity-75"><i class="bi bi-check"></i> {{ skill }}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary opacity-25 text-decoration-line-through">{{ skill }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                        {% else %}
+                            <div class="py-3 text-center">
+                                <i class="bi bi-stars text-primary display-4 mb-3 d-block opacity-50"></i>
+                                <h6 class="fw-bold text-dark">Chưa có đánh giá AI</h6>
+                                <p class="text-muted small mb-3">Hệ thống cần phân tích để tính toán điểm chi tiết.</p>
+                                <button id="btn-analyze" onclick="triggerAIAnalysis()" class="btn btn-primary fw-bold w-50 shadow-sm">
+                                    <i class="bi bi-cpu me-2"></i> Phân tích ngay
+                                </button>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if (application.match_score or 0) > 0 and application.ai_analysis %}
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-white fw-bold text-primary py-3">
+                            <i class="bi bi-chat-square-quote-fill me-2"></i> Tóm tắt bởi AI
                         </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <h1 class="fw-bold text-success mb-0 display-4">92%</h1>
-                            <div class="vr mx-2"></div>
-                            <div>
-                                <p class="small text-muted mb-0">Hồ sơ vượt trội hơn</p>
-                                <div class="fw-bold text-dark">95% ứng viên khác</div>
+                        <div class="card-body bg-light rounded-bottom">
+                            <p class="card-text small text-dark mb-0 fst-italic text-justify border-start border-4 border-primary ps-3">
+                                "{{ application.ai_analysis.get('summary', 'Không có dữ liệu tóm tắt.') }}"
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card shadow-sm border-0 mb-4">
+                        <div class="card-header bg-white fw-bold py-3 border-bottom">
+                            <i class="bi bi-list-check me-2"></i> Đánh giá chi tiết
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="p-3">
+                                <h6 class="small fw-bold text-success mb-2"><i class="bi bi-plus-circle-fill me-1"></i> Điểm mạnh / Phù hợp</h6>
+                                <ul class="list-unstyled small mb-0">
+                                    {% for item in application.ai_analysis.get('pros', []) %}
+                                        <li class="mb-2 d-flex align-items-start">
+                                            <i class="bi bi-check-lg text-success me-2 fw-bold"></i>
+                                            <span>{{ item }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="text-muted fst-italic">Không tìm thấy điểm mạnh nổi bật.</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+
+                            <hr class="m-0 opacity-10">
+
+                            <div class="p-3 bg-light rounded-bottom">
+                                <h6 class="small fw-bold text-danger mb-2"><i class="bi bi-dash-circle-fill me-1"></i> Hạn chế / Cần hỏi thêm</h6>
+                                <ul class="list-unstyled small mb-0">
+                                    {% for item in application.ai_analysis.get('cons', []) %}
+                                        <li class="mb-2 d-flex align-items-start">
+                                            <i class="bi bi-exclamation-triangle-fill text-danger me-2 small"></i>
+                                            <span>{{ item }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="text-muted fst-italic">Không tìm thấy điểm yếu đáng kể.</li>
+                                    {% endfor %}
+                                </ul>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-header bg-white fw-bold text-primary py-3">
-                        <i class="bi bi-stars me-2"></i> Tóm tắt bởi AI
-                    </div>
-                    <div class="card-body bg-light">
-                        <p class="card-text small text-dark mb-3 text-justify">
-                            Ứng viên có <strong>5 năm kinh nghiệm</strong> chuyên sâu với Python/Django.
-                            Điểm mạnh nổi bật là khả năng thiết kế hệ thống Microservices và tối ưu hóa PostgreSQL.
-                            <br><br>
-                            <em>Lưu ý:</em> Kỹ năng tiếng Anh giao tiếp ở mức trung bình, cần kiểm tra thêm trong buổi phỏng vấn.
-                        </p>
-
-                        <hr class="border-secondary opacity-25">
-
-                        <h6 class="small fw-bold text-uppercase text-muted mb-2">Thông tin liên hệ (Trích xuất)</h6>
-                        <ul class="list-unstyled small mb-0">
-                            <li class="mb-2 d-flex align-items-center">
-                                <i class="bi bi-envelope text-primary me-3"></i>
-                                <span class="fw-bold">a.nguyen@email.com</span>
-                            </li>
-                            <li class="mb-2 d-flex align-items-center">
-                                <i class="bi bi-phone text-primary me-3"></i>
-                                <span>0909 123 456</span>
-                            </li>
-                            <li class="d-flex align-items-center">
-                                <i class="bi bi-mortarboard text-primary me-3"></i>
-                                <span>ĐH Bách Khoa HN</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
+                {% endif %}
 
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white fw-bold py-3">
-                        <i class="bi bi-check2-all me-2"></i> So khớp Kỹ năng
+                        <i class="bi bi-person-lines-fill me-2"></i> Thông tin liên hệ
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span class="fw-bold">Python & Django</span>
-                                <span class="text-success fw-bold"><i class="bi bi-check-lg"></i> Có</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" style="width: 100%"></div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span class="fw-bold">Docker & CI/CD</span>
-                                <span class="text-success fw-bold"><i class="bi bi-check-lg"></i> Có</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" style="width: 100%"></div>
-                            </div>
-                        </div>
-
-                        <div class="mb-2">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span class="fw-bold text-muted">Kubernetes (K8s)</span>
-                                <span class="text-danger fw-bold"><i class="bi bi-x-lg"></i> Thiếu</span>
-                            </div>
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-secondary opacity-25" style="width: 100%"></div>
-                            </div>
-                        </div>
+                        <ul class="list-unstyled small mb-0">
+                            <li class="mb-3 d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3 text-primary"><i class="bi bi-person-fill"></i></div>
+                                <div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Họ và tên</div>
+                                    <div class="fw-bold">{{ application.candidate.full_name }}</div>
+                                </div>
+                            </li>
+                            <li class="mb-3 d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3 text-primary"><i class="bi bi-envelope-fill"></i></div>
+                                <div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Email</div>
+                                    <div class="fw-bold text-break">{{ application.candidate.email }}</div>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle me-3 text-primary"><i class="bi bi-telephone-fill"></i></div>
+                                <div>
+                                    <div class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Số điện thoại</div>
+                                    <div class="fw-bold">{{ application.candidate.phone or 'Chưa cập nhật' }}</div>
+                                </div>
+                            </li>
+                        </ul>
                     </div>
                 </div>
 
             </div>
         </div>
     </div>
+
     <div class="modal fade" id="scheduleModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-calendar-plus"></i> Thiết lập cuộc hẹn</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header {{ 'bg-primary text-white' if active_interview else 'bg-warning' }}">
+                    <h5 class="modal-title fw-bold {{ 'text-white' if active_interview else 'text-dark' }}">
+                        {% if active_interview %}
+                            <i class="bi bi-pencil-square"></i> Thay đổi lịch phỏng vấn
+                        {% else %}
+                            <i class="bi bi-calendar-plus"></i> Thiết lập cuộc hẹn mới
+                        {% endif %}
+                    </h5>
+                    <button type="button" class="btn-close {{ 'btn-close-white' if active_interview }}" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="{{ url_for('hr.create_interview', app_id=application.id) }}" method="POST">
+
+                <form action="{{ url_for('hr.update_interview', interview_id=active_interview.id) if active_interview else url_for('hr.create_interview', app_id=application.id) }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                     <div class="modal-body">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3 bg-light p-2 rounded border border-primary border-opacity-25">
-                            <div>
-                                <small class="fw-bold text-primary"><i class="bi bi-stars"></i> AI Smart Schedule</small>
-                                <div class="text-muted" style="font-size: 0.75rem;">Tự động tìm giờ rảnh chung tốt nhất</div>
+                        {% if active_interview %}
+                            <div class="alert alert-info small">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Bạn đang sửa lịch hẹn ngày <strong>{{ active_interview.start_time.strftime('%d/%m/%Y %H:%M') }}</strong>.
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary bg-white" onclick="alert('Tính năng đang phát triển!\nChúng tôi đang tích hợp thuật toán tìm lịch tối ưu.')">
-                                <i class="bi bi-magic"></i> Gợi ý ngay
-                            </button>
-                        </div>
-                        <hr class="my-3">
-                        <div class="alert alert-info small">
-                            Hệ thống sẽ lưu lịch và hiển thị bên phía ứng viên <strong>{{ application.candidate.full_name }}</strong>.
-                        </div>
+                        {% endif %}
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Ngày & Giờ bắt đầu</label>
-                            <input type="datetime-local" name="start_time" class="form-control" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Thời lượng dự kiến</label>
-                            <select name="duration" class="form-select">
-                                <option value="30">30 phút</option>
-                                <option value="45">45 phút</option>
-                                <option value="60" selected>60 phút (1 tiếng)</option>
-                                <option value="90">90 phút</option>
+                            <label class="form-label fw-bold">Thời lượng</label>
+                            <select name="duration" id="durationSelect" class="form-select" onchange="loadSuggestions()">
+                                {% set current_dur = 60 %}
+                                {% if active_interview %}
+                                    {% set current_dur = ((active_interview.end_time - active_interview.start_time).seconds / 60) | int %}
+                                {% endif %}
+                                <option value="30" {{ 'selected' if current_dur == 30 }}>30 phút</option>
+                                <option value="45" {{ 'selected' if current_dur == 45 }}>45 phút</option>
+                                <option value="60" {{ 'selected' if current_dur == 60 }}>60 phút</option>
+                                <option value="90" {{ 'selected' if current_dur == 90 }}>90 phút</option>
                             </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-success">
+                                <i class="bi bi-stars"></i> Đề xuất thời gian (Khớp lịch rảnh cả 2)
+                            </label>
+                            <div id="suggestion-container" class="d-flex flex-wrap gap-2">
+                                <span class="text-muted small fst-italic">Đang tính toán...</span>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Thời gian (Thủ công):</label>
+                            <input type="datetime-local" name="start_time" id="manualTimeInput" class="form-control" required
+                                   value="{{ active_interview.start_time.strftime('%Y-%m-%dT%H:%M') if active_interview else '' }}">
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Hình thức / Địa điểm</label>
-                            <select name="location_type" class="form-select mb-2" onchange="toggleLocation(this)">
-                                <option value="online">Online (Google Meet/Zoom)</option>
-                                <option value="offline">Offline (Tại văn phòng)</option>
-                            </select>
-                            <input type="text" name="location_detail" id="locationInput" class="form-control"
-                                   placeholder="Nhập link cuộc họp (VD: meet.google.com/abc...)" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Ghi chú cho ứng viên</label>
-                            <textarea name="note" class="form-control" rows="2" placeholder="VD: Vui lòng mang theo laptop..."></textarea>
+                            <div class="input-group mb-2">
+                                <select name="location_type" class="form-select" style="max-width: 120px;">
+                                    <option value="online" {{ 'selected' if active_interview and 'Online' in active_interview.location }}>Online</option>
+                                    <option value="offline" {{ 'selected' if active_interview and 'Online' not in active_interview.location }}>Offline</option>
+                                </select>
+                                <input type="text" name="location_detail" class="form-control" placeholder="Link họp hoặc địa chỉ..." required
+                                       value="{{ active_interview.meeting_link if (active_interview and active_interview.meeting_link) else (active_interview.location | replace('Online: ', '') if active_interview else '') }}">
+                            </div>
                         </div>
                     </div>
+
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                        <button type="submit" class="btn btn-warning fw-bold text-dark">Lưu Lịch Hẹn</button>
+
+                        {% if active_interview %}
+                            <button type="submit" class="btn btn-primary fw-bold">
+                                <i class="bi bi-check-circle me-1"></i> Cập nhật Lịch
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-warning fw-bold text-dark">
+                                <i class="bi bi-plus-circle me-1"></i> Tạo Lịch Hẹn
+                            </button>
+                        {% endif %}
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    {% include 'hr/_reject_modal.html' %}
+
     <script>
-        function toggleLocation(select) {
-            const input = document.getElementById('locationInput');
-            if (select.value === 'online') {
-                input.placeholder = "Nhập link cuộc họp (VD: meet.google.com/abc...)";
-            } else {
-                input.placeholder = "Nhập tên phòng họp / Địa chỉ văn phòng";
-                input.value = "{{ application.job.company.address }}"; // Gợi ý địa chỉ cty
-            }
+        // 1. Script gợi ý lịch phỏng vấn (Giữ nguyên từ code cũ)
+        document.getElementById('scheduleModal').addEventListener('shown.bs.modal', function () {
+            loadSuggestions();
+        });
+
+        function loadSuggestions() {
+            const container = document.getElementById('suggestion-container');
+            const duration = document.getElementById('durationSelect').value;
+            const manualInput = document.getElementById('manualTimeInput');
+
+            container.innerHTML = '<div class="spinner-border spinner-border-sm text-warning" role="status"></div> Đang tìm khung giờ vàng...';
+
+            fetch(`{{ url_for('hr.get_interview_suggestions', app_id=application.id) }}?duration=${duration}`)
+                .then(res => res.json())
+                .then(data => {
+                    container.innerHTML = '';
+
+                    if (data.error === 'CANDIDATE_NO_SETTINGS') {
+                        container.innerHTML = `
+                        <div class="alert alert-warning border-0 d-flex align-items-center w-100 mb-0 py-2">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+                            <div class="small lh-sm"><strong>Ứng viên chưa cài lịch rảnh.</strong><br>Vui lòng nhập thủ công.</div>
+                        </div>`;
+                        return;
+                    }
+
+                    if (data.error === 'HR_NO_SETTINGS') {
+                        container.innerHTML = `
+                        <div class="alert alert-danger border-0 w-100 mb-0 py-2 small">
+                            <strong>Bạn chưa cấu hình lịch làm việc!</strong> Vào Profile để cài đặt ngay.
+                        </div>`;
+                        return;
+                    }
+
+                    if (Array.isArray(data) && data.length === 0) {
+                        container.innerHTML = `
+                        <div class="alert alert-secondary border-0 w-100 mb-0 py-2 small">
+                            <i class="bi bi-calendar-x me-1"></i> Không tìm thấy lịch khớp trong 7 ngày tới.
+                        </div>`;
+                        return;
+                    }
+
+                    data.forEach(slot => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'btn btn-outline-success btn-sm';
+                        btn.style.minWidth = "120px";
+                        btn.innerHTML = `
+                        <div class="fw-bold">${slot.weekday}</div>
+                        <div class="" style="font-size: 0.75rem">${slot.date}</div>
+                        <div class="fw-bold mt-1">${slot.start} - ${slot.end}</div>
+                    `;
+
+                        btn.onclick = function() {
+                            manualInput.value = slot.value;
+                            Array.from(container.children).forEach(c => {
+                                if(c.tagName === 'BUTTON') {
+                                    c.classList.remove('btn-success', 'text-white');
+                                    c.classList.add('btn-outline-success');
+                                }
+                            });
+                            this.classList.remove('btn-outline-success');
+                            this.classList.add('btn-success', 'text-white');
+                        };
+                        container.appendChild(btn);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = '<span class="text-danger small">Lỗi kết nối server.</span>';
+                });
+        }
+
+        // 2. Script gọi AI phân tích lại
+        function triggerAIAnalysis() {
+            const btn = document.getElementById('btn-analyze') || document.getElementById('btn-re-analyze');
+            const originalText = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang phân tích...';
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            fetch("{{ url_for('hr.analyze_application_cv', app_id=application.id) }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert("❌ Lỗi: " + data.message);
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("❌ Lỗi kết nối đến Server!");
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
         }
     </script>
 {% endblock %}

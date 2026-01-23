@@ -1,0 +1,112 @@
+<div class="modal fade" id="rejectReasonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Xác nhận từ chối</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rejectAppId">
+                <p>Chọn lý do từ chối để hệ thống ghi nhận:</p>
+                <div class="d-grid gap-2">
+                    <input type="radio" class="btn-check" name="reject_reason" id="r1" value="SKILL_GAP">
+                    <label class="btn btn-outline-danger text-start" for="r1">⚡ Thiếu kỹ năng chuyên môn</label>
+
+                    <input type="radio" class="btn-check" name="reject_reason" id="r2" value="EXP_GAP">
+                    <label class="btn btn-outline-warning text-start" for="r2">📉 Thiếu kinh nghiệm</label>
+
+                    <input type="radio" class="btn-check" name="reject_reason" id="r3" value="ENGLISH">
+                    <label class="btn btn-outline-info text-start" for="r3">🗣️ Tiếng Anh yếu</label>
+
+                    <input type="radio" class="btn-check" name="reject_reason" id="r4" value="SALARY">
+                    <label class="btn btn-outline-success text-start" for="r4">💰 Lương quá cao</label>
+
+                    <input type="radio" class="btn-check" name="reject_reason" id="r5" value="OTHER">
+                    <label class="btn btn-outline-secondary text-start" for="r5">📝 Lý do khác</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" onclick="submitRejection()">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openRejectModal(appId) {
+        document.getElementById('rejectAppId').value = appId;
+        // Reset lựa chọn cũ
+        document.querySelectorAll('input[name="reject_reason"]').forEach(el => el.checked = false);
+        var myModal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
+        myModal.show();
+    }
+
+    function submitRejection() {
+        // 1. Lấy dữ liệu
+        const appId = document.getElementById('rejectAppId').value;
+        const reasonEl = document.querySelector('input[name="reject_reason"]:checked');
+        const submitBtn = document.querySelector('#rejectReasonModal .btn-danger');
+
+        if (!reasonEl) {
+            alert("⚠️ Vui lòng chọn một lý do!");
+            return;
+        }
+
+        // 2. Lấy CSRF Token từ thẻ Meta (File 1)
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfMeta) {
+            alert("❌ Lỗi nghiêm trọng: Không tìm thấy CSRF Token trong Layout!");
+            return;
+        }
+        const csrfToken = csrfMeta.getAttribute('content');
+
+        // 3. Hiệu ứng Loading
+        const originalText = submitBtn.innerText;
+        submitBtn.innerText = "Đang xử lý...";
+        submitBtn.disabled = true;
+
+        console.log("👉 Đang gửi request tới:", `/hr/applications/${appId}/reject`);
+
+        // 4. Gửi Request
+        fetch(`/hr/applications/${appId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ reason: reasonEl.value })
+        })
+            .then(async response => {
+                // Kiểm tra xem server trả về JSON hay HTML lỗi
+                const contentType = response.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    throw new Error("Server trả về lỗi không phải JSON (Có thể là 404 hoặc 500 HTML)");
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Lỗi server không xác định");
+                }
+
+                return data;
+            })
+            .then(data => {
+                if (data.success) {
+                    alert("✅ Đã từ chối thành công!");
+                    window.location.reload(); // Load lại trang để cập nhật giao diện
+                } else {
+                    throw new Error(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('❌ LỖI:', error);
+                alert("❌ Có lỗi xảy ra: " + error.message);
+
+                // Reset nút để bấm lại được
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            });
+    }
+</script>
